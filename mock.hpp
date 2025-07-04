@@ -62,7 +62,5 @@ namespace rvm64::mock {
 
 		return data;
 	}
-
-	//NOTE: consider returning the packet data from here to keep memory/elf init separated.
 };
 #endif // MOCK_H
