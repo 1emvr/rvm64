@@ -22,23 +22,24 @@ namespace rvm64::mock {
 
 	_native vm_buffer_t* read_file() {
 		DWORD bytes_read = 0;
+		BOOL success = false;
 
 		auto data = (vm_buffer_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_buffer_t));
 		if (!data) {
 			return nullptr;
 		}
-		HANDLE handle = CreateFileA("./test.elf", GENERIC_READ, FILE_SHARE_READ, nullptr,
+		HANDLE handle = CreateFileA("C:/Users/lemur/github/rvm64/test.elf", GENERIC_READ, FILE_SHARE_READ, nullptr,
 									OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 		if (handle == INVALID_HANDLE_VALUE) {
 			data->stat = GetLastError();
-			return data;
+			goto defer;
 		}
 
 		data->size = GetFileSize(handle, nullptr);
 		if (data->size == INVALID_FILE_SIZE || data->size == 0) {
 			data->stat = GetLastError();
-			return data;
+			goto defer;
 		}
 
 		data->address = (uint8_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, data->size);
@@ -46,10 +47,17 @@ namespace rvm64::mock {
 		if (!ReadFile(handle, data->address, data->size, &bytes_read, nullptr) ||
 		    bytes_read != data->size) {
 			data->stat = GetLastError();
-			return data;
+			goto defer;
 		}
+		success = true;
+
+	defer:
 		if (handle) {
 			CloseHandle(handle);
+		}
+		if (!success && data != nullptr) {
+			HeapFree(GetProcessHeap(), 0, data);
+			data = nullptr;
 		}
 
 		return data;
