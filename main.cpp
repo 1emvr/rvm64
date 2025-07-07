@@ -37,7 +37,7 @@ namespace rvm64::entry {
 
 	_vmcall void vm_entry() {
 		save_host_context();
-		vmcs->trap_handler = (uintptr_t) __builtin_return_address(0);
+		vmcs->trap_handler = (uintptr_t)__builtin_return_address(0);
 
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
@@ -45,8 +45,8 @@ namespace rvm64::entry {
 			if ((opcode & RET_MASK) == RET_PATTERN) { // TODO: need to check that this is an accurate exit
 				uintptr_t ret_addr = vmcs->vregs[ra];
 
-				if (ret_addr < (uintptr_t) vmcs->process.address ||
-				    ret_addr >= (uintptr_t) (vmcs->process.address + vmcs->process.size)) {
+				if (ret_addr < (uintptr_t)vmcs->process.address ||
+				    ret_addr >= (uintptr_t)(vmcs->process.address + vmcs->process.size)) {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
