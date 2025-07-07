@@ -9,15 +9,12 @@
 
 namespace rvm64::entry {
 	_vmcall void vm_init() {
-		save_host_context();
-
 		vmcs->dkey = key;
 		vmcs->dispatch_table = (uintptr_t)dispatch_table;
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
 		vm_buffer_t *data = rvm64::mock::read_file();
-
 		if (data == nullptr) {
 			CSR_SET_TRAP(nullptr, image_bad_load, STATUS_NO_MEMORY, 0, 1);
 		}
@@ -36,17 +33,15 @@ namespace rvm64::entry {
 	_vmcall void vm_exit() {
 		rvm64::memory::memory_end();
 		RemoveVectoredExceptionHandler(vmcs->veh_handle);
-		restore_host_context();
 	}
 
 	_vmcall void vm_entry() {
-		uintptr_t jmp_exit = setjmp(vmcs->trap_handler);
+		save_host_context();
+		vmcs->trap_handler = (uintptr_t)__builtin_return_address(0);
 
-		if (!jmp_exit) {
-			while (!vmcs->halt) {
-				rvm64::decoder::vm_decode(*(int32_t*)vmcs->pc);
-				vmcs->pc += 4;
-			}
+		while (!vmcs->halt) {
+			rvm64::decoder::vm_decode(*(int32_t *) vmcs->pc);
+			vmcs->pc += 4;
 		}
 	}
 };
