@@ -32,9 +32,9 @@ save_host_context:
 
     ret
 
-
 .global restore_host_context
 restore_host_context:
+;; DO NOT MODIFY RIP/RSP
     mov     rax, [rip + vmcs]
     lea     rsi, [rax + OFFSET_HOST_CONTEXT]
 
@@ -55,17 +55,14 @@ restore_host_context:
     mov     r15, [rsi + OFFSET_R15]
 
     push    qword ptr [rsi + OFFSET_FLAGS]
-    popfq
-
-    mov     rsp, [rsi + OFFSET_RSP]
-    push    qword ptr [rsi + OFFSET_RIP]
     mov     rsi, [rsi + OFFSET_RSI]
+    popfq
     ret
 
 
 .global save_vm_context
 save_vm_context:
-;; do not modify rip/rsp
+;; DO NOT MODIFY RIP/RSP
     mov     rax, [rip + vmcs]
     lea     rdi, [rax + OFFSET_VM_CONTEXT]
 
@@ -91,9 +88,10 @@ save_vm_context:
 
     ret
 
+
 .global restore_vm_context
 restore_vm_context:
-;; do not modify rip/rsp
+;; DO NOT MODIFY RIP/RSP
     mov     rax, [rip + vmcs]
     lea     rsi, [rax + OFFSET_VM_CONTEXT]
 
