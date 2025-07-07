@@ -36,7 +36,7 @@ typedef struct {
 
 
 struct intel_t {
-    uint64_t rax, rbx, rcx, rdx, rsi, rdi, rbp;
+    uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
     uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
     uint64_t rflags;
 };
@@ -92,7 +92,8 @@ typedef struct {
     vm_process_t data;
     vm_process_t process;
 
-	jmp_buf trap_handler;
+	//jmp_buf trap_handler;
+	volatile uintptr_t trap_handler;
     volatile uintptr_t load_rsv_addr;
     volatile int load_rsv_valid;
 
