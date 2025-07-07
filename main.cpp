@@ -40,6 +40,7 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_entry() {
+		__debugbreak();
 		vmcs->trap_handler = (uintptr_t)__builtin_return_address(0);
 		while (!vmcs->halt) {
 			rvm64::decoder::vm_decode(*(int32_t*)vmcs->pc);
