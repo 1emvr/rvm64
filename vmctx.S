@@ -3,12 +3,13 @@
 
 .text
 .extern vmcs
-
 .global save_host_context
 save_host_context:
     mov     rax, [rip + vmcs]
     lea     rdi, [rax + OFFSET_HOST_CONTEXT]
 
+    mov     [rdi + OFFSET_RIP], rip
+    mov     [rdi + OFFSET_RSP], rsp
     mov     [rdi + OFFSET_RAX], rax
     mov     [rdi + OFFSET_RBX], rbx
     mov     [rdi + OFFSET_RCX], rcx
@@ -36,6 +37,8 @@ restore_host_context:
     mov     rax, [rip + vmcs]
     lea     rsi, [rax + OFFSET_HOST_CONTEXT]
 
+    mov     rip, [rdi + OFFSET_RIP]
+    mov     rsp, [rdi + OFFSET_RSP]
     mov     rax, [rsi + OFFSET_RAX]
     mov     rbx, [rsi + OFFSET_RBX]
     mov     rcx, [rsi + OFFSET_RCX]
