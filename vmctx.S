@@ -32,6 +32,7 @@ save_host_context:
 
     ret
 
+
 .global restore_host_context
 restore_host_context:
     mov     rax, [rip + vmcs]
@@ -64,6 +65,7 @@ restore_host_context:
 
 .global save_vm_context
 save_vm_context:
+;; do not modify rip/rsp
     mov     rax, [rip + vmcs]
     lea     rdi, [rax + OFFSET_VM_CONTEXT]
 
@@ -91,6 +93,7 @@ save_vm_context:
 
 .global restore_vm_context
 restore_vm_context:
+;; do not modify rip/rsp
     mov     rax, [rip + vmcs]
     lea     rsi, [rax + OFFSET_VM_CONTEXT]
 
