@@ -37,15 +37,12 @@ restore_host_context:
     mov     rax, [rip + vmcs]
     lea     rsi, [rax + OFFSET_HOST_CONTEXT]
 
-    mov     rip, [rdi + OFFSET_RIP]
-    mov     rsp, [rdi + OFFSET_RSP]
     mov     rax, [rsi + OFFSET_RAX]
     mov     rbx, [rsi + OFFSET_RBX]
     mov     rcx, [rsi + OFFSET_RCX]
     mov     rdx, [rsi + OFFSET_RDX]
-    mov     rsi, [rsi + OFFSET_RSI]
-    mov     rdi, [rsi + OFFSET_RDI]
     mov     rbp, [rsi + OFFSET_RBP]
+    mov     rdi, [rsi + OFFSET_RDI]
 
     mov     r8,  [rsi + OFFSET_R8]
     mov     r9,  [rsi + OFFSET_R9]
@@ -59,7 +56,11 @@ restore_host_context:
     push    qword ptr [rsi + OFFSET_FLAGS]
     popfq
 
+    mov     rsp, [rsi + OFFSET_RSP]
+    push    qword ptr [rsi + OFFSET_RIP]
+    mov     rsi, [rsi + OFFSET_RSI]
     ret
+
 
 .global save_vm_context
 save_vm_context:
