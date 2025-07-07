@@ -45,8 +45,9 @@ namespace rvm64::entry {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
 			// TODO: need to check that this is an accurate exit
-			// NOTE: might trigger an exit prematurely in weird cases
+			// NOTE: might trigger an exit prematurely in weird cases. needs tested.
 			if (opcode == JALR_RA_ZERO) {
+				__debugbreak();
 				uintptr_t ret_addr = vmcs->vregs[ra];
 
 				if (ret_addr < (uintptr_t)vmcs->process.address ||
