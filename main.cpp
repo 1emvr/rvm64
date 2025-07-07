@@ -42,7 +42,7 @@ namespace rvm64::entry {
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
-			if ((opcode & RET_MASK) == RET_PATTERN) {
+			if ((opcode & RET_MASK) == RET_PATTERN) { // TODO: this needs to be checked
 				uintptr_t ret_addr = vmcs->vregs[ra];
 
 				if (ret_addr < (uintptr_t) vmcs->process.address ||
