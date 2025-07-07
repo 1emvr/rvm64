@@ -2,6 +2,7 @@
 #define VMCS_H
 #include <windows.h>
 #include <stdint.h>
+#include <setjmp.h>
 
 #include "vmcommon.hpp"
 
@@ -91,7 +92,7 @@ typedef struct {
     vm_process_t data;
     vm_process_t process;
 
-	volatile uintptr_t trap_handler;
+	jmp_buf trap_handler;
     volatile uintptr_t load_rsv_addr;
     volatile int load_rsv_valid;
 

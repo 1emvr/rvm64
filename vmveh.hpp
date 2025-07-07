@@ -12,8 +12,7 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 
 	CSR_GET(exception_info);
 	if (vmcs->halt || code != RVM_TRAP_EXCEPTION) {
-		exception_info->ContextRecord->Rip = (DWORD64)vmcs->trap_handler;
-		return EXCEPTION_CONTINUE_EXECUTION;
+		longjmp(vmcs->trap_handler, 1);
 	}
 	if (winctx->ContextFlags & CONTEXT_CONTROL) {
 		winctx->EFlags &= ~0x100; // remove trap flag
