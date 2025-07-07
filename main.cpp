@@ -9,6 +9,8 @@
 
 namespace rvm64::entry {
 	_vmcall void vm_init() {
+		rvm64::rvni::resolve_ucrt_imports();
+
 		vmcs->dkey = key;
 		vmcs->dispatch_table = (uintptr_t)dispatch_table;
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
@@ -18,16 +20,16 @@ namespace rvm64::entry {
 		if (data == nullptr) {
 			CSR_SET_TRAP(nullptr, image_bad_load, STATUS_NO_MEMORY, 0, 1);
 		}
-		if (data->stat || data->address == nullptr) {
-			CSR_SET_TRAP(nullptr, image_bad_load, data->stat, 0, 1);
-		}
 
 		data->size += VM_PROCESS_PADDING;
-
-		rvm64::rvni::resolve_ucrt_imports();
 		rvm64::memory::memory_init(data->size);
+
 		rvm64::elf::load_elf_image(data->address, data->size);
-		rvm64::mock::destroy_file(data);
+		rvm64::elf::patch_elf_plt(vmcs->process.address);
+
+		vmcs->cache
+			? rvm64::mock::cache_file(data)
+			: rvm64::mock::destroy_file(data);
 	}
 
 	_vmcall void vm_exit() {

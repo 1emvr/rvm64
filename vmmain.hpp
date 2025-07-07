@@ -103,7 +103,7 @@ typedef struct {
 	} csr;
 
     int halt;
-	int trap;
+	int cache;
 } vmcs_t;
 
 

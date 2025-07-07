@@ -7,6 +7,10 @@
 #include "vmcommon.hpp"
 
 namespace rvm64::mock {
+	_native void cache_file(vm_buffer_t *data) {
+		// only for mock-up
+	};
+
 	_native void destroy_file(vm_buffer_t *data) {
 		if (!data) {
 			return;
