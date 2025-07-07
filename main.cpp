@@ -37,10 +37,20 @@ namespace rvm64::entry {
 
 	_vmcall void vm_entry() {
 		save_host_context();
-		vmcs->trap_handler = (uintptr_t)__builtin_return_address(0);
+		vmcs->trap_handler = (uintptr_t) __builtin_return_address(0);
 
 		while (!vmcs->halt) {
-			rvm64::decoder::vm_decode(*(int32_t *) vmcs->pc);
+			int32_t opcode = *(int32_t*)vmcs->pc;
+
+			if ((opcode & RET_MASK) == RET_PATTERN) {
+				uintptr_t ret_addr = vmcs->vregs[ra];
+
+				if (ret_addr < (uintptr_t) vmcs->process.address ||
+				    ret_addr >= (uintptr_t) (vmcs->process.address + vmcs->process.size)) {
+					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
+				}
+			}
+			rvm64::decoder::vm_decode(opcode);
 			vmcs->pc += 4;
 		}
 	}

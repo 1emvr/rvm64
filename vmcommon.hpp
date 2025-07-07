@@ -28,6 +28,9 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define EXPONENT_MASK           0x7FF0000000000000ULL
 #define FRACTION_MASK           0x000FFFFFFFFFFFFFULL
 
+#define RET_MASK 0b11111111111111111000011111111111
+#define RET_PATTERN 0b00000000000100000000000001100111
+
 #define CSR_SET_TRAP(epc, cause, stat, val, hlt)	\
 	vmcs->csr.m_epc = (uintptr_t)epc;				\
 	vmcs->csr.m_cause = cause;						\
@@ -84,7 +87,7 @@ enum causenum {
 	designated_for_custom_use_5 = 0xb028,
 	designated_for_custom_use_6 = 0xb029,
 	designated_for_custom_use_7 = 0xb030,
-	vm_halt = 0xb031,
+	environment_exit = 0xb031,
 	undefined = 0xffff,
 };
 
