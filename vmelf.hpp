@@ -183,8 +183,7 @@ typedef struct {
 
 // NOTE: I do not understand the elf format.
 namespace rvm64::elf {
-	_native void patch_elf_imports() {
-		auto process = vmcs->process.address;
+	_native void patch_elf_plt(uint8_t *process) {
 		auto ehdr = (elf64_ehdr*)process;
 
 		if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
@@ -206,7 +205,7 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		auto* dyn_entries = (elf64_dyn*) ((uint8_t*)process + dyn_vaddr); 
+		auto* dyn_entries = (elf64_dyn*) (process + dyn_vaddr);
 		uint64_t symtab_vaddr = 0, strtab_vaddr = 0, rela_plt_vaddr = 0, rela_plt_size = 0;
 
 		// TODO: add support for .rela.dyn entries as well (R_RISCV_RELATIVE and others)
@@ -232,16 +231,16 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		auto rela_entries 	= (elf64_rela*) ((uint8_t*)process + rela_plt_vaddr);
-		auto symtab 		= (elf64_sym*) ((uint8_t*)process + symtab_vaddr);
-		auto strtab 		= (const char*) ((uint8_t*)process + strtab_vaddr);
+		auto rela_entries 	= (elf64_rela*) (process + rela_plt_vaddr);
+		auto symtab 		= (elf64_sym*) (process + symtab_vaddr);
+		auto strtab 		= (const char*) (process + strtab_vaddr);
 		size_t rela_count 	= rela_plt_size / sizeof(elf64_rela);
 
 		for (size_t i = 0; i < rela_count; ++i) {
 			uint32_t sym_idx = ELF64_R_SYM(rela_entries[i].r_info);
 			uint32_t rel_type = ELF64_REL_TYPE(rela_entries[i].r_info);
 
-			auto reloc_addr = (uint64_t*) ((uint8_t*)process + rela_entries[i].r_offset);
+			auto reloc_addr = (uint64_t*) (process + rela_entries[i].r_offset);
 			const char *sym_name = strtab + symtab[sym_idx].st_name;
 
 			if (rel_type != R_RISCV_JUMP_SLOT && rel_type != R_RISCV_CALL_PLT) {
@@ -255,10 +254,10 @@ namespace rvm64::elf {
 			*reloc_addr = (uint64_t)(win_func);
 		}
 
-		auto shdrs = (elf64_shdr*) ((uint8_t*)process + ehdr->e_shoff);
+		auto shdrs = (elf64_shdr*) (process + ehdr->e_shoff);
 		if (ehdr->e_shstrndx != SHN_UNDEF) {
 			auto& strtab_hdr = shdrs[ehdr->e_shstrndx];
-			strtab = (const char*)((uint8_t*)process + strtab_hdr.sh_offset);
+			strtab = (const char*)(process + strtab_hdr.sh_offset);
 		}
 
 		for (int i = 0; i < ehdr->e_shnum; ++i) {
@@ -272,7 +271,7 @@ namespace rvm64::elf {
 		}
 	}
 
-	_native void load_elf_image(void* image_data, size_t image_size) {
+	_native void load_elf_image(uint8_t *image_data, size_t image_size) {
 		auto ehdr = (elf64_ehdr*)(image_data);
 
 		if (ehdr->e_ident[0] != 0x7F ||
@@ -318,7 +317,6 @@ namespace rvm64::elf {
 		vmcs->process.entry = (uintptr_t)vmcs->process.address + (ehdr->e_entry - base);
 
 		vmcs->pc = vmcs->process.entry;
-		patch_elf_imports();
 	}
 };
 #endif // VMELF_H
