@@ -60,6 +60,10 @@ namespace rvm64::mock {
 			CloseHandle(handle);
 		}
 		if (!success && data != nullptr) {
+			if (data->address) {
+				HeapFree(GetProcessHeap(), 0, data->address);
+				data->address = nullptr;
+			}
 			HeapFree(GetProcessHeap(), 0, data);
 			data = nullptr;
 		}
