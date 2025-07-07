@@ -36,7 +36,7 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_entry() {
-		save_host_context();
+		save_context();
 		vmcs->trap_handler = (uintptr_t) __builtin_return_address(0);
 
 		while (!vmcs->halt) {
