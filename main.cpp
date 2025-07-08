@@ -1,4 +1,5 @@
 #include <errhandlingapi.h>
+#include <setjmp.h>
 
 #include "vmmain.hpp"
 #include "vmcode.hpp"
@@ -37,17 +38,14 @@ namespace rvm64::entry {
 		RemoveVectoredExceptionHandler(vmcs->veh_handle);
 	}
 
-	_vmcall void vm_entry() {
-		save_host_context();
-		vmcs->trap_handler = (uintptr_t)__builtin_return_address(0);
+	_vmcall void vm_loop() {
+		vmcs->trap_handler.rip = (uintptr_t)&vm_loop;
+		vmcs->trap_handler.rsp = (uintptr_t)__builtin_frame_address(0);
 
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
-			// TODO: need to check that this is an accurate exit
-			// NOTE: might trigger an exit prematurely in weird cases. needs tested.
 			if (opcode == JALR_RA_ZERO) {
-				__debugbreak();
 				uintptr_t ret_addr = vmcs->vregs[ra];
 
 				if (ret_addr < (uintptr_t)vmcs->process.address ||
@@ -58,6 +56,12 @@ namespace rvm64::entry {
 			rvm64::decoder::vm_decode(opcode);
 			vmcs->pc += 4;
 		}
+	}
+
+	_vmcall void vm_entry() {
+		save_host_context();
+		vmcs->exit_handler = (uintptr_t)__builtin_return_address(0);
+		vm_loop();
 	}
 };
 

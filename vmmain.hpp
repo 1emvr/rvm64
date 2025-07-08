@@ -74,6 +74,11 @@ struct ucrt_function {
 	ucrt_wrapper::typenum type;
 };
 
+struct trapframe_t {
+	uintptr_t rip;
+	uintptr_t rsp;
+};
+
 typedef struct {
     uintptr_t pc;
     uintptr_t dispatch_table;
@@ -91,7 +96,8 @@ typedef struct {
     vm_process_t process;
 
 	//jmp_buf trap_handler;
-	volatile uintptr_t trap_handler;
+	trapframe_t trap_handler;
+	volatile uintptr_t exit_handler;
     volatile uintptr_t load_rsv_addr;
     volatile int load_rsv_valid;
 
@@ -102,8 +108,8 @@ typedef struct {
 		uintptr_t m_tval;
 	} csr;
 
-    int halt;
 	int cache;
+    int halt;
 } vmcs_t;
 
 
