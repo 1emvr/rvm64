@@ -39,8 +39,11 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_loop() {
-		vmcs->trap_handler.rip = (uintptr_t)&vm_loop;
-		vmcs->trap_handler.rsp = (uintptr_t)__builtin_frame_address(0);
+		if (!vmcs->trap_set) {
+			vmcs->trap_handler.rip = (uintptr_t)&vm_loop;
+			vmcs->trap_handler.rsp = (uintptr_t)__builtin_frame_address(0);
+			vmcs->trap_set = 1;
+		}
 
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
@@ -60,7 +63,8 @@ namespace rvm64::entry {
 
 	_vmcall void vm_entry() {
 		save_host_context();
-		vmcs->exit_handler = (uintptr_t)__builtin_return_address(0);
+		vmcs->exit_handler.rip = (uintptr_t)__builtin_return_address(0);
+		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(0);
 		vm_loop();
 	}
 };
