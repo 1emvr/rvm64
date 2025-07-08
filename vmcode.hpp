@@ -1046,18 +1046,6 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, v1);
 		}
 
-		_vmcall void rv_flq() {
-			CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, 0, 1);
-		}
-
-		_vmcall void rv_fence() {
-			CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, 0, 1);
-		}
-
-		_vmcall void rv_fence_i() {
-			CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, 0, 1);
-		}
-
 		_vmcall void rv_jalr() {
 			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0;
 
@@ -1077,6 +1065,18 @@ namespace rvm64::operations {
 			if (vmcs->pc >= vmcs->process.plt.start && vmcs->pc < vmcs->process.plt.end) {
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
+		}
+
+		_vmcall void rv_flq() {
+			CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, 0, 1);
+		}
+
+		_vmcall void rv_fence() {
+			CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, 0, 1);
+		}
+
+		_vmcall void rv_fence_i() {
+			CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, 0, 1);
 		}
 
 		_vmcall void rv_ecall() {
