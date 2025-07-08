@@ -10,12 +10,10 @@
 
 namespace rvm64::entry {
 	_vmcall void vm_init() {
-		rvm64::rvni::resolve_ucrt_imports();
-
-		vmcs->dkey = key;
-		vmcs->dispatch_table = (uintptr_t)dispatch_table;
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
+		vmcs->dispatch_table = (uintptr_t)dispatch_table;
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
+		vmcs->dkey = key;
 
 		vm_buffer_t *data = rvm64::mock::read_file();
 		if (data == nullptr) {
@@ -73,6 +71,8 @@ namespace rvm64 {
 	_native int64_t vm_main() {
 		vmcs_t vm_instance = { };
 		vmcs = &vm_instance;
+
+		rvm64::rvni::resolve_ucrt_imports();
 
 		rvm64::entry::vm_init();
 		rvm64::entry::vm_entry();
