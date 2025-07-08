@@ -93,7 +93,7 @@ enum causenum {
 	image_bad_type = 0xb027,
 	designated_for_custom_use_5 = 0xb028,
 	designated_for_custom_use_6 = 0xb029,
-	designated_for_custom_use_7 = 0xb030,
+	environment_branch = 0xb030,
 	environment_exit = 0xb031,
 	undefined = 0xffff,
 };

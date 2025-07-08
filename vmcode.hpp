@@ -1192,6 +1192,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("sc.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			mem_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, value, _rs2);
 
@@ -1213,6 +1215,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("sc.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, value, _rs2);
@@ -1236,6 +1240,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("fadd.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
 			reg_write(float, _rd, (v1 + v2));
@@ -1247,6 +1253,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("fsub.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
@@ -1260,6 +1268,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("fmul.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
 			reg_write(float, _rd, (v1 * v2));
@@ -1271,6 +1281,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("fdiv.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
@@ -1284,6 +1296,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("fsgnj.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(int64_t, v1, _rs1);
 			reg_read(int64_t, v2, _rs2);
@@ -1303,6 +1317,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("fsgnjn.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int64_t, v1, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1320,6 +1336,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("fsgnjx.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(int64_t, v1, _rs1);
 			reg_read(int64_t, v2, _rs2);
@@ -1340,6 +1358,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("fmin.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
@@ -1358,6 +1378,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("fmax.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
@@ -1378,6 +1400,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("feq.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
@@ -1395,6 +1419,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("flt.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
@@ -1414,6 +1440,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("fle.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
@@ -1432,6 +1460,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("add.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 			reg_write(int64_t, _rd, (int64_t)(v1 + v2));
@@ -1443,6 +1473,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("sub.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
@@ -1456,6 +1488,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("mul.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 			reg_write(int64_t, _rd, (int64_t)(v1 * v2));
@@ -1467,6 +1501,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("srl.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(int32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
@@ -1480,6 +1516,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("sra.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
 			reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
@@ -1491,6 +1529,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("divu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uint32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
@@ -1504,6 +1544,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("sll.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
@@ -1515,6 +1557,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("div.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
@@ -1528,6 +1572,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("rem.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 			reg_write(int32_t, _rd, (v1 % v2));
@@ -1539,6 +1585,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("remu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uint32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
@@ -1552,6 +1600,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("add x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 			reg_write(int32_t, _rd, (v1 + v2));
@@ -1563,6 +1613,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("sub x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
@@ -1576,6 +1628,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("mul x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 			reg_write(int32_t, _rd, (v1 * v2));
@@ -1588,6 +1642,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("sll x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(int32_t, _rs1, v1);
 			reg_read(int32_t, _rs2, v2);
 			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
@@ -1599,6 +1655,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("mulh x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(intptr_t, v2, _rs2);
@@ -1621,6 +1679,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("slt x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(intptr_t, v2, _rs2);
 			reg_write(intptr_t, _rd, ((v1 < v2) ? 1 : 0));
@@ -1632,6 +1692,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("mulhsu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
@@ -1654,6 +1716,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("sltu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
 			reg_write(uintptr_t, _rd, ((v1 < v2) ? 1 : 0));
@@ -1665,6 +1729,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("mulhu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
@@ -1685,6 +1751,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("xor x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
 			reg_write(uintptr_t, _rd, (v1 ^ v2));
@@ -1696,6 +1764,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("div x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
@@ -1709,6 +1779,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("srl x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
 			reg_write(uintptr_t, _rd, (v1 >> (v2 & 0x1F)));
@@ -1721,9 +1793,10 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("sra x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
-
 			reg_write(intptr_t, _rd, (v1 >> (v2 & 0x1F)));
 		}
 
@@ -1733,6 +1806,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("divu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
@@ -1751,6 +1826,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("or x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(intptr_t, _rs1, v1);
 			reg_read(intptr_t, _rs2, v2);
 			reg_write(intptr_t, _rd, (v1 | v2));
@@ -1762,6 +1839,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("rem x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(intptr_t, v2, _rs2);
@@ -1780,6 +1859,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("and x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
 			reg_write(uintptr_t, _rd, (v1 & v2));
@@ -1791,6 +1872,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("remu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
@@ -1808,6 +1891,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amoswap.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
@@ -1828,6 +1913,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amoadd.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1846,6 +1933,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amoxor.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
@@ -1866,6 +1955,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amoand.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1884,6 +1975,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amoor.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
@@ -1904,6 +1997,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amomin.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint64_t, v2, _rs2);
 
@@ -1922,6 +2017,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amomax.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
@@ -1942,6 +2039,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amominu.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, _rs1, address);
 			reg_read(uint64_t, _rs2, v2);
 
@@ -1960,6 +2059,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amomaxu.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint64_t, v2, _rs2);
@@ -1980,6 +2081,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amoswap.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -1998,6 +2101,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amoadd.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
@@ -2018,6 +2123,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amoxor.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -2036,6 +2143,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amoand.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
@@ -2056,6 +2165,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amoor.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -2074,6 +2185,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amomin.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
@@ -2094,6 +2207,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amomax.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -2112,6 +2227,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
+
+			dbgprint("amominu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint32_t, v2, _rs2);
@@ -2132,6 +2249,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
+			dbgprint("amomaxu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
+
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint32_t, v2, _rs2);
 
@@ -2151,6 +2270,8 @@ namespace rvm64::operations {
 
 			scr_read(uint32_t, _rd, rd);
 			scr_read(int32_t, _imm, imm);
+
+			dbgprint("lui x%d, 0x%x\n", _rd, _imm);
 			reg_write(int32_t, _rd, _imm);
 		}
 
@@ -2159,6 +2280,8 @@ namespace rvm64::operations {
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(int32_t, _imm, imm);
+
+			dbgprint("auipc x%d, 0x%x\n", _rd, _imm);
 			reg_write(int64_t, _rd, (int64_t)vmcs->pc + _imm);
 		}
 	}
@@ -2169,6 +2292,8 @@ namespace rvm64::operations {
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(intptr_t, offset, imm);
+
+			dbgprint("jal x%d, 0x%x\n", _rd, offset);
 
 			reg_write(uintptr_t, _rd, vmcs->pc + 4);
 			vmcs->pc += offset;
@@ -2183,12 +2308,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs2, rs2);
 			scr_read(intptr_t, offset, imm);
 
+			dbgprint("beq x%d, x%d, 0x%x\n", _rs1, _rs2, offset);
+
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
 			if (v1 == v2) {
 				vmcs->pc += offset;
-				// vmcs->step = false;
+				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
 			}
 		}
 
