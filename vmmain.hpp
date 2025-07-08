@@ -95,9 +95,8 @@ typedef struct {
     vm_process_t data;
     vm_process_t process;
 
-	//jmp_buf trap_handler;
 	trapframe_t trap_handler;
-	volatile uintptr_t exit_handler;
+	trapframe_t exit_handler;
     volatile uintptr_t load_rsv_addr;
     volatile int load_rsv_valid;
 
@@ -108,6 +107,7 @@ typedef struct {
 		uintptr_t m_tval;
 	} csr;
 
+	int trap_set;
 	int cache;
     int halt;
 } vmcs_t;
