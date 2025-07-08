@@ -2,13 +2,14 @@
 #define VMRWX_HPP
 
 #ifdef DEBUG
+#undef DEBUG
 #define mem_read_check(T, addr)												\
 	if ((addr) % sizeof(T) != 0) {											\
 		CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);		\
 		return;																\
 	}																		\
-	if ((addr) < (uintptr_t)vmcs->process.address ||									\
-		(addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size)) {				\
+	if ((addr) < (uintptr_t)vmcs->process.address ||						\
+		(addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size)) {\
 		CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);				\
 		return;																\
 	}
@@ -18,8 +19,8 @@
 		CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1); 		\
 		return;																\
 	}																		\
-	if ((addr) < (uintptr_t)vmcs->process.address ||									\
-		(addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size)) { 			\
+	if ((addr) < (uintptr_t)vmcs->process.address ||						\
+		(addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size)) {\
 		CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);			\
 		return;																\
 	}
@@ -75,15 +76,15 @@
 #define mem_read(T, retval, addr)  								\
 	do {														\
 		__debugbreak();											\
-		mem_read_check(T, ((uintptr_t)vmcs->process.address + (uintptr_t)addr));		\
-		retval = *(T *)((uintptr_t)vmcs->process.address + (uintptr_t)addr); 		\
+		mem_read_check(T, ((uintptr_t)addr));					\
+		retval = *(T *)((uintptr_t)addr); 						\
 	} while(0)
 
 #define mem_write(T, addr, value)  								\
 	do {														\
 		__debugbreak();											\
-		mem_write_check(T, ((uintptr_t)vmcs->process.address + (uintptr_t)addr));	\
-		*(T *)((uintptr_t)vmcs->process.address + (uintptr_t)addr) = value;  		\
+		mem_write_check(T, ((uintptr_t)addr));					\
+		*(T *)((uintptr_t)addr) = value;  						\
 	} while(0)
 
 #define reg_read(T, dst, reg_idx) 								\

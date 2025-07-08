@@ -8,7 +8,6 @@ save_host_context:
     mov     rax, [rip + vmcs]
     lea     rdi, [rax + OFFSET_HOST_CONTEXT]
 
-    mov     [rdi + OFFSET_RIP], rip
     mov     [rdi + OFFSET_RSP], rsp
     mov     [rdi + OFFSET_RAX], rax
     mov     [rdi + OFFSET_RBX], rbx
