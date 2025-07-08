@@ -3,6 +3,30 @@
 #include <windows.h>
 #include "vmmain.hpp"
 
+#ifdef DEBUG
+	#include <stdio.h>
+
+	static inline FILE* dbg_get_log_file() {
+		static FILE *dbg_log_file = NULL;
+		if (!dbg_log_file) {
+			dbg_log_file = fopen("C:\\temp\\vm_debug.log", "w");  // use an explicit path
+			if (!dbg_log_file) {
+				MessageBoxA(NULL, "Failed to open vm_debug.log", "DBGPRINT ERROR", MB_OK);
+				dbg_log_file = stderr;
+			}
+		}
+		return dbg_log_file;
+	}
+
+#define DBGPRINT(fmt, ...)								\
+	do {												\
+		fprintf(dbg_get_log_file(), fmt, ##__VA_ARGS__);\
+		fflush(dbg_get_log_file());						\
+	} while (0)
+#else
+#define DBGPRINT(fmt, ...) ((void)0)
+#endif
+
 namespace simple_map {
 	template<typename K, typename V>
 	struct entry {
@@ -82,15 +106,42 @@ namespace simple_map {
 	};
 };
 
-int map_main() {
-	simple_map::unordered_map<uint64_t, uint64_t> map;
-	map.push(1234, 5678);
-	auto val = map.find(1234);
-	if (val == 5678) {
-		map.pop(1234);
-		return true;
-	}
-	return false;
+inline int32_t sign_extend(int32_t val, int bits) {
+	int shift = 32 - bits;
+	return (int32_t)(val << shift) >> shift;
+}
+
+inline uint8_t shamt_i(uint32_t opcode) {
+	return (opcode >> 20) & 0x1F;
+}
+
+// NOTE: annoying as fuck to read. just let GPT do the math and say fuck it.
+inline int32_t imm_u(uint32_t opcode) {
+	return (int32_t) opcode & 0xFFFFF000;
+}
+inline int32_t imm_i(uint32_t opcode) {
+	int32_t raw_imm = opcode >> 20;
+	return sign_extend(raw_imm, 12);
+}
+inline int32_t imm_s(uint32_t opcode) {
+	int32_t raw_imm =  ((opcode >> 25) << 5) | ((opcode >> 7) & 0x1F);
+	return sign_extend(raw_imm & 0xFFF, 12);
+}
+
+inline int32_t imm_b(uint32_t opcode) {
+	int32_t raw_imm = (((opcode >> 31) & 1) << 12)
+	              | (((opcode >> 25) & 0x3F) << 5)
+	              | (((opcode >> 8) & 0xF) << 1)
+	              | (((opcode >> 7) & 1) << 11);
+	return sign_extend(raw_imm, 13);
+}
+
+inline int32_t imm_j(uint32_t opcode) {
+	int32_t raw_imm = (((opcode >> 31) & 1) << 20)
+	              | (((opcode >> 21) & 0x3FF) << 1)
+	              | (((opcode >> 20) & 1) << 11)
+	              | (((opcode >> 12) & 0xFF) << 12);
+	return sign_extend(raw_imm, 21);
 }
 
 #endif //VMUTILS_H
