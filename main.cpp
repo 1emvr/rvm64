@@ -8,6 +8,7 @@
 #include "rvni.hpp"
 #include "mock.hpp"
 
+
 namespace rvm64::entry {
 	_vmcall void vm_init() {
 		vm_buffer_t *data = nullptr;
