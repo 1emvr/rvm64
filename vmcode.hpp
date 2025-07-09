@@ -133,8 +133,7 @@ namespace rvm64::decoder {
 							}
 						}
 
-			case rtype:
-						{
+			case rtype: {
 							scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
 							scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
 							scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
@@ -350,6 +349,7 @@ namespace rvm64::decoder {
 														default: break;
 													}
 												}
+								default: break;
 							}
 						}
 			case stype: {
