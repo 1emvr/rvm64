@@ -75,7 +75,6 @@ namespace rvm64 {
 		vmcs = &vm_instance;
 
 		rvm64::rvni::resolve_ucrt_imports();
-
 		rvm64::entry::vm_init();
 		rvm64::entry::vm_entry();
 		rvm64::entry::vm_exit();
