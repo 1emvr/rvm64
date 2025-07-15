@@ -76,9 +76,7 @@ struct trapframe_t {
 
 typedef struct {
 	uintptr_t pc;
-	uintptr_t dispatch_table;
 	uintptr_t dkey;
-
 	uintptr_t vscratch[32];
 	uintptr_t vregs[32];
 	uintptr_t vstack[VSTACK_MAX_CAPACITY];
