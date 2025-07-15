@@ -17,6 +17,3 @@
 #define OFFSET_R14      0x78
 #define OFFSET_R15      0x80
 #define OFFSET_FLAGS    0x88
-
-#define OFFSET_HOST_CONTEXT     16920
-#define OFFSET_VM_CONTEXT       17064
