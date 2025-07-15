@@ -117,6 +117,8 @@ _externc {
 	_data intel_t host_context = { };
 	_data intel_t vm_context = { };
 
+	_rdata const uintptr_t dispatch_table[];
+
 #ifdef __cplusplus
 }
 #endif
