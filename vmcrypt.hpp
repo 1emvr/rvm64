@@ -4,7 +4,7 @@
 
 namespace rvm64::crypt {
 	constexpr uintptr_t encrypt_ptr(uintptr_t ptr) {
-		return ptr ^ key;
+		return ptr ^ DKEY;
 	}
 
 	_vmcall uintptr_t decrypt_ptr(uintptr_t ptr) {
