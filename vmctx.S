@@ -7,7 +7,7 @@
 
 .global save_host_context
 save_host_context:
-    lea     rdi, [host_context]
+    lea     rdi, [rel host_context]
 
     mov     [rdi + OFFSET_RSP], rsp
     mov     [rdi + OFFSET_RAX], rax
@@ -34,7 +34,7 @@ save_host_context:
 
 .global restore_host_context
 restore_host_context:
-    lea     rsi, [host_context]
+    lea     rsi, [rel host_context]
 
     mov     rax, [rsi + OFFSET_RAX]
     mov     rbx, [rsi + OFFSET_RBX]
@@ -60,7 +60,7 @@ restore_host_context:
 
 .global save_vm_context
 save_vm_context:
-    lea     rdi, [vm_context]
+    lea     rdi, [rel vm_context]
 
     mov     [rdi + OFFSET_RAX], rax
     mov     [rdi + OFFSET_RBX], rbx
@@ -87,7 +87,7 @@ save_vm_context:
 
 .global restore_vm_context
 restore_vm_context:
-    lea     rsi, [vm_context]
+    lea     rsi, [rel vm_context]
 
     mov     rax, [rsi + OFFSET_RAX]
     mov     rbx, [rsi + OFFSET_RBX]
