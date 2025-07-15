@@ -13,7 +13,7 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		vm_buffer_t *data = nullptr;
 
-		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
+		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
 		data = rvm64::mock::read_file();
@@ -67,7 +67,7 @@ namespace rvm64::entry {
 	_vmcall void vm_exit() {
 		restore_host_context();
 
-		RemoveVectoredExceptionHandler(vmcs->veh_handle);
+		RemoveVectoredExceptionHandler(veh_handle);
 		rvm64::memory::memory_end();
 	}
 };
