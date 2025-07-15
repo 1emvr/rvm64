@@ -31,6 +31,8 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		case environment_branch: {
 			winctx->Rip = vmcs->trap_handler.rip;
 			winctx->Rsp = vmcs->trap_handler.rsp;
+			winctx->ContextFlags |= CONTEXT_CONTROL;
+
 			break;
 		}
 		case environment_call_native: {
