@@ -67,7 +67,7 @@
 #define unwrap_opcall(hdl_idx) 									\
 	do { 														\
 		opcall_check(hdl_idx);									\
-		auto a = ((uintptr_t*)vmcs->dispatch_table)[hdl_idx];	\
+		auto a = ((uintptr_t*)dispatch_table)[hdl_idx];	\
 		auto b = rvm64::crypt::decrypt_ptr((uintptr_t)a);		\
 		void (*fn)() = (void (*)())(b);							\
 		fn();													\

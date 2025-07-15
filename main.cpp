@@ -13,10 +13,9 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		vm_buffer_t *data = nullptr;
 
-		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
-		vmcs->dispatch_table = (uintptr_t)dispatch_table;
-		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 		vmcs->dkey = DKEY;
+		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
+		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
 		if (!((data = rvm64::mock::read_file()))) {
 			CSR_SET_TRAP(nullptr, image_bad_load, STATUS_NO_MEMORY, 0, 1);
@@ -41,6 +40,7 @@ namespace rvm64::entry {
 	_vmcall void vm_loop() {
 		if (!vmcs->trap_set) {
 			// NOTE: setup for return-loop once a branch is taken.
+			//
 			vmcs->trap_handler.rip = (uintptr_t)&vm_loop;
 			vmcs->trap_handler.rsp = (uintptr_t)__builtin_frame_address(0);
 			vmcs->trap_set = 1;
@@ -65,6 +65,7 @@ namespace rvm64::entry {
 	_vmcall void vm_entry() {
 		save_host_context();
 		// TODO: testing for exit handler needs done. Doesn't seem to correctly return.
+		//
 		vmcs->exit_handler.rip = (uintptr_t)__builtin_return_address(0);
 		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(0);
 		vm_loop();
