@@ -22,9 +22,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 
-	if (winctx->ContextFlags & CONTEXT_CONTROL) {
-		winctx->EFlags &= ~0x100;
-	}
 	switch (vmcs->csr.m_cause) {
 		case environment_branch: {
 			// NOTE: jump back to vm_loop and don't modify vmcs->pc
