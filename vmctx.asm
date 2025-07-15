@@ -1,11 +1,14 @@
-.intel_syntax noprefix
-#include "vmctx_gnu.inc"
+INCLUDE vmctx_msvc.inc
 
-.text
-.extern vmcs
-.global save_host_context
-save_host_context:
-    mov     rax, [rip + vmcs]
+.DATA
+EXTERN vmcs:QWORD
+
+.CODE
+
+PUBLIC save_host_context
+save_host_context PROC
+    lea     rax, vmcs
+    mov     rax, [rax]                     
     lea     rdi, [rax + OFFSET_HOST_CONTEXT]
 
     mov     [rdi + OFFSET_RSP], rsp
@@ -30,10 +33,12 @@ save_host_context:
     pop     qword ptr [rdi + OFFSET_FLAGS]
 
     ret
+save_host_context ENDP
 
-.global restore_host_context
-restore_host_context:
-    mov     rax, [rip + vmcs]
+PUBLIC restore_host_context
+restore_host_context PROC
+    lea     rax, vmcs
+    mov     rax, [rax]
     lea     rsi, [rax + OFFSET_HOST_CONTEXT]
 
     mov     rax, [rsi + OFFSET_RAX]
@@ -55,12 +60,14 @@ restore_host_context:
     push    qword ptr [rsi + OFFSET_FLAGS]
     mov     rsi, [rsi + OFFSET_RSI]
     popfq
+
     ret
+restore_host_context ENDP
 
-
-.global save_vm_context
-save_vm_context:
-    mov     rax, [rip + vmcs]
+PUBLIC save_vm_context
+save_vm_context PROC
+    lea     rax, vmcs
+    mov     rax, [rax]
     lea     rdi, [rax + OFFSET_VM_CONTEXT]
 
     mov     [rdi + OFFSET_RAX], rax
@@ -84,11 +91,12 @@ save_vm_context:
     pop     qword ptr [rdi + OFFSET_FLAGS]
 
     ret
+save_vm_context ENDP
 
-
-.global restore_vm_context
-restore_vm_context:
-    mov     rax, [rip + vmcs]
+PUBLIC restore_vm_context
+restore_vm_context PROC
+    lea     rax, vmcs
+    mov     rax, [rax]
     lea     rsi, [rax + OFFSET_VM_CONTEXT]
 
     mov     rax, [rsi + OFFSET_RAX]
@@ -112,3 +120,4 @@ restore_vm_context:
     popfq
 
     ret
+restor
