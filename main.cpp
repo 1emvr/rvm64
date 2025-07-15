@@ -17,11 +17,9 @@ namespace rvm64::entry {
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
-		if (!((data = rvm64::mock::read_file()))) {
-			CSR_SET_TRAP(nullptr, image_bad_load, STATUS_NO_MEMORY, 0, 1);
-		}
-
+		data = rvm64::mock::read_file();
 		data->size += VM_PROCESS_PADDING;
+
 		rvm64::memory::memory_init(data->size);
 
 		rvm64::elf::load_elf_image(data->address, data->size);
