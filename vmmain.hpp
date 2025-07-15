@@ -83,6 +83,7 @@ typedef struct {
 	uintptr_t load_rsv_addr;
 	uintptr_t load_rsv_valid;
 
+	vm_process_t process;
 	trapframe_t trap_handler;
 	trapframe_t exit_handler;
 
@@ -92,8 +93,6 @@ typedef struct {
 		uintptr_t m_status;
 		uintptr_t m_tval;
 	} csr;
-
-	vm_process_t process;
 
 	int trap_set;
 	int cache;
