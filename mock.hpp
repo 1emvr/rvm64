@@ -33,8 +33,9 @@ namespace rvm64::mock {
 			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
 		}
 
-		HANDLE handle = CreateFileA("C:/Users/lemur/github/rvm64/test.elf", GENERIC_READ, FILE_SHARE_READ, nullptr,
-									OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		HANDLE handle = CreateFileA("C:/Users/lemur/github/rvm64/test.elf", 
+				GENERIC_READ, FILE_SHARE_READ, nullptr,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 		if (handle == INVALID_HANDLE_VALUE) {
 			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
