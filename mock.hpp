@@ -30,43 +30,28 @@ namespace rvm64::mock {
 
 		auto data = (vm_buffer_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_buffer_t));
 		if (!data) {
-			return nullptr;
+			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
 		}
+
 		HANDLE handle = CreateFileA("C:/Users/lemur/github/rvm64/test.elf", GENERIC_READ, FILE_SHARE_READ, nullptr,
 									OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 		if (handle == INVALID_HANDLE_VALUE) {
-			data->stat = GetLastError();
-			goto defer;
+			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
 		}
 
 		data->size = GetFileSize(handle, nullptr);
 		if (data->size == INVALID_FILE_SIZE || data->size == 0) {
-			data->stat = GetLastError();
-			goto defer;
+			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
 		}
 
 		data->address = (uint8_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, data->size);
-
-		if (!ReadFile(handle, data->address, data->size, &bytes_read, nullptr) ||
-		    bytes_read != data->size) {
-			data->stat = GetLastError();
-			goto defer;
+		if (!data->address) {
+			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
 		}
-		success = true;
 
-	defer:
-		if (handle) {
-			CloseHandle(handle);
-		}
-		if (!success && data != nullptr) {
-			if (data->address) {
-				HeapFree(GetProcessHeap(), 0, data->address);
-				data->address = nullptr;
-			}
-
-			HeapFree(GetProcessHeap(), 0, data);
-			data = nullptr;
+		if (!ReadFile(handle, data->address, data->size, &bytes_read, nullptr) || bytes_read != data->size) {
+			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
 		}
 
 		return data;
