@@ -100,6 +100,7 @@ typedef struct {
 		uintptr_t m_tval;
 	} csr;
 
+	int encrypted;
 	int trap_set;
 	int cache;
 	int halt;

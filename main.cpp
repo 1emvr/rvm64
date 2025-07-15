@@ -41,8 +41,10 @@ namespace rvm64::entry {
 
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
-			// NOTE: opcode is never encrypted/decrypted
 
+			if (vmcs->encrypted) {
+				// NOTE: opcode is never encrypted/decrypted
+			}
 			if (opcode == JALR_RA_ZERO) {
 				uintptr_t ret_addr = vmcs->vregs[ra];
 
