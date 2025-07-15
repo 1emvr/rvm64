@@ -49,7 +49,6 @@ namespace rvm64::entry {
 				}
 			}
 
-			__debugbreak();
 			rvm64::decoder::vm_decode(opcode);
 			vmcs->pc += 4;
 		}
