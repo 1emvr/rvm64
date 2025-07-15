@@ -13,9 +13,6 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		vm_buffer_t *data = nullptr;
 
-		// NOTE: receiving BOFs over the network means we don't need to store the key, dummy.
-		// To be perfectly honest, do we really need to encrypt at all (?)
-		//
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
@@ -44,9 +41,6 @@ namespace rvm64::entry {
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
-			if (vmcs->encrypted) {
-				// TODO: implement crypt
-			}
 			if (opcode == JALR_RA_ZERO) {
 				uintptr_t ret_addr = vmcs->vregs[ra];
 
