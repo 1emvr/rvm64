@@ -8,7 +8,7 @@ namespace rvm64::crypt {
 		return ptr ^ DKEY;
 	}
 
-	_vmcall uintptr_t decrypt_ptr(uintptr_t ptr) {
+	_vmcall inline uintptr_t decrypt_ptr(uintptr_t ptr) {
 		return ptr ^ DKEY;
 	}
 };
