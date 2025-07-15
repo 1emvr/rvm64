@@ -13,7 +13,7 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 	}
 	CSR_GET(exception_info);
 
-	// TODO: test this. fatal exceptions don't seem to return correctly.
+	// TODO: test that VEH jumps back to vm_main -> exit
 	if (vmcs->halt || code != RVM_TRAP_EXCEPTION) {
 		winctx->Rip = vmcs->exit_handler.rip;
 		winctx->Rsp = vmcs->exit_handler.rsp;
