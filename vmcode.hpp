@@ -2348,7 +2348,7 @@ namespace rvm64::operations {
 	namespace r4type {};
 };
 
-_rdata const uintptr_t dispatch_table[] = {
+_rdata const uintptr_t dispatch_table[256] = {
 #define ENCRYPT(op) rvm64::crypt::encrypt_ptr((uintptr_t)(op))
 
     // ITYPE
