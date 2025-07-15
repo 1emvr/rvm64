@@ -13,7 +13,7 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		vm_buffer_t *data = nullptr;
 
-		// TODO: use NtHeaders->OptionalHeaders.ImageBase as the initial decryption key.
+		// TODO: use some image offset as the initial decryption key.
 		//
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
