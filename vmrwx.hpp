@@ -2,6 +2,7 @@
 #define VMRWX_HPP
 
 #ifdef DEBUG
+#define DEBUGBREAK __debugbreak()
 #define mem_read_check(T, addr)												\
 	if ((addr) % sizeof(T) != 0) {											\
 		CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);		\
@@ -54,6 +55,7 @@
 		return;																\
 	}
 #else
+#define DEBUGBREAK 
 #define mem_read_check(T, addr)		{}
 #define mem_write_check(T, addr)	{}
 #define reg_read_check(reg_idx)		{}
@@ -65,8 +67,9 @@
 
 #define unwrap_opcall(hdl_idx) 									\
 	do { 														\
+		DEBUGBREAK;												\
 		opcall_check(hdl_idx);									\
-		auto a = ((uintptr_t*)dispatch_table)[hdl_idx];	\
+		auto a = ((uintptr_t*)dispatch_table)[hdl_idx];			\
 		auto b = rvm64::crypt::decrypt_ptr((uintptr_t)a);		\
 		void (*fn)() = (void (*)())(b);							\
 		fn();													\
@@ -74,38 +77,42 @@
 
 #define mem_read(T, retval, addr)  								\
 	do {														\
-		__debugbreak();											\
+		DEBUGBREAK;												\
 		mem_read_check(T, ((uintptr_t)addr));					\
 		retval = *(T *)((uintptr_t)addr); 						\
 	} while(0)
 
 #define mem_write(T, addr, value)  								\
 	do {														\
-		__debugbreak();											\
+		DEBUGBREAK; 											\
 		mem_write_check(T, ((uintptr_t)addr));					\
 		*(T *)((uintptr_t)addr) = value;  						\
 	} while(0)
 
 #define reg_read(T, dst, reg_idx) 								\
 	do { 														\
+		DEBUGBREAK; 											\
 		reg_read_check(reg_idx);								\
 		dst = (T)vmcs->vregs[(reg_idx)];						\
 	} while(0)
 
 #define reg_write(T, reg_idx, src) 								\
 	do { 														\
+		DEBUGBREAK; 											\
 		reg_write_check(reg_idx);								\
 		vmcs->vregs[(reg_idx)] = (T)(src);						\
 	} while(0)
 
 #define scr_read(T, dst, scr_idx) 								\
 	do { 														\
+		DEBUGBREAK; 											\
 		scr_read_check(scr_idx);								\
 		dst = (T)vmcs->vscratch[(scr_idx)];						\
 	} while(0)
 
 #define scr_write(T, scr_idx, src) 								\
 	do { 														\
+		DEBUGBREAK; 											\
 		scr_write_check(scr_idx);								\
 		vmcs->vscratch[(scr_idx)] = (T)(src);					\
 	} while(0)
