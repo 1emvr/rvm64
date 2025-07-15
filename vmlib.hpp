@@ -334,7 +334,7 @@ char** x_split_new(const char* str, const char* delim, int* count) {
     int index   = 0;
 
     if (!(temp = x_strdup(str)) ||
-        !(result = (char**) HeapAlloc(GetProcessHeap(), 0, size * sizeof(char *))) ||
+        !(result = (char**)HeapAlloc(GetProcessHeap(), 0, size * sizeof(char *))) ||
         !(token = x_strtok(temp, delim))) {
         return nullptr;
     }
