@@ -2,7 +2,7 @@
 #define VMCRYPT_HPP
 #include "vmmain.hpp"
 
-// TODO: do not use compile-time constants for decryption. this is dumb.
+// TODO: do not use compile-time constants for decryption. 
 namespace rvm64::crypt {
 	constexpr uintptr_t encrypt_ptr(uintptr_t ptr) {
 		return ptr ^ DKEY;
