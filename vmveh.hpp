@@ -44,9 +44,10 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 			break;
 		}
 		default:
-			// panic
+			// panic!!
 			break;
 	}
+
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 #endif //VMVEH_H
