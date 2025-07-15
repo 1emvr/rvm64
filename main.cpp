@@ -13,7 +13,7 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		vm_buffer_t *data = nullptr;
 
-		vmcs->dkey = DKEY;
+		vmcs->dkey = DKEY; // NOTE: probably don't need to save DKEY 
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
@@ -30,12 +30,6 @@ namespace rvm64::entry {
 		vmcs->cache
 			? rvm64::mock::cache_file(data)
 			: rvm64::mock::destroy_file(data);
-	}
-
-	_vmcall void vm_exit() {
-		restore_host_context();
-		rvm64::memory::memory_end();
-		RemoveVectoredExceptionHandler(vmcs->veh_handle);
 	}
 
 	_vmcall void vm_loop() {
@@ -59,17 +53,25 @@ namespace rvm64::entry {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
+
 			rvm64::decoder::vm_decode(opcode);
 			vmcs->pc += 4;
 		}
 	}
 
+	_vmcall void vm_exit() {
+		restore_host_context();
+
+		RemoveVectoredExceptionHandler(vmcs->veh_handle);
+		rvm64::memory::memory_end();
+	}
+
 	_vmcall void vm_entry() {
 		save_host_context();
-		// TODO: testing for exit handler needs done. Doesn't seem to correctly return.
-		//
+
 		vmcs->exit_handler.rip = (uintptr_t)__builtin_return_address(0);
 		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(0);
+
 		vm_loop();
 	}
 };
