@@ -60,13 +60,6 @@ namespace rvm64::entry {
 		}
 	}
 
-	_vmcall void vm_exit() {
-		restore_host_context();
-
-		RemoveVectoredExceptionHandler(vmcs->veh_handle);
-		rvm64::memory::memory_end();
-	}
-
 	_vmcall void vm_entry() {
 		save_host_context();
 
@@ -74,6 +67,13 @@ namespace rvm64::entry {
 		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(0);
 
 		vm_loop();
+	}
+
+	_vmcall void vm_exit() {
+		restore_host_context();
+
+		RemoveVectoredExceptionHandler(vmcs->veh_handle);
+		rvm64::memory::memory_end();
 	}
 };
 
