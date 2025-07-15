@@ -27,6 +27,8 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 	}
 	switch (vmcs->csr.m_cause) {
 		case environment_branch: {
+			// NOTE: jump back to vm_loop and don't modify vmcs->pc
+			//
 			winctx->Rip = vmcs->trap_handler.rip;
 			winctx->Rsp = vmcs->trap_handler.rsp;
 			winctx->ContextFlags |= CONTEXT_CONTROL;
@@ -34,6 +36,8 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 			break;
 		}
 		case environment_call_native: {
+			// NOTE: vm exit to native api
+			//
 			rvm64::rvni::vm_native_call();
 			vmcs->halt = 0;
 
