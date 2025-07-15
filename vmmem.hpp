@@ -49,9 +49,7 @@ namespace rvm64::memory {
 		if (vmcs->process.address == nullptr) {
 			return;
 		}
-		if (!VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE)) {
-			CSR_SET_TRAP(nullptr, load_access_fault, status, 0, 1);
-		}
+		VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE);
 	}
 };
 

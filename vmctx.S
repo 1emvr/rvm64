@@ -1,5 +1,5 @@
 .intel_syntax noprefix
-#include "vmctx_gnu.inc"
+#include "vmctx.inc"
 
 .text
 .extern vm_context
