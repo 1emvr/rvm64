@@ -445,13 +445,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("lr.w x%d, (x%d)\n", _rd, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			WaitForSingleObject(vmcs_mutex, INFINITE);
 
 			mem_read(int32_t, value, address);
-			reg_write(int32_t, _rd, value);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, value);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -462,13 +463,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("lr.d x%d, (x%d)\n", _rd, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			WaitForSingleObject(vmcs_mutex, INFINITE);
 
 			mem_read(int64_t, value, address);
-			reg_write(int64_t, _rd, value);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, value);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -479,10 +481,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("fmv.d.x f%d, x%d\n", _rd, _rs1);
-
 			reg_read(int64_t, v1, _rs1);
-			reg_write(int64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fcvt_s_d() {
@@ -491,10 +494,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("fcvt.s.d f%d, f%d\n", _rd, _rs1);
-
 			reg_read(double, v1, _rs1);
-			reg_write(float, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(float, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fcvt_d_s() {
@@ -503,10 +507,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("fcvt.d.s f%d, f%d\n", _rd, _rs1);
-
 			reg_read(float, v1, _rs1);
-			reg_write(double, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(double, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fcvt_w_d() {
@@ -515,10 +520,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("fcvt.w.d x%d, f%d\n", _rd, _rs1);
-
 			reg_read(double, v1, _rs1);
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fcvt_wu_d() {
@@ -527,10 +533,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("fcvt.wu.d x%d, f%d\n", _rd, _rs1);
-
 			reg_read(double, v1, _rs1);
-			reg_write(uint32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(uint32_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fcvt_d_w() {
@@ -539,10 +546,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("fcvt.d.w f%d, x%d\n", _rd, _rs1);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(double, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(double, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fcvt_d_wu() {
@@ -551,10 +559,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 
-			DBGPRINT("fcvt.d.wu f%d, x%d\n", _rd, _rs1);
-
 			reg_read(uint32_t, v1, _rs1);
-			reg_write(double, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(double, _rd, v1);
+			}
 		}
 
 		// NOTE: maybe not even real...
@@ -563,8 +572,6 @@ namespace rvm64::operations {
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
-
-			DBGPRINT("fclass.d x%d, f%d\n", _rd, _rs1);
 
 			reg_read(double, v1, _rs1);
 			converter.d = v1;
@@ -576,36 +583,56 @@ namespace rvm64::operations {
 			if (exponent == 0x7FF) {
 				if (fraction == 0) {
 					if (sign == 0) {
-						reg_write(int, _rd, 0x7); // +inf
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x7); // +inf
+						}
 					} else {
-						reg_write(int, _rd, 0x0); // -inf
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x0); // -inf
+						}
 					}
 				} else {
 					if (fraction & (1LL << 51)) {
-						reg_write(int, _rd, 0x8); // quiet NaN
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x8); // quiet NaN
+						}
 					} else {
-						reg_write(int, _rd, 0x9); // signaling NaN
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x9); // signaling NaN
+						}
 					}
 				}
 			} else if (exponent == 0) {
 				if (fraction == 0) {
 					if (sign == 0) {
-						reg_write(int, _rd, 0x4); // +0
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x4); // +0
+						}
 					} else {
-						reg_write(int, _rd, 0x3); // -0
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x3); // -0
+						}
 					}
 				} else {
 					if (sign == 0) {
-						reg_write(int, _rd, 0x5); // +subnormal
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x5); // +subnormal
+						}
 					} else {
-						reg_write(int, _rd, 0x2); // -subnormal
+						if (_rd != 0) {
+							reg_write(int, _rd, 0x2); // -subnormal
+						}
 					}
 				}
 			} else {
 				if (sign == 0) {
-					reg_write(int, _rd, 0x6); // +normal
+					if (_rd != 0) {
+						reg_write(int, _rd, 0x6); // +normal
+					}
 				} else {
-					reg_write(int, _rd, 0x1); // -normal
+					if (_rd != 0) {
+						reg_write(int, _rd, 0x1); // -normal
+					}
 				}
 			}
 		}
@@ -618,10 +645,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("addi x%d, x%d, %d\n", _rd, _rs1, _imm);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 + _imm));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(int32_t, _rd, (v1 + _imm));
+				}
+			}
 		}
 
 		_vmcall void rv_slti() {
@@ -631,10 +662,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("slti x%d, x%d, %d\n", _rd, _rs1, _imm);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, ((v1 < _imm) ? 1 : 0));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(int32_t, _rd, ((v1 < _imm) ? 1 : 0));
+				}
+			}
 		}
 
 		_vmcall void rv_sltiu() {
@@ -644,10 +679,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("sltiu x%d, x%d, %d\n", _rd, _rs1, _imm);
-
 			reg_read(uint32_t, v1, _rs1);
-			reg_write(uint32_t, _rd, ((v1 < (uint32_t)_imm) ? 1 : 0));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(uint32_t, _rd, ((v1 < (uint32_t)_imm) ? 1 : 0));
+				}
+			}
 		}
 
 		_vmcall void rv_xori() {
@@ -657,10 +696,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("xori x%d, x%d, %d\n", _rd, _rs1, _imm);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 ^ _imm));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(int32_t, _rd, (v1 ^ _imm));
+				}
+			}
 		}
 
 		_vmcall void rv_ori() {
@@ -670,10 +713,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("ori x%d, x%d, %d\n", _rd, _rs1, _imm);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 | _imm));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(int32_t, _rd, (v1 | _imm));
+				}
+			}
 		}
 
 		_vmcall void rv_andi() {
@@ -683,10 +730,14 @@ namespace rvm64::operations {
 			scr_read(int32_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("andi x%d, x%d, %d\n", _rd, _rs1, _imm);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 & _imm));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(int32_t, _rd, (v1 & _imm));
+				}
+			}
 		}
 
 		_vmcall void rv_slli() {
@@ -696,10 +747,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			DBGPRINT("slli x%d, x%d, %u\n", _rd, _rs1, _shamt & 0x1F);
-
 			reg_read(uint32_t, _rs1, v1);
-			reg_write(uint32_t, _rd, (v1 << (_shamt & 0x1F)));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(uint32_t, _rd, (v1 << (_shamt & 0x1F)));
+				}
+			}
 		}
 
 		_vmcall void rv_srli() {
@@ -709,10 +764,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			DBGPRINT("srli x%d, x%d, %u\n", _rd, _rs1, shamt & 0x1F);
-
 			reg_read(uint32_t, v1, _rs1);
-			reg_write(uint32_t, _rd, v1 >> (_shamt & 0x1F));
+
+			if (_rd != 0) {
+
+				if (_rd != 0) {
+					reg_write(uint32_t, _rd, v1 >> (_shamt & 0x1F));
+				}
+			}
 		}
 
 		_vmcall void rv_srai() {
@@ -722,10 +781,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			DBGPRINT("srai x%d, x%d, %u\n", _rd, _rs1, _shamt & 0x1F);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			}
 		}
 
 		_vmcall void rv_addiw() {
@@ -735,10 +795,11 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("addiw x%d, x%d, %d\n", _rd, _rs1, _imm);
-
 			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, v1 + _imm);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1 + _imm);
+			}
 		}
 
 		_vmcall void rv_slliw() {
@@ -748,14 +809,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			DBGPRINT("slliw x%d, x%d, %u\n", _rd, _rs1, _shamt & 0x1F);
 			reg_read(int32_t, v1, _rs1);
 
 			if ((_shamt >> 5) != 0) {
 				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, (uint64_t)vmcs->vscratch, 1);
 			}
-
-			reg_write(int32_t, _rd, v1 << (_shamt & 0x1F));
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1 << (_shamt & 0x1F));
+			}
 		}
 
 		_vmcall void rv_srliw() {
@@ -765,14 +826,14 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			DBGPRINT("srliw x%d, x%d, %u\n", _rd, _rs1, _shamt & 0x1F);
 			reg_read(int32_t, v1, _rs1);
 
 			if ((_shamt >> 5) != 0) {
 				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, (uint64_t)vmcs->vscratch, 1);
 			}
-
-			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			}
 		}
 
 		_vmcall void rv_sraiw() {
@@ -782,15 +843,15 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			DBGPRINT("sraiw x%d, x%d, %u\n", _rd, _rs1, _shamt & 0x1F);
 			reg_read(int32_t, v1, _rs1);
 
 			if ((_shamt >> 5) != 0) {
 				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, (uint64_t)vmcs->vscratch, 1);
 			}
-			// TODO: this may be wrong to mask
-			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
-
+			if (_rd != 0) {
+				// TODO: this may be wrong to mask
+				reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			}
 		}
 
 		_vmcall void rv_lb() {
@@ -800,13 +861,13 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("lb x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 
 			mem_read(int8_t, v1, address);
-			reg_write(int8_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(int8_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_lh() {
@@ -816,13 +877,13 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("lh x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 
 			mem_read(int16_t, v1, address);
-			reg_write(int16_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(int16_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_lw() {
@@ -832,13 +893,13 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("lw x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 
 			mem_read(int32_t, v1, address);
-			reg_write(int32_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_lbu() {
@@ -848,13 +909,13 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("lbu x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 
 			mem_read(uint8_t, v1, address);
-			reg_write(uint8_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(uint8_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_lhu() {
@@ -864,13 +925,13 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("lhu x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 
 			mem_read(uint16_t, v1, address);
-			reg_write(uint16_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(uint16_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_lwu() {
@@ -880,13 +941,13 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("lwu x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 
 			mem_read(uint32_t, v1, address);
-			reg_write(uint32_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(uint32_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_ld() {
@@ -896,13 +957,13 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("ld x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 
 			mem_read(int64_t, v1, address);
-			reg_write(int64_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_jalr() {
@@ -912,15 +973,15 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("jalr x%d, %d(x%d)\n", _rd, _imm, _rs1);
-
 			reg_read(uintptr_t, address, _rs1);
 			address += (intptr_t)_imm;
 			address &= ~((intptr_t)1);
 
-			reg_write(uintptr_t, _rd, vmcs->pc);
-			vmcs->pc = address;
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, vmcs->pc);
+			}
 
+			vmcs->pc = address;
 			if (vmcs->pc >= vmcs->process.plt.start && vmcs->pc < vmcs->process.plt.end) {
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
@@ -962,7 +1023,6 @@ namespace rvm64::operations {
 			   RaiseException(Breakpoint)
 			   */
 
-			DBGPRINT("ebreak\n");
 			CSR_SET_TRAP(vmcs->pc, breakpoint, 0, vmcs->pc, 0);
 		}
 
@@ -1051,20 +1111,22 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sc.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			mem_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, value, _rs2);
 
 			if (rvm64::memory::vm_check_load_rsv(0, address)) {
 				rvm64::memory::vm_set_load_rsv(0, address);
-
 				mem_write(int32_t, address, value);
-				reg_write(int32_t, _rd, 0);
 
+				if (_rd != 0) {
+					reg_write(int32_t, _rd, 0);
+				}
 				rvm64::memory::vm_clear_load_rsv(0);
+
 			} else {
-				reg_write(int32_t, _rd, 1);
+				if (_rd != 0) {
+					reg_write(int32_t, _rd, 1);
+				}
 			}
 		}
 
@@ -1075,20 +1137,22 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sc.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, value, _rs2);
 
 			if (!rvm64::memory::vm_check_load_rsv(0, address)) {
 				rvm64::memory::vm_set_load_rsv(0, address);
-
 				mem_write(int64_t, address, value);
-				reg_write(int64_t, _rd, 0);
 
+				if (_rd != 0) {
+					reg_write(int64_t, _rd, 0);
+				}
 				rvm64::memory::vm_clear_load_rsv(0);
+
 			} else {
-				reg_write(int64_t, _rd, 1);
+				if (_rd != 0) {
+					reg_write(int64_t, _rd, 1);
+				}
 			}
 		}
 
@@ -1099,11 +1163,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fadd.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
-			reg_write(float, _rd, (v1 + v2));
+
+			if (_rd != 0) {
+				reg_write(float, _rd, (v1 + v2));
+			}
 		}
 
 		_vmcall void rv_fsub_d() {
@@ -1113,11 +1178,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fsub.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
-			reg_write(float, _rd, (v1 - v2));
+
+			if (_rd != 0) {
+				reg_write(float, _rd, (v1 - v2));
+			}
 		}
 
 		_vmcall void rv_fmul_d() {
@@ -1127,11 +1193,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fmul.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
-			reg_write(float, _rd, (v1 * v2));
+
+			if (_rd != 0) {
+				reg_write(float, _rd, (v1 * v2));
+			}
 		}
 
 		_vmcall void rv_fdiv_d() {
@@ -1141,11 +1208,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fdiv.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(float, v1, _rs1);
 			reg_read(float, v2, _rs2);
-			reg_write(float, _rd, (v1 / v2));
+
+			if (_rd != 0) {
+				reg_write(float, _rd, (v1 / v2));
+			}
 		}
 
 
@@ -1156,8 +1224,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fsgnj.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int64_t, v1, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1166,7 +1232,9 @@ namespace rvm64::operations {
 			v1 &= ~(1LL << 63);
 			v1 |= (s2 << 63);
 
-			reg_write(int64_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fsgnjn_d() {
@@ -1176,8 +1244,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fsgnjn.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int64_t, v1, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1186,7 +1252,9 @@ namespace rvm64::operations {
 			v1 &= ~(1LL << 63);
 			v1 |= (s2 << 63);
 
-			reg_write(int64_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fsgnjx_d() {
@@ -1195,8 +1263,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
-
-			DBGPRINT("fsgnjx.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
 
 			reg_read(int64_t, v1, _rs1);
 			reg_read(int64_t, v2, _rs2);
@@ -1207,7 +1273,9 @@ namespace rvm64::operations {
 			v1 &= ~(1LL << 63);
 			v1 |= ((s1 ^ s2) << 63);
 
-			reg_write(int64_t, _rd, v1);
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 		}
 
 		_vmcall void rv_fmin_d() {
@@ -1217,17 +1285,21 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fmin.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
 			if (is_nan(v1)) {
-				reg_write(double, _rd, v2);
+				if (_rd != 0) {
+					reg_write(double, _rd, v2);
+				}
 			} else if (is_nan(v2)) {
-				reg_write(double, _rd, v1);
+				if (_rd != 0) {
+					reg_write(double, _rd, v1);
+				}
 			} else {
-				reg_write(double, _rd, (v1 > v2) ? v2 : v1);
+				if (_rd != 0) {
+					reg_write(double, _rd, (v1 > v2) ? v2 : v1);
+				}
 			}
 		}
 
@@ -1238,17 +1310,21 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fmax.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
 			if (is_nan(v1)) {
-				reg_write(double, _rd, v2);
+				if (_rd != 0) {
+					reg_write(double, _rd, v2);
+				}
 			} else if (is_nan(v2)) {
-				reg_write(double, _rd, v1);
+				if (_rd != 0) {
+					reg_write(double, _rd, v1);
+				}
 			} else {
-				reg_write(double, _rd, (v1 > v2) ? v1 : v2);
+				if (_rd != 0) {
+					reg_write(double, _rd, (v1 > v2) ? v1 : v2);
+				}
 			}
 		}
 
@@ -1259,17 +1335,18 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("feq.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
 			if (is_nan(v1) || is_nan(v2)) {
-				reg_write(bool, _rd, false);
+				if (_rd != 0) {
+					reg_write(bool, _rd, false);
+				}
 				return;
 			}
-
-			reg_write(bool, _rd, (v1 == v2));
+			if (_rd != 0) {
+				reg_write(bool, _rd, (v1 == v2));
+			}
 		}
 
 		_vmcall void rv_flt_d() {
@@ -1279,17 +1356,18 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("flt.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
 			if (is_nan(v1) || is_nan(v2)) {
-				reg_write(bool, _rd, false);
+				if (_rd != 0) {
+					reg_write(bool, _rd, false);
+				}
 				return;
 			}
-
-			reg_write(bool, _rd, (v1 < v2));
+			if (_rd != 0) {
+				reg_write(bool, _rd, (v1 < v2));
+			}
 		}
 
 		_vmcall void rv_fle_d() {
@@ -1299,17 +1377,18 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("fle.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(double, v1, _rs1);
 			reg_read(double, v2, _rs2);
 
 			if (is_nan(v1) || is_nan(v2)) {
-				reg_write(bool, _rd, false);
+				if (_rd != 0) {
+					reg_write(bool, _rd, false);
+				}
 				return;
 			}
-
-			reg_write(bool, _rd, (v1 <= v2));
+			if (_rd != 0) {
+				reg_write(bool, _rd, (v1 <= v2));
+			}
 		}
 
 		_vmcall void rv_addw() {
@@ -1319,11 +1398,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("add.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int64_t, _rd, (int64_t)(v1 + v2));
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, (int64_t)(v1 + v2));
+			}
 		}
 
 		_vmcall void rv_subw() {
@@ -1333,11 +1413,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sub.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int64_t, _rd, (int64_t)(v1 - v2));
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, (int64_t)(v1 - v2));
+			}
 		}
 
 		_vmcall void rv_mulw() {
@@ -1347,11 +1428,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("mul.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int64_t, _rd, (int64_t)(v1 * v2));
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, (int64_t)(v1 * v2));
+			}
 		}
 
 		_vmcall void rv_srlw() {
@@ -1361,11 +1443,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("srl.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
+			}
 		}
 
 		_vmcall void rv_sraw() {
@@ -1375,11 +1458,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sra.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
+			}
 		}
 
 		_vmcall void rv_divuw() {
@@ -1389,11 +1473,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("divu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uint32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
-			reg_write(uint32_t, _rd, (v1 / v2));
+
+			if (_rd != 0) {
+				reg_write(uint32_t, _rd, (v1 / v2));
+			}
 		}
 
 		_vmcall void rv_sllw() {
@@ -1403,11 +1488,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sll.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
+			}
 		}
 
 		_vmcall void rv_divw() {
@@ -1417,11 +1503,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("div.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 / v2));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 / v2));
+			}
 		}
 
 		_vmcall void rv_remw() {
@@ -1431,11 +1518,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("rem.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 % v2));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 % v2));
+			}
 		}
 
 		_vmcall void rv_remuw() {
@@ -1445,11 +1533,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("remu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uint32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
-			reg_write(uint32_t, _rd, (v1 % v2));
+
+			if (_rd != 0) {
+				reg_write(uint32_t, _rd, (v1 % v2));
+			}
 		}
 
 		_vmcall void rv_add() {
@@ -1459,11 +1548,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("add x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 + v2));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 + v2));
+			}
 		}
 
 		_vmcall void rv_sub() {
@@ -1473,11 +1563,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sub x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 - v2));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 - v2));
+			}
 		}
 
 		_vmcall void rv_mul() {
@@ -1487,11 +1578,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("mul x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
-			reg_write(int32_t, _rd, (v1 * v2));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 * v2));
+			}
 		}
 
 		_vmcall void rv_sll() {
@@ -1501,11 +1593,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sll x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(int32_t, _rs1, v1);
 			reg_read(int32_t, _rs2, v2);
-			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
+			}
 		}
 
 		_vmcall void rv_mulh() {
@@ -1515,18 +1608,21 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("mulh x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(intptr_t, v2, _rs2);
 
 #if UINTPTR_MAX == 0xFFFFFFFF
 			int64_t result = (int64_t)v1 * (int64_t)v2;
-			reg_write(int32_t, _rd, (result >> 32));
 
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (result >> 32));
+			}
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
 			__int128 result = (__int128)v1 * (__int128)v2;
-			reg_write(int64_t, _rd, (result >> 64));
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, (result >> 64));
+			}
 
 #endif
 		}
@@ -1538,11 +1634,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("slt x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(intptr_t, v2, _rs2);
-			reg_write(intptr_t, _rd, ((v1 < v2) ? 1 : 0));
+
+			if (_rd != 0) {
+				reg_write(intptr_t, _rd, ((v1 < v2) ? 1 : 0));
+			}
 		}
 
 		_vmcall void rv_mulhsu() {
@@ -1552,19 +1649,22 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("mulhsu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
 
 #if UINTPTR_MAX == 0xFFFFFFFF
 			int64_t result = (int64_t)(int32_t)v1 * (uint64_t)(uint32_t)v2;
-			reg_write(int32_t, _rd, (result >> 32));
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, (result >> 32));
+			}
 
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
 			__int128 result = (__int128) (int64_t) v1 * (__uint128_t) (uint64_t) v2;
-			reg_write(int64_t, _rd, (result >> 64));
 
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, (result >> 64));
+			}
 #endif
 		}
 
@@ -1575,11 +1675,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sltu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
-			reg_write(uintptr_t, _rd, ((v1 < v2) ? 1 : 0));
+
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, ((v1 < v2) ? 1 : 0));
+			}
 		}
 
 		_vmcall void rv_mulhu() {
@@ -1589,17 +1690,20 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("mulhu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
 
 			uintptr_t result = v1 * v2;
 #if UINTPTR_MAX == 0xFFFFFFFF
-			reg_write(uintptr_t, _rd, (result >> 16));
 
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, (result >> 16));
+			}
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
-			reg_write(uintptr_t, _rd, (result >> 32));
+
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, (result >> 32));
+			}
 #endif
 		}
 
@@ -1610,11 +1714,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("xor x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
-			reg_write(uintptr_t, _rd, (v1 ^ v2));
+
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, (v1 ^ v2));
+			}
 		}
 
 		_vmcall void rv_div() {
@@ -1624,11 +1729,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("div x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
-			reg_write(uintptr_t, _rd, (v1 / v2));
+
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, (v1 / v2));
+			}
 		}
 
 		_vmcall void rv_srl() {
@@ -1638,11 +1744,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("srl x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
-			reg_write(uintptr_t, _rd, (v1 >> (v2 & 0x1F)));
+
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, (v1 >> (v2 & 0x1F)));
+			}
 		}
 
 		_vmcall void rv_sra() {
@@ -1652,11 +1759,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("sra x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
-			reg_write(intptr_t, _rd, (v1 >> (v2 & 0x1F)));
+
+			if (_rd != 0) {
+				reg_write(intptr_t, _rd, (v1 >> (v2 & 0x1F)));
+			}
 		}
 
 		_vmcall void rv_divu() {
@@ -1666,15 +1774,17 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("divu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
 
 			if (v2 == 0) {
-				reg_write(uintptr_t, _rd, 0);
+				if (_rd != 0) {
+					reg_write(uintptr_t, _rd, 0);
+				}
 			} else {
-				reg_write(uintptr_t, _rd, (v1 / v2));
+				if (_rd != 0) {
+					reg_write(uintptr_t, _rd, (v1 / v2));
+				}
 			}
 		}
 
@@ -1685,11 +1795,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("or x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(intptr_t, _rs1, v1);
 			reg_read(intptr_t, _rs2, v2);
-			reg_write(intptr_t, _rd, (v1 | v2));
+
+			if (_rd != 0) {
+				reg_write(intptr_t, _rd, (v1 | v2));
+			}
 		}
 
 		_vmcall void rv_rem() {
@@ -1699,15 +1810,17 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("rem x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(intptr_t, v1, _rs1);
 			reg_read(intptr_t, v2, _rs2);
 
 			if (v2 == 0) {
-				reg_write(intptr_t, _rd, 0);
+				if (_rd != 0) {
+					reg_write(intptr_t, _rd, 0);
+				}
 			} else {
-				reg_write(intptr_t, _rd, (v1 % v2));
+				if (_rd != 0) {
+					reg_write(intptr_t, _rd, (v1 % v2));
+				}
 			}
 		}
 
@@ -1718,11 +1831,12 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("and x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
-			reg_write(uintptr_t, _rd, (v1 & v2));
+
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, (v1 & v2));
+			}
 		}
 
 		_vmcall void rv_remu() {
@@ -1732,15 +1846,17 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("remu x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, v1, _rs1);
 			reg_read(uintptr_t, v2, _rs2);
 
 			if (v2 == 0) {
-				reg_write(uintptr_t, _rd, 0);
+				if (_rd != 0) {
+					reg_write(uintptr_t, _rd, 0);
+				}
 			} else {
-				reg_write(uintptr_t, _rd, (v1 % v2));
+				if (_rd != 0) {
+					reg_write(uintptr_t, _rd, (v1 % v2));
+				}
 			}
 		}
 
@@ -1751,8 +1867,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoswap.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1760,7 +1874,10 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			mem_write(int64_t, address, v2);
-			reg_write(int64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1772,8 +1889,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoadd.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1781,7 +1896,10 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			mem_write(int64_t, address, (v1 + v2));
-			reg_write(int64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1793,8 +1911,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoxor.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1802,7 +1918,10 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			mem_write(int64_t, address, (v1 ^ v2));
-			reg_write(int64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1814,8 +1933,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoand.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1823,7 +1940,10 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			mem_write(int64_t, address, (v1 & v2));
-			reg_write(int64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1835,8 +1955,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoor.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1844,7 +1962,10 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			mem_write(int64_t, address, (v1 | v2));
-			reg_write(int64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1856,8 +1977,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amomin.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint64_t, v2, _rs2);
 
@@ -1865,7 +1984,10 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			mem_write(int64_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(uint64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(uint64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1877,8 +1999,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amomax.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int64_t, v2, _rs2);
 
@@ -1886,7 +2006,10 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			mem_write(int64_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(int64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1898,8 +2021,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amominu.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, _rs1, address);
 			reg_read(uint64_t, _rs2, v2);
 
@@ -1907,7 +2028,10 @@ namespace rvm64::operations {
 
 			mem_read(uint64_t, v1, address);
 			mem_write(uint64_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(uint64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(uint64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1919,8 +2043,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amomaxu.d x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint64_t, v2, _rs2);
 
@@ -1928,7 +2050,10 @@ namespace rvm64::operations {
 
 			mem_read(uint64_t, v1, address);
 			mem_write(uint64_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(uint64_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(uint64_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1940,8 +2065,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoswap.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -1949,7 +2072,10 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			mem_write(int32_t, address, v2);
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1961,8 +2087,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoadd.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -1970,7 +2094,10 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			mem_write(int32_t, address, (v1 + v2));
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -1982,8 +2109,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoxor.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -1991,7 +2116,10 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			mem_write(int32_t, address, (v1 ^ v2));
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -2003,8 +2131,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoand.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -2012,7 +2138,10 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			mem_write(int32_t, address, (v1 & v2));
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -2024,8 +2153,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amoor.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -2033,7 +2160,10 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			mem_write(int32_t, address, (v1 | v2));
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -2045,8 +2175,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amomin.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -2054,7 +2182,10 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			mem_write(int32_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -2066,8 +2197,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amomax.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
@@ -2075,7 +2204,10 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			mem_write(int32_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(int32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -2087,8 +2219,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amominu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint32_t, v2, _rs2);
 
@@ -2096,7 +2226,10 @@ namespace rvm64::operations {
 
 			mem_read(uint32_t, v1, address);
 			mem_write(uint32_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(uint32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(uint32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -2108,8 +2241,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 
-			DBGPRINT("amomaxu.w x%d, x%d, x%d\n", _rd, _rs1, _rs2);
-
 			reg_read(uintptr_t, address, _rs1);
 			reg_read(uint32_t, v2, _rs2);
 
@@ -2117,7 +2248,10 @@ namespace rvm64::operations {
 
 			mem_read(uint32_t, v1, address);
 			mem_write(uint32_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(uint32_t, _rd, v1);
+
+			if (_rd != 0) {
+				reg_write(uint32_t, _rd, v1);
+			}
 
 			ReleaseMutex(vmcs_mutex);
 		}
@@ -2130,8 +2264,9 @@ namespace rvm64::operations {
 			scr_read(uint32_t, _rd, rd);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("lui x%d, 0x%x\n", _rd, _imm);
-			reg_write(int32_t, _rd, _imm);
+			if (_rd != 0) {
+				reg_write(int32_t, _rd, _imm);
+			}
 		}
 
 		_vmcall void rv_auipc() {
@@ -2140,8 +2275,9 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(int32_t, _imm, imm);
 
-			DBGPRINT("auipc x%d, 0x%x\n", _rd, _imm);
-			reg_write(int64_t, _rd, (int64_t)vmcs->pc + _imm);
+			if (_rd != 0) {
+				reg_write(int64_t, _rd, (int64_t)vmcs->pc + _imm);
+			}
 		}
 	}
 
@@ -2152,9 +2288,9 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(intptr_t, offset, imm);
 
-			DBGPRINT("jal x%d, 0x%x\n", _rd, offset);
-
-			reg_write(uintptr_t, _rd, vmcs->pc + 4);
+			if (_rd != 0) {
+				reg_write(uintptr_t, _rd, vmcs->pc + 4);
+			}
 			vmcs->pc += offset;
 		}
 	}
@@ -2166,8 +2302,6 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint8_t, _rs2, rs2);
 			scr_read(intptr_t, offset, imm);
-
-			DBGPRINT("beq x%d, x%d, 0x%x\n", _rs1, _rs2, offset);
 
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
