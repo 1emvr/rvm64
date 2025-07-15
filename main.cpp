@@ -16,7 +16,7 @@ namespace rvm64::entry {
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->dispatch_table = (uintptr_t)dispatch_table;
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
-		vmcs->dkey = key;
+		vmcs->dkey = DKEY;
 
 		if (!((data = rvm64::mock::read_file()))) {
 			CSR_SET_TRAP(nullptr, image_bad_load, STATUS_NO_MEMORY, 0, 1);

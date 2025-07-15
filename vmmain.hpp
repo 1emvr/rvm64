@@ -120,7 +120,6 @@ _externc {
 	_data volatile vmcs_t *vmcs = nullptr;
 	_data volatile HANDLE vmcs_mutex = 0;
 	_data volatile uintptr_t stack_cookie = 0;
-	_rdata const uintptr_t key = 0;
 
 #ifdef __cplusplus
 }
