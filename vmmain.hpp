@@ -76,22 +76,15 @@ struct trapframe_t {
 
 typedef struct {
 	uintptr_t pc;
-	uintptr_t dkey;
 	uintptr_t vscratch[32];
 	uintptr_t vregs[32];
 	uintptr_t vstack[VSTACK_MAX_CAPACITY];
 
-	intel_t host_context;
-	intel_t vm_context;
-	HANDLE veh_handle;
-
-	vm_process_t data;
-	vm_process_t process;
+	uintptr_t load_rsv_addr;
+	uintptr_t load_rsv_valid;
 
 	trapframe_t trap_handler;
 	trapframe_t exit_handler;
-	volatile uintptr_t load_rsv_addr;
-	volatile int load_rsv_valid;
 
 	struct {
 		uintptr_t m_epc;
@@ -100,7 +93,8 @@ typedef struct {
 		uintptr_t m_tval;
 	} csr;
 
-	int encrypted;
+	vm_process_t process;
+
 	int trap_set;
 	int cache;
 	int halt;
@@ -116,9 +110,12 @@ _externc {
 	void save_vm_context();
 	void restore_vm_context();
 
-	_data volatile vmcs_t *vmcs = nullptr;
-	_data volatile HANDLE vmcs_mutex = 0;
-	_data volatile uintptr_t stack_cookie = 0;
+	_data vmcs_t *vmcs = nullptr;
+	_data HANDLE vmcs_mutex = 0;
+	_data HANDLE veh_handle = 0;
+
+	_data intel_t host_context = { };
+	_data intel_t vm_context = { };
 
 #ifdef __cplusplus
 }
