@@ -64,6 +64,7 @@ namespace rvm64::entry {
 
 	_vmcall void vm_entry() {
 		save_host_context();
+		// TODO: testing for exit handler needs done. Doesn't seem to correctly return.
 		vmcs->exit_handler.rip = (uintptr_t)__builtin_return_address(0);
 		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(0);
 		vm_loop();
