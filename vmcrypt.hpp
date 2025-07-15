@@ -8,7 +8,7 @@ namespace rvm64::crypt {
 	}
 
 	_vmcall uintptr_t decrypt_ptr(uintptr_t ptr) {
-		return ptr ^ vmcs->dkey;
+		return ptr ^ DKEY;
 	}
 };
 #endif // VMCRYPT_HPP
