@@ -13,7 +13,7 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		vm_buffer_t *data = nullptr;
 
-		vmcs->dkey = DKEY; // NOTE: probably don't need to save DKEY 
+		// TODO: don't use compile-time constants for decryption key. this is stupid.
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
