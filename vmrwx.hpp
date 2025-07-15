@@ -2,7 +2,6 @@
 #define VMRWX_HPP
 
 #ifdef DEBUG
-#undef DEBUG
 #define mem_read_check(T, addr)												\
 	if ((addr) % sizeof(T) != 0) {											\
 		CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);		\
