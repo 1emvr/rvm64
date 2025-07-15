@@ -40,6 +40,7 @@ namespace rvm64::entry {
 
 	_vmcall void vm_loop() {
 		if (!vmcs->trap_set) {
+			// NOTE: setup for return-loop once a branch is taken.
 			vmcs->trap_handler.rip = (uintptr_t)&vm_loop;
 			vmcs->trap_handler.rsp = (uintptr_t)__builtin_frame_address(0);
 			vmcs->trap_set = 1;
