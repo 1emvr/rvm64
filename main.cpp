@@ -14,6 +14,8 @@ namespace rvm64::entry {
 		vm_buffer_t *data = nullptr;
 
 		// NOTE: receiving BOFs over the network means we don't need to store the key, dummy.
+		// To be perfectly honest, do we really need to encrypt at all (?)
+		//
 		vmcs->veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
