@@ -31,6 +31,7 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define JALR_RA_ZERO			0x00008067
 
 #define CSR_SET_TRAP(epc, cause, stat, val, hlt)	\
+	DEBUGBREAK; 									\
 	vmcs->csr.m_epc = (uintptr_t)epc;				\
 	vmcs->csr.m_cause = cause;						\
 	vmcs->csr.m_status = stat;						\
@@ -40,6 +41,7 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 
 #define CSR_GET(ctx_ptr)							\
 	do {											\
+		DEBUGBREAK; 								\
 		uintptr_t csr1 = vmcs->csr.m_epc;			\
 		uintptr_t csr2 = vmcs->csr.m_cause; 		\
 		uintptr_t csr3 = vmcs->csr.m_status;		\
