@@ -136,6 +136,7 @@ namespace rvm64::decoder {
 					}
 					default: break;
 				}
+				break;
 			}
 
 			case rtype: 
@@ -381,7 +382,9 @@ namespace rvm64::decoder {
 					}
 					default: break;
 				}
+				break;
 			}
+
 			case stype: 
 			{
 				uint8_t func3 = (opcode >> 12) & 0x7;
@@ -410,6 +413,7 @@ namespace rvm64::decoder {
 					}
 					default: break;
 				}
+				break;
 			}
 
 			case btype: 
@@ -429,6 +433,7 @@ namespace rvm64::decoder {
 					case 0b111: { unwrap_opcall(_rv_bgeu); break; }
 					default: break;
 				}
+				break;
 			}
 
 			case utype: 
@@ -441,6 +446,7 @@ namespace rvm64::decoder {
 					case 0b0010111: { unwrap_opcall(_rv_auipc); break; }
 					default: break;
 				}
+				break;
 			}
 
 			case jtype:
@@ -452,6 +458,7 @@ namespace rvm64::decoder {
 					case 0b1101111: { unwrap_opcall(_rv_jal); break; }
 					default: break;
 				}
+				break;
 			}
 
 			default: {
