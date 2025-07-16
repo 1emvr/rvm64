@@ -55,6 +55,7 @@
 		return;																\
 	}
 #else
+#define DEBUGBREAK
 #define mem_read_check(T, addr)		{}
 #define mem_write_check(T, addr)	{}
 #define reg_read_check(reg_idx)		{}
