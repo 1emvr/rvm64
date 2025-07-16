@@ -69,10 +69,10 @@ struct ucrt_function {
 	ucrt_wrapper::typenum type;
 };
 
-struct trapframe_t {
-	uintptr_t rip;
-	uintptr_t rsp;
-};
+//struct trapframe_t {
+//	uintptr_t rip;
+//	uintptr_t rsp;
+//};
 
 typedef struct {
 	uintptr_t pc;
@@ -84,8 +84,8 @@ typedef struct {
 	uintptr_t load_rsv_valid;
 
 	vm_process_t process;
-	trapframe_t trap_handler;
-	trapframe_t exit_handler;
+	jmp_buf trap_handler;
+	jmp_buf exit_handler;
 
 	struct {
 		uintptr_t m_epc;

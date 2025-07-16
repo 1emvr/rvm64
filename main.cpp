@@ -29,12 +29,8 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_loop() {
-		if (!vmcs->trap_set) {
-			// NOTE: setup for return-loop once a branch is taken.
-			//
-			vmcs->trap_handler.rip = (uintptr_t)&vm_loop;
-			vmcs->trap_handler.rsp = (uintptr_t)__builtin_frame_address(0);
-			vmcs->trap_set = 1;
+		if (setjmp(vmcs->exit_handler)) return;	
+		if (setjmp(vmcs->trap_handler)) { 
 		}
 
 		while (!vmcs->halt) {
@@ -56,18 +52,11 @@ namespace rvm64::entry {
 
 	_noinline _vmcall void vm_entry() {
 		save_host_context();
-
-		auto ra = __builtin_return_address(0);
-		vmcs->exit_handler.rip = (uintptr_t)__builtin_extract_return_addr(ra);
-		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(1);
-		__debugbreak();
-
 		vm_loop();
+		restore_host_context();
 	}
 
 	_vmcall void vm_exit() {
-		restore_host_context();
-
 		RemoveVectoredExceptionHandler(veh_handle);
 		rvm64::memory::memory_end();
 	}
