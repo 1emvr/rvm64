@@ -77,348 +77,387 @@ namespace rvm64::decoder {
 		}
 
 		switch(decoded) {
-			case itype: {
-							uint8_t func3 = (opcode >> 12) & 0x7;
-							scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
+			case itype: 
+			{
+				uint8_t func3 = (opcode >> 12) & 0x7;
+				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
 
-							switch(opcode7) {
-								case 0b0010011: {
-													switch(func3) {
-														case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_addi); break; }
-														case 0b010: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_slti); break; }
-														case 0b011: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_sltiu); break; }
-														case 0b100: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_xori); break; }
-														case 0b110: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_ori);  break; }
-														case 0b111: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_andi); break; }
-														case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slli); break; }
-														case 0b101: {
-																		uint8_t func7 = (opcode >> 24) & 0x7F;
-																		switch(func7) {
-																			case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srli); break; }
-																			case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srai); break; }
-																			default: break;
-																		}
-																	}
-														default: break;
-													}
-												}
-								case 0b0011011: {
-													switch(func3) {
-														case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_addiw); break; }
-														case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slliw); break; }
-														case 0b101: {
-																		uint8_t func7 = (opcode >> 24) & 0x7F;
-																		switch(func7) {
-																			case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srliw); break; }
-																			case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_sraiw); break; }
-																			default: break;
-																		}
-																	}
-														default: break;
-													}
-												}
-								case 0b0000011: {
-													switch(func3) {
-														case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lb); break;  }
-														case 0b001: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lh); break;  }
-														case 0b010: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lw); break;  }
-														case 0b100: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lbu); break; }
-														case 0b101: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lhu); break; }
-														case 0b110: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lwu); break; }
-														case 0b011: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_ld); break;  }
-														default: break;
-													}
-												}
-								default: break;
+				switch(opcode7) {
+					case 0b0010011: 
+					{
+						switch(func3) {
+							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_addi); break; }
+							case 0b010: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_slti); break; }
+							case 0b011: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_sltiu); break; }
+							case 0b100: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_xori); break; }
+							case 0b110: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_ori);  break; }
+							case 0b111: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_andi); break; }
+							case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slli); break; }
+							case 0b101: {
+								uint8_t func7 = (opcode >> 24) & 0x7F;
+								switch(func7) {
+									case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srli); break; }
+									case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srai); break; }
+									default: break;
+								}
 							}
+							default: break;
 						}
-
-			case rtype: {
-							scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
-							scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
-							scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
-
-							switch(opcode7) {
-								case 0b1010011: {
-													uint8_t func7 = (opcode >> 24) & 0x7F;
-													switch(func7) {
-														case 0b0000001: { unwrap_opcall(_rv_fadd_d); break; }
-														case 0b0000101: { unwrap_opcall(_rv_fsub_d); break; }
-														case 0b0001001: { unwrap_opcall(_rv_fmul_d); break; }
-														case 0b0001101: { unwrap_opcall(_rv_fdiv_d); break; }
-														case 0b1111001: { unwrap_opcall(_rv_fmv_d_x); break; }
-														case 0b0100000: {
-																			uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-																			switch(fcvt_mask) {
-																				case 0b00001: { unwrap_opcall(_rv_fcvt_s_d); break; }
-																				default: break;
-																			}
-																		}
-														case 0b0100001: {
-																			uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-																			switch(fcvt_mask) {
-																				case 0b00000: { unwrap_opcall(_rv_fcvt_d_s); break; }
-																				default: break;
-																			}
-																		}
-														case 0b1100001: {
-																			uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-																			switch(fcvt_mask) {
-																				case 0b00000: { unwrap_opcall(_rv_fcvt_w_d); break; }
-																				case 0b00001: { unwrap_opcall(_rv_fcvt_wu_d); break; }
-																				default: break;
-																			}
-																		}
-														case 0b1101001: {
-																			uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-																			switch(fcvt_mask) {
-																				case 0b00000: { unwrap_opcall(_rv_fcvt_d_w); break; }
-																				case 0b00001: { unwrap_opcall(_rv_fcvt_d_wu); break; }
-																				default: break;
-																			}
-																		}
-														case 0b0010001: {
-																			uint8_t func3 = (opcode >> 12) & 0x7;
-																			switch(func3) {
-																				case 0b000: { unwrap_opcall(_rv_fsgnj_d); break; }
-																				case 0b001: { unwrap_opcall(_rv_fsgnjn_d); break; }
-																				case 0b010: { unwrap_opcall(_rv_fsgnjx_d); break; }
-																				default: break;
-																			}
-																		}
-														case 0b0010101: {
-																			uint8_t func3 = (opcode >> 12) & 0x7;
-																			switch(func3) {
-																				case 0b000: { unwrap_opcall(_rv_fmin_d); break; }
-																				case 0b001: { unwrap_opcall(_rv_fmax_d); break; }
-																				default: break;
-																			}
-																		}
-														case 0b1010001: {
-																			uint8_t func3 = (opcode >> 12) & 0x7;
-																			switch(func3) {
-																				case 0b010: { unwrap_opcall(_rv_feq_d); break; }
-																				case 0b001: { unwrap_opcall(_rv_flt_d); break; }
-																				case 0b000: { unwrap_opcall(_rv_fle_d); break; }
-																				default: break;
-																			}
-																		}
-														case 0b1110001: {
-																			uint8_t func3 = (opcode >> 12) & 0x7;
-																			switch(func3) {
-																				case 0b001: { unwrap_opcall(_rv_fclass_d); break; }
-																				default: break;
-																			}
-																		}
-														default: break;
-													}
-												}
-								case 0b0101111: {
-													// TODO: func5 might be incorrect.
-													uint8_t func7 = (opcode >> 24) & 0x7F;
-													uint8_t func5 = (func7 >> 2) & 0x1F;
-													uint8_t func3 = (opcode >> 12) & 0x7;
-
-													switch(func3) {
-														case 0b010: {
-																		switch(func5) {
-																			case 0b00010: { unwrap_opcall(_rv_lrw); break; }
-																			case 0b00011: { unwrap_opcall(_rv_scw); break; }
-																			case 0b00001: { unwrap_opcall(_rv_amoswap_w); break; }
-																			case 0b00000: { unwrap_opcall(_rv_amoadd_w); break; }
-																			case 0b00100: { unwrap_opcall(_rv_amoxor_w); break; }
-																			case 0b01100: { unwrap_opcall(_rv_amoand_w); break; }
-																			case 0b01000: { unwrap_opcall(_rv_amoor_w); break; }
-																			case 0b10000: { unwrap_opcall(_rv_amomin_w); break; }
-																			case 0b10100: { unwrap_opcall(_rv_amomax_w); break; }
-																			case 0b11000: { unwrap_opcall(_rv_amominu_w); break; }
-																			case 0b11100: { unwrap_opcall(_rv_amomaxu_w); break; }
-																			default: break;
-																		}
-																	}
-														case 0b011: {
-																		switch(func5) {
-																			case 0b00010: { unwrap_opcall(_rv_lrd); break; }
-																			case 0b00011: { unwrap_opcall(_rv_scd); break; }
-																			case 0b00001: { unwrap_opcall(_rv_amoswap_d); break; }
-																			case 0b00000: { unwrap_opcall(_rv_amoadd_d); break; }
-																			case 0b00100: { unwrap_opcall(_rv_amoxor_d); break; }
-																			case 0b01100: { unwrap_opcall(_rv_amoand_d); break; }
-																			case 0b01000: { unwrap_opcall(_rv_amoor_d); break; }
-																			case 0b10000: { unwrap_opcall(_rv_amomin_d); break; }
-																			case 0b10100: { unwrap_opcall(_rv_amomax_d); break; }
-																			case 0b11000: { unwrap_opcall(_rv_amominu_d); break; }
-																			case 0b11100: { unwrap_opcall(_rv_amomaxu_d); break; }
-																			default: break;
-																		}
-																	}
-														default: break;
-													}
-												}
-								case 0b0111011: {
-													uint8_t func7 = (opcode >> 24) & 0x7F;
-													uint8_t func3 = (opcode >> 12) & 0x7;
-
-													switch(func3) {
-														case 0b000: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_addw); break; }
-																			case 0b0100000: { unwrap_opcall(_rv_subw); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_mulw); break; }
-																			default: break;
-																		}
-																	}
-														case 0b101: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_srlw); break; }
-																			case 0b0100000: { unwrap_opcall(_rv_sraw); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_divuw); break; }
-																			default: break;
-																		}
-																	}
-														case 0b001: { unwrap_opcall(_rv_sllw); break; }
-														case 0b100: { unwrap_opcall(_rv_divw); break; }
-														case 0b110: { unwrap_opcall(_rv_remw); break; }
-														case 0b111: { unwrap_opcall(_rv_remuw); break; }
-														default: break;
-													}
-												}
-								case 0b0110011: {
-													uint8_t func7 = (opcode >> 24) & 0x7F;
-													uint8_t func3 = (opcode >> 12) & 0x7;
-
-													switch(func3) {
-														case 0b000: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_add); break; }
-																			case 0b0100000: { unwrap_opcall(_rv_sub); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_mul); break; }
-																			default: break;
-																		}
-																	}
-														case 0b001: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_sll); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_mulh); break; }
-																			default: break;
-																		}
-																	}
-														case 0b010: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_slt); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_mulhsu); break; }
-																			default: break;
-																		}
-																	}
-														case 0b011: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_sltu); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_mulhu); break; }
-																			default: break;
-																		}
-																	}
-														case 0b100: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_xor); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_div); break; }
-																			default: break;
-																		}
-																	}
-														case 0b101: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_srl); break; }
-																			case 0b0100000: { unwrap_opcall(_rv_sra); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_divu); break; }
-																			default: break;
-																		}
-																	}
-														case 0b110: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_or); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_rem); break; }
-																			default: break;
-																		}
-																	}
-														case 0b111: {
-																		switch(func7) {
-																			case 0b0000000: { unwrap_opcall(_rv_and); break; }
-																			case 0b0000001: { unwrap_opcall(_rv_remu); break; }
-																			default: break;
-																		}
-																	}
-														default: break;
-													}
-												}
-								default: break;
+					}
+					case 0b0011011: 
+					{
+						switch(func3) {
+							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_addiw); break; }
+							case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slliw); break; }
+							case 0b101: 
+							{
+								uint8_t func7 = (opcode >> 24) & 0x7F;
+								switch(func7) {
+									case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srliw); break; }
+									case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_sraiw); break; }
+									default: break;
+								}
 							}
+							default: break;
 						}
-			case stype: {
-							uint8_t func3 = (opcode >> 12) & 0x7;
+					}
+					case 0b0000011: 
+					{
+						switch(func3) {
+							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lb); break;  }
+							case 0b001: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lh); break;  }
+							case 0b010: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lw); break;  }
+							case 0b100: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lbu); break; }
+							case 0b101: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lhu); break; }
+							case 0b110: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lwu); break; }
+							case 0b011: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_ld); break;  }
+							default: break;
+						}
+					}
+					default: break;
+				}
+			}
 
-							scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
-							scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
-							scr_write(int32_t, imm, imm_s(opcode));
+			case rtype: 
+			{
+				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
+				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
+				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
 
-							switch(opcode7) {
-								case 0b0100011: {
-													switch(func3) {
-														case 0b000: { unwrap_opcall(_rv_sb); break; }
-														case 0b001: { unwrap_opcall(_rv_sh); break; }
-														case 0b010: { unwrap_opcall(_rv_sw); break; }
-														case 0b011: { unwrap_opcall(_rv_sd); break; }
-														default: break;
-													}
-												}
-								case 0b0100111: {
-													switch(func3) {
-														case 0b010: { unwrap_opcall(_rv_fsw); break; }
-														case 0b011: { unwrap_opcall(_rv_fsd); break; }
-														default: break;
-													}
-												}
-								default: break;
+				switch(opcode7) {
+					case 0b1010011: 
+					{
+						uint8_t func7 = (opcode >> 24) & 0x7F;
+						switch(func7) {
+							case 0b0000001: { unwrap_opcall(_rv_fadd_d); break; }
+							case 0b0000101: { unwrap_opcall(_rv_fsub_d); break; }
+							case 0b0001001: { unwrap_opcall(_rv_fmul_d); break; }
+							case 0b0001101: { unwrap_opcall(_rv_fdiv_d); break; }
+							case 0b1111001: { unwrap_opcall(_rv_fmv_d_x); break; }
+							case 0b0100000: 
+							{
+								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
+								switch(fcvt_mask) {
+									case 0b00001: { unwrap_opcall(_rv_fcvt_s_d); break; }
+									default: break;
+								}
 							}
-						}
-			case btype: {
-							uint8_t func3 = (opcode >> 12) & 0x7;
-
-							scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
-							scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
-							scr_write(int32_t, imm, imm_b(opcode));
-
-							switch(func3) {
-								case 0b000: { unwrap_opcall(_rv_beq); break; }
-								case 0b001: { unwrap_opcall(_rv_bne); break; }
-								case 0b100: { unwrap_opcall(_rv_blt); break; }
-								case 0b101: { unwrap_opcall(_rv_bge); break; }
-								case 0b110: { unwrap_opcall(_rv_bltu); break; }
-								case 0b111: { unwrap_opcall(_rv_bgeu); break; }
-								default: break;
+							case 0b0100001: 
+							{
+								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
+								switch(fcvt_mask) {
+									case 0b00000: { unwrap_opcall(_rv_fcvt_d_s); break; }
+									default: break;
+								}
 							}
-						}
-			case utype: {
-							scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
-							scr_write(int32_t, screnum::imm, imm_u(opcode));
-
-							switch(opcode7) {
-								case 0b0110111: { unwrap_opcall(_rv_lui); break; }
-								case 0b0010111: { unwrap_opcall(_rv_auipc); break; }
-								default: break;
+							case 0b1100001: 
+							{
+								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
+								switch(fcvt_mask) {
+									case 0b00000: { unwrap_opcall(_rv_fcvt_w_d); break; }
+									case 0b00001: { unwrap_opcall(_rv_fcvt_wu_d); break; }
+									default: break;
+								}
 							}
-						}
-			case jtype: {
-							scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
-							scr_write(int32_t, screnum::imm, imm_j(opcode));
-
-							switch(opcode7) {
-								case 0b1101111: { unwrap_opcall(_rv_jal); break; }
-								default: break;
+							case 0b1101001: 
+							{
+								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
+								switch(fcvt_mask) {
+									case 0b00000: { unwrap_opcall(_rv_fcvt_d_w); break; }
+									case 0b00001: { unwrap_opcall(_rv_fcvt_d_wu); break; }
+									default: break;
+								}
 							}
+							case 0b0010001: 
+							{
+								uint8_t func3 = (opcode >> 12) & 0x7;
+								switch(func3) {
+									case 0b000: { unwrap_opcall(_rv_fsgnj_d); break; }
+									case 0b001: { unwrap_opcall(_rv_fsgnjn_d); break; }
+									case 0b010: { unwrap_opcall(_rv_fsgnjx_d); break; }
+									default: break;
+								}
+							}
+							case 0b0010101: 
+							{
+								uint8_t func3 = (opcode >> 12) & 0x7;
+								switch(func3) {
+									case 0b000: { unwrap_opcall(_rv_fmin_d); break; }
+									case 0b001: { unwrap_opcall(_rv_fmax_d); break; }
+									default: break;
+								}
+							}
+							case 0b1010001: 
+							{
+								uint8_t func3 = (opcode >> 12) & 0x7;
+								switch(func3) {
+									case 0b010: { unwrap_opcall(_rv_feq_d); break; }
+									case 0b001: { unwrap_opcall(_rv_flt_d); break; }
+									case 0b000: { unwrap_opcall(_rv_fle_d); break; }
+									default: break;
+								}
+							}
+							case 0b1110001: 
+							{
+								uint8_t func3 = (opcode >> 12) & 0x7;
+								switch(func3) {
+									case 0b001: { unwrap_opcall(_rv_fclass_d); break; }
+									default: break;
+								}
+							}
+							default: break;
 						}
+					}
+					case 0b0101111: 
+					{
+						// TODO: func5 might be incorrect.
+						uint8_t func7 = (opcode >> 24) & 0x7F;
+						uint8_t func5 = (func7 >> 2) & 0x1F;
+						uint8_t func3 = (opcode >> 12) & 0x7;
+
+						switch(func3) {
+							case 0b010: 
+							{
+								switch(func5) {
+									case 0b00010: { unwrap_opcall(_rv_lrw); break; }
+									case 0b00011: { unwrap_opcall(_rv_scw); break; }
+									case 0b00001: { unwrap_opcall(_rv_amoswap_w); break; }
+									case 0b00000: { unwrap_opcall(_rv_amoadd_w); break; }
+									case 0b00100: { unwrap_opcall(_rv_amoxor_w); break; }
+									case 0b01100: { unwrap_opcall(_rv_amoand_w); break; }
+									case 0b01000: { unwrap_opcall(_rv_amoor_w); break; }
+									case 0b10000: { unwrap_opcall(_rv_amomin_w); break; }
+									case 0b10100: { unwrap_opcall(_rv_amomax_w); break; }
+									case 0b11000: { unwrap_opcall(_rv_amominu_w); break; }
+									case 0b11100: { unwrap_opcall(_rv_amomaxu_w); break; }
+									default: break;
+								}
+							}
+							case 0b011: 
+							{
+								switch(func5) {
+									case 0b00010: { unwrap_opcall(_rv_lrd); break; }
+									case 0b00011: { unwrap_opcall(_rv_scd); break; }
+									case 0b00001: { unwrap_opcall(_rv_amoswap_d); break; }
+									case 0b00000: { unwrap_opcall(_rv_amoadd_d); break; }
+									case 0b00100: { unwrap_opcall(_rv_amoxor_d); break; }
+									case 0b01100: { unwrap_opcall(_rv_amoand_d); break; }
+									case 0b01000: { unwrap_opcall(_rv_amoor_d); break; }
+									case 0b10000: { unwrap_opcall(_rv_amomin_d); break; }
+									case 0b10100: { unwrap_opcall(_rv_amomax_d); break; }
+									case 0b11000: { unwrap_opcall(_rv_amominu_d); break; }
+									case 0b11100: { unwrap_opcall(_rv_amomaxu_d); break; }
+									default: break;
+								}
+							}
+							default: break;
+						}
+					}
+					case 0b0111011: 
+					{
+						uint8_t func7 = (opcode >> 24) & 0x7F;
+						uint8_t func3 = (opcode >> 12) & 0x7;
+
+						switch(func3) {
+							case 0b000: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_addw); break; }
+									case 0b0100000: { unwrap_opcall(_rv_subw); break; }
+									case 0b0000001: { unwrap_opcall(_rv_mulw); break; }
+									default: break;
+								}
+							}
+							case 0b101: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_srlw); break; }
+									case 0b0100000: { unwrap_opcall(_rv_sraw); break; }
+									case 0b0000001: { unwrap_opcall(_rv_divuw); break; }
+									default: break;
+								}
+							}
+							case 0b001: { unwrap_opcall(_rv_sllw); break; }
+							case 0b100: { unwrap_opcall(_rv_divw); break; }
+							case 0b110: { unwrap_opcall(_rv_remw); break; }
+							case 0b111: { unwrap_opcall(_rv_remuw); break; }
+							default: break;
+						}
+					}
+					case 0b0110011: 
+					{
+						uint8_t func7 = (opcode >> 24) & 0x7F;
+						uint8_t func3 = (opcode >> 12) & 0x7;
+
+						switch(func3) {
+							case 0b000: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_add); break; }
+									case 0b0100000: { unwrap_opcall(_rv_sub); break; }
+									case 0b0000001: { unwrap_opcall(_rv_mul); break; }
+									default: break;
+								}
+							}
+							case 0b001: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_sll); break; }
+									case 0b0000001: { unwrap_opcall(_rv_mulh); break; }
+									default: break;
+								}
+							}
+							case 0b010: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_slt); break; }
+									case 0b0000001: { unwrap_opcall(_rv_mulhsu); break; }
+									default: break;
+								}
+							}
+							case 0b011: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_sltu); break; }
+									case 0b0000001: { unwrap_opcall(_rv_mulhu); break; }
+									default: break;
+								}
+							}
+							case 0b100: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_xor); break; }
+									case 0b0000001: { unwrap_opcall(_rv_div); break; }
+									default: break;
+								}
+							}
+							case 0b101: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_srl); break; }
+									case 0b0100000: { unwrap_opcall(_rv_sra); break; }
+									case 0b0000001: { unwrap_opcall(_rv_divu); break; }
+									default: break;
+								}
+							}
+							case 0b110: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_or); break; }
+									case 0b0000001: { unwrap_opcall(_rv_rem); break; }
+									default: break;
+								}
+							}
+							case 0b111: 
+							{
+								switch(func7) {
+									case 0b0000000: { unwrap_opcall(_rv_and); break; }
+									case 0b0000001: { unwrap_opcall(_rv_remu); break; }
+									default: break;
+								}
+							}
+							default: break;
+						}
+					}
+					default: break;
+				}
+			}
+			case stype: 
+			{
+				uint8_t func3 = (opcode >> 12) & 0x7;
+
+				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
+				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
+				scr_write(int32_t, imm, imm_s(opcode));
+
+				switch(opcode7) {
+					case 0b0100011: 
+					{
+						switch(func3) {
+							case 0b000: { unwrap_opcall(_rv_sb); break; }
+							case 0b001: { unwrap_opcall(_rv_sh); break; }
+							case 0b010: { unwrap_opcall(_rv_sw); break; }
+							case 0b011: { unwrap_opcall(_rv_sd); break; }
+							default: break;
+						}
+					}
+					case 0b0100111: {
+						switch(func3) {
+							case 0b010: { unwrap_opcall(_rv_fsw); break; }
+							case 0b011: { unwrap_opcall(_rv_fsd); break; }
+							default: break;
+						}
+					}
+					default: break;
+				}
+			}
+
+			case btype: 
+			{
+				uint8_t func3 = (opcode >> 12) & 0x7;
+
+				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
+				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
+				scr_write(int32_t, imm, imm_b(opcode));
+
+				switch(func3) {
+					case 0b000: { unwrap_opcall(_rv_beq); break; }
+					case 0b001: { unwrap_opcall(_rv_bne); break; }
+					case 0b100: { unwrap_opcall(_rv_blt); break; }
+					case 0b101: { unwrap_opcall(_rv_bge); break; }
+					case 0b110: { unwrap_opcall(_rv_bltu); break; }
+					case 0b111: { unwrap_opcall(_rv_bgeu); break; }
+					default: break;
+				}
+			}
+
+			case utype: 
+			{
+				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
+				scr_write(int32_t, screnum::imm, imm_u(opcode));
+
+				switch(opcode7) {
+					case 0b0110111: { unwrap_opcall(_rv_lui); break; }
+					case 0b0010111: { unwrap_opcall(_rv_auipc); break; }
+					default: break;
+				}
+			}
+
+			case jtype:
+			{
+				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
+				scr_write(int32_t, screnum::imm, imm_j(opcode));
+
+				switch(opcode7) {
+					case 0b1101111: { unwrap_opcall(_rv_jal); break; }
+					default: break;
+				}
+			}
+
 			default: {
-						 CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, opcode, 1);
-						 break;
-					 }
+				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, opcode, 1);
+				break;
+			}
 		}
 	}
 };
