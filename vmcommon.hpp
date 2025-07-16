@@ -15,6 +15,7 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 
 #define _rdata    __attribute__((section(".rdata")))
 #define _data     __attribute__((section(".data")))
+#define _noinline __attribute__((noinline))
 #define _externc  extern "C"
 
 #define NT_SUCCESS(status)      ((status) >= 0)

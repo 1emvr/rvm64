@@ -49,17 +49,18 @@ namespace rvm64::entry {
 				}
 			}
 
-			__debugbreak();
 			rvm64::decoder::vm_decode(opcode);
 			vmcs->pc += 4;
 		}
 	}
 
-	_vmcall void vm_entry() {
+	_noinline _vmcall void vm_entry() {
 		save_host_context();
 
-		vmcs->exit_handler.rip = (uintptr_t)__builtin_return_address(0);
-		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(0);
+		auto ra = __builtin_return_address(0);
+		vmcs->exit_handler.rip = (uintptr_t)__builtin_extract_return_addr(ra);
+		vmcs->exit_handler.rsp = (uintptr_t)__builtin_frame_address(1);
+		__debugbreak();
 
 		vm_loop();
 	}
