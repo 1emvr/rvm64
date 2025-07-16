@@ -94,7 +94,7 @@ namespace rvm64::decoder {
 							case 0b111: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_andi); break; }
 							case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slli); break; }
 							case 0b101: {
-								uint8_t func7 = (opcode >> 24) & 0x7F;
+								uint8_t func7 = (opcode >> 25) & 0x7F; // NOTE: "opcode >> 24" (?) Not sure 
 								switch(func7) {
 									case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srli); break; }
 									case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srai); break; }
