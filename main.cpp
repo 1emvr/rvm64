@@ -36,11 +36,13 @@ namespace rvm64::entry {
 
 	_vmcall void vm_entry() {
 		save_host_context();
+		if (setjmp(vmcs->exit_handler)) {
+			goto defer;	
+		}
 
-		if (setjmp(vmcs->exit_handler)) goto defer;	
 		vm_init(); 
-
-		if (setjmp(vmcs->trap_handler)) { }
+		if (setjmp(vmcs->trap_handler)) { 
+		}
 
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
