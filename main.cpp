@@ -16,12 +16,10 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_init() {
-		vm_buffer_t *data = { };
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
+		vm_buffer_t *data = rvm64::mock::read_file();
 
-		data = rvm64::mock::read_file();
 		data->size += VM_PROCESS_PADDING;
-
 		rvm64::memory::memory_init(data->size);
 
 		rvm64::elf::load_elf_image(data->address, data->size);
