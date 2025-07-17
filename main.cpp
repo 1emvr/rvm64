@@ -35,9 +35,11 @@ namespace rvm64::entry {
 	_vmcall void vm_entry() {
 		save_host_context();
 
-		if (setjmp(vmcs->exit_handler)) goto defer;	
-		vm_init(); 
+		if (setjmp(vmcs->exit_handler)) {
+			goto defer;	
+		}
 
+		vm_init(); 
 		if (setjmp(vmcs->trap_handler)) { 
 		}
 
