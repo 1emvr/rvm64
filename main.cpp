@@ -46,8 +46,7 @@ namespace rvm64::entry {
 			if (opcode == JALR_RA_ZERO) {
 				uintptr_t ret_addr = vmcs->vregs[ra];
 
-				if (ret_addr < (uintptr_t)vmcs->process.address ||
-				    ret_addr >= (uintptr_t)(vmcs->process.address + vmcs->process.size)) {
+				if (PROCESS_OOB(ret_addr)) {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
