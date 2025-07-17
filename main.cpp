@@ -46,7 +46,7 @@ namespace rvm64::entry {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
 			if (opcode == RV64_RET) {
-				if (PROCESS_MEMORY_OOB(vmcs->vregs[ra])) {
+				if (PROCESS_MEMORY_OOB(vmcs->vregs[regenum::ra])) {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
