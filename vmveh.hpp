@@ -6,6 +6,8 @@
 #include "rvni.hpp"
 
 
+#define LONGJMP(addr, b) longjmp(addr, b); __builtin_unreachable()
+
 LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 	CONTEXT *winctx = exception_info->ContextRecord;
 	DWORD code = exception_info->ExceptionRecord->ExceptionCode;
@@ -17,16 +19,14 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 	CSR_GET(exception_info);
 
 	if (vmcs->halt || code != RVM_TRAP_EXCEPTION) {
-		longjmp(vmcs->exit_handler, true);
-		__builtin_unreachable();
+		LONGJMP(vmcs->exit_handler, true);
 	}
 
 	switch (vmcs->csr.m_cause) {
-		case environment_branch: {
-			longjmp(vmcs->trap_handler, true);
-			__builtin_unreachable();
-		}
-		case environment_call_native: {
+		case environment_exit: 		LONGJMP(vmcs->exit_handler, true);
+		case environment_branch: 	LONGJMP(vmcs->trap_handler, true);
+		case environment_call_native: 
+		{
 			rvm64::rvni::vm_native_call();
 			break;
 		}
