@@ -19,6 +19,7 @@ namespace rvm64::entry {
 		data = rvm64::mock::read_file();
 		data->size += VM_PROCESS_PADDING;
 
+		// NOTE: major problem - what happens when no trap/exit handler is set??
 		rvm64::memory::memory_init(data->size);
 		rvm64::elf::load_elf_image(data->address, data->size);
 		rvm64::elf::patch_elf_plt(vmcs->process.address);
