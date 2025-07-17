@@ -26,7 +26,7 @@
 
 #define mem_write_check(T, addr) do {                                      \
     if ((addr) % sizeof(T) != 0) {                                         \
-        CSR_SET_TRAP(vmcs->pc, store_address_misaligned, 0, addr, 1);      \
+        CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  \
         return;                                                            \
     }                                                                      \
     uintptr_t stack_base = (uintptr_t)&vmcs->vstack[0];                    \
