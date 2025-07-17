@@ -32,7 +32,6 @@ namespace rvm64::entry {
 		if (setjmp(vmcs->exit_handler)) return;	
 		if (setjmp(vmcs->trap_handler)) { 
 		}
-
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
