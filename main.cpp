@@ -44,13 +44,10 @@ namespace rvm64::entry {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
 			if (opcode == JALR_RA_ZERO) {
-				uintptr_t ret_addr = vmcs->vregs[ra];
-
-				if (PROCESS_OOB(ret_addr)) {
+				if (PROCESS_OOB(vmcs->vregs[ra])) {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
-
 			rvm64::decoder::vm_decode(opcode);
 			vmcs->pc += 4;
 		}
