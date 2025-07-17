@@ -28,7 +28,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		}
 		case environment_call_native: {
 			rvm64::rvni::vm_native_call();
-			vmcs->halt = 0;
 			break;
 		}
 		default: {
