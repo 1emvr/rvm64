@@ -9,7 +9,7 @@ do {                                       									\
     if ((addr) % sizeof(T) != 0) {                                         	\
         CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       	\
     }                                                                      	\
-    uintptr_t stack_base = (uintptr_t)&vmcs->vstack[0];                    	\
+    uintptr_t stack_base = (uintptr_t)vmcs->vstack;                    		\
     uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);	\
     uintptr_t process_base = (uintptr_t)vmcs->process.address;             	\
     uintptr_t process_end  = process_base + vmcs->process.size;            	\
@@ -28,7 +28,7 @@ do {                                      									\
     if ((addr) % sizeof(T) != 0) {                                         	\
         CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  	\
     }                                                                      	\
-    uintptr_t stack_base = (uintptr_t)&vmcs->vstack[0];                    	\
+    uintptr_t stack_base = (uintptr_t)vmcs->vstack;                    		\
     uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);	\
     uintptr_t process_base = (uintptr_t)vmcs->process.address;             	\
     uintptr_t process_end  = process_base + vmcs->process.size;            	\
