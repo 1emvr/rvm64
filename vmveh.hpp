@@ -30,7 +30,8 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 			rvm64::rvni::vm_native_call();
 			break;
 		}
-		default: {
+		default: 
+		{
 			__debugbreak();
 			break;
 		}
