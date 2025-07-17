@@ -61,6 +61,11 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 	expr;						\
 	restore_host_context()
 
+#define PROCESS_OOB(addr)  												\
+	((addr) < (uintptr_t)vmcs->process.address || 						\
+	 (addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size)
+
+
 enum causenum {
 	supervisor_software_interrupt = 0xb11,
 	machine_software_interrupt = 0xb13,
