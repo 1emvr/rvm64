@@ -1,6 +1,15 @@
 #ifndef VMRWX_HPP
 #define VMRWX_HPP
 
+#define PROCESS_MEMORY_OOB(addr)  										\
+	((addr) < (uintptr_t)vmcs->process.address || 						\
+	 (addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size))
+
+#define STACK_MEMORY_OOB(addr) 											\
+	((addr) < (uintptr_t)vmcs->vstack || 								\
+	 (addr) >= (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
+
+
 #ifdef DEBUG
 #define DEBUGBREAK __debugbreak()
 
@@ -9,17 +18,9 @@ do {                                       									\
     if ((addr) % sizeof(T) != 0) {                                         	\
         CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       	\
     }                                                                      	\
-    uintptr_t stack_base = (uintptr_t)vmcs->vstack;                    		\
-    uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);	\
-    uintptr_t process_base = (uintptr_t)vmcs->process.address;             	\
-    uintptr_t process_end  = process_base + vmcs->process.size;            	\
-                                                                           	\
-    if ((addr >= stack_base && addr < stack_end) ||                        	\
-        (addr >= process_base && addr < process_end)) {                    	\
-        break; /* Valid address — do nothing */                            	\
+    if (STACK_MEMORY_OOB(addr) ||  PROCESS_MEMORY_OOB(addr)) {              \
+    	CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);              \
     }                                                                      	\
-                                                                           	\
-    CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);                 	\
 } while (0)
 
 
@@ -28,17 +29,9 @@ do {                                      									\
     if ((addr) % sizeof(T) != 0) {                                         	\
         CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  	\
     }                                                                      	\
-    uintptr_t stack_base = (uintptr_t)vmcs->vstack;                    		\
-    uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);	\
-    uintptr_t process_base = (uintptr_t)vmcs->process.address;             	\
-    uintptr_t process_end  = process_base + vmcs->process.size;            	\
-                                                                           	\
-    if ((addr >= stack_base && addr < stack_end) ||                        	\
-        (addr >= process_base && addr < process_end)) {                    	\
-        break; /* Valid address — do nothing */                            	\
+    if (STACK_MEMORY_OOB(addr) ||  PROCESS_MEMORY_OOB(addr)) {              \
+    	CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);         \
     }                                                                      	\
-                                                                           	\
-    CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);            	\
 } while (0)
 
 
@@ -85,8 +78,8 @@ do {                                      									\
 #define unwrap_opcall(hdl_idx) 									\
 	do { 														\
 		opcall_check(hdl_idx);									\
-		auto a = ((uintptr_t*)dispatch_table)[hdl_idx];			\
-		auto b = rvm64::crypt::decrypt_ptr((uintptr_t)a);		\
+		uintptr_t a = ((uintptr_t*)dispatch_table)[hdl_idx];	\
+		uintptr_t b = rvm64::crypt::decrypt_ptr((uintptr_t)a);	\
 		void (*fn)() = (void (*)())(b);							\
 		fn();													\
 	} while(0)

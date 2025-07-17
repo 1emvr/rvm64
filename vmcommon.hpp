@@ -29,7 +29,7 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 
 #define EXPONENT_MASK           0x7FF0000000000000ULL
 #define FRACTION_MASK           0x000FFFFFFFFFFFFFULL
-#define JALR_RA_ZERO			0x00008067
+#define RV64_RET				0x00008067
 
 #define CSR_SET_TRAP(epc, cause, stat, val, hlt)		\
 	DEBUGBREAK; 										\
@@ -57,13 +57,17 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 	restore_vm_context()
 
 #define SAVE_HOST_CONTEXT(expr)	\
-	save_host_context();			\
+	save_host_context();		\
 	expr;						\
 	restore_host_context()
 
-#define PROCESS_OOB(addr)  												\
+#define PROCESS_MEMORY_OOB(addr)  										\
 	((addr) < (uintptr_t)vmcs->process.address || 						\
-	 (addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size)
+	 (addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size))
+
+#define STACK_MEMORY_OOB(addr) 											\
+	((addr) < (uintptr_t)vmcs->vstack || 								\
+	 (addr) >= (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
 
 
 enum causenum {
