@@ -20,7 +20,7 @@
     }                                                                      \
                                                                            \
     CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);                 \
-    return;                                                                \
+    __builtin_unreachable();                                               \
 } while (0)
 
 
@@ -40,7 +40,7 @@
     }                                                                      \
                                                                            \
     CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);            \
-    return;                                                                \
+    __builtin_unreachable();                                               \
 } while (0)
 
 
