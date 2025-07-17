@@ -50,7 +50,7 @@ namespace rvm64::entry {
 		}
 	}
 
-	_noinline _vmcall void vm_entry() {
+	_vmcall void vm_entry() {
 		save_host_context();
 		vm_loop();
 		restore_host_context();
