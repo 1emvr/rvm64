@@ -94,7 +94,7 @@ typedef struct {
 		uintptr_t m_tval;
 	} csr;
 
-	int init;
+	int trap;
 	int cache;
 	int halt;
 } vmcs_t;
