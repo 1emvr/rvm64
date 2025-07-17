@@ -33,12 +33,12 @@ namespace rvm64::entry {
 			: rvm64::mock::destroy_file(data);
 	}
 
-	_vmcall void vm_loop() {
-		if (setjmp(vmcs->exit_handler)) {
-			goto defer;	
-		}
+	_vmcall void vm_entry() {
+		save_host_context();
 
+		if (setjmp(vmcs->exit_handler)) goto defer;	
 		vm_init(); 
+
 		if (setjmp(vmcs->trap_handler)) { }
 
 		while (!vmcs->halt) {
@@ -58,11 +58,9 @@ namespace rvm64::entry {
 		}
 defer:
 		vm_exit();
-		return;
-	}
+		restore_host_context();
 
-	_vmcall void vm_entry() {
-		SAVE_HOST_CONTEXT(vm_loop());
+		return;
 	}
 };
 
