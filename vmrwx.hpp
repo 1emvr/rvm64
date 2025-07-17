@@ -4,78 +4,71 @@
 #ifdef DEBUG
 #define DEBUGBREAK __debugbreak()
 
-#define mem_read_check(T, addr) do {                                       \
-    if ((addr) % sizeof(T) != 0) {                                         \
-        CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       \
-        return;                                                            \
-    }                                                                      \
-    uintptr_t stack_base = (uintptr_t)&vmcs->vstack[0];                    \
-    uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);\
-    uintptr_t process_base = (uintptr_t)vmcs->process.address;             \
-    uintptr_t process_end  = process_base + vmcs->process.size;            \
-                                                                           \
-    if ((addr >= stack_base && addr < stack_end) ||                        \
-        (addr >= process_base && addr < process_end)) {                    \
-        break; /* Valid address — do nothing */                            \
-    }                                                                      \
-                                                                           \
-    CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);                 \
-    __builtin_unreachable();                                               \
+#define mem_read_check(T, addr)  											\
+do {                                       									\
+    if ((addr) % sizeof(T) != 0) {                                         	\
+        CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       	\
+    }                                                                      	\
+    uintptr_t stack_base = (uintptr_t)&vmcs->vstack[0];                    	\
+    uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);	\
+    uintptr_t process_base = (uintptr_t)vmcs->process.address;             	\
+    uintptr_t process_end  = process_base + vmcs->process.size;            	\
+                                                                           	\
+    if ((addr >= stack_base && addr < stack_end) ||                        	\
+        (addr >= process_base && addr < process_end)) {                    	\
+        break; /* Valid address — do nothing */                            	\
+    }                                                                      	\
+                                                                           	\
+    CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);                 	\
 } while (0)
 
 
-#define mem_write_check(T, addr) do {                                      \
-    if ((addr) % sizeof(T) != 0) {                                         \
-        CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  \
-        return;                                                            \
-    }                                                                      \
-    uintptr_t stack_base = (uintptr_t)&vmcs->vstack[0];                    \
-    uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);\
-    uintptr_t process_base = (uintptr_t)vmcs->process.address;             \
-    uintptr_t process_end  = process_base + vmcs->process.size;            \
-                                                                           \
-    if ((addr >= stack_base && addr < stack_end) ||                        \
-        (addr >= process_base && addr < process_end)) {                    \
-        break; /* Valid address — do nothing */                            \
-    }                                                                      \
-                                                                           \
-    CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);            \
-    __builtin_unreachable();                                               \
+#define mem_write_check(T, addr) 											\
+do {                                      									\
+    if ((addr) % sizeof(T) != 0) {                                         	\
+        CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  	\
+    }                                                                      	\
+    uintptr_t stack_base = (uintptr_t)&vmcs->vstack[0];                    	\
+    uintptr_t stack_end  = (uintptr_t)(&vmcs->vstack[VSTACK_MAX_CAPACITY]);	\
+    uintptr_t process_base = (uintptr_t)vmcs->process.address;             	\
+    uintptr_t process_end  = process_base + vmcs->process.size;            	\
+                                                                           	\
+    if ((addr >= stack_base && addr < stack_end) ||                        	\
+        (addr >= process_base && addr < process_end)) {                    	\
+        break; /* Valid address — do nothing */                            	\
+    }                                                                      	\
+                                                                           	\
+    CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);            	\
 } while (0)
 
 
 #define reg_read_check(reg_idx)												\
 	if ((reg_idx) > t6) {													\
 		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, reg_idx, 1);	\
-		return;																\
 	}
 
 
 #define reg_write_check(reg_idx)											\
 	if ((reg_idx) == zr || (reg_idx) > t6) {								\
 		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, reg_idx, 1);	\
-		return;																\
 	}
 
 
 #define scr_read_check(scr_idx)												\
 	if ((scr_idx) > imm) {													\
 		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, scr_idx, 1);	\
-		return;																\
 	}
 
 
 #define scr_write_check(scr_idx)											\
 	if ((scr_idx) > imm) {													\
 		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, scr_idx, 1);	\
-		return;																\
 	}
 
 
 #define	opcall_check(hdl_idx)												\
 	if ((hdl_idx) > 255) {													\
 		CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, hdl_idx, 1);			\
-		return;																\
 	}
 
 #else
