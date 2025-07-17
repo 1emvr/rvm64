@@ -31,14 +31,15 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define FRACTION_MASK           0x000FFFFFFFFFFFFFULL
 #define JALR_RA_ZERO			0x00008067
 
-#define CSR_SET_TRAP(epc, cause, stat, val, hlt)	\
-	DEBUGBREAK; 									\
-	vmcs->csr.m_epc = (uintptr_t)epc;				\
-	vmcs->csr.m_cause = cause;						\
-	vmcs->csr.m_status = stat;						\
-	vmcs->csr.m_tval = val;							\
-	vmcs->halt = hlt;								\
-	RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr)
+#define CSR_SET_TRAP(epc, cause, stat, val, hlt)		\
+	DEBUGBREAK; 										\
+	vmcs->csr.m_epc = (uintptr_t)epc;					\
+	vmcs->csr.m_cause = cause;							\
+	vmcs->csr.m_status = stat;							\
+	vmcs->csr.m_tval = val;								\
+	vmcs->halt = hlt;									\
+	RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	\
+	__builtin_unreachable()
 
 #define CSR_GET(ctx_ptr)							\
 	do {											\
@@ -54,6 +55,11 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 	save_vm_context();			\
 	expr;						\
 	restore_vm_context()
+
+#define SAVE_HOST_CONTEXT(expr)	\
+	save_host_context();			\
+	expr;						\
+	restore_host_context()
 
 enum causenum {
 	supervisor_software_interrupt = 0xb11,

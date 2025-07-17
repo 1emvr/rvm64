@@ -32,6 +32,7 @@ namespace rvm64::entry {
 		if (setjmp(vmcs->exit_handler)) return;	
 		if (setjmp(vmcs->trap_handler)) { 
 		}
+
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
@@ -50,9 +51,7 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_entry() {
-		save_host_context();
-		vm_loop();
-		restore_host_context();
+		SAVE_HOST_CONTEXT(vm_loop());
 	}
 
 	_vmcall void vm_exit() {
