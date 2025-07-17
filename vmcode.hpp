@@ -103,6 +103,7 @@ namespace rvm64::decoder {
 							}
 							default: break;
 						}
+						break;
 					}
 					case 0b0011011: 
 					{
@@ -120,6 +121,7 @@ namespace rvm64::decoder {
 							}
 							default: break;
 						}
+						break;
 					}
 					case 0b0000011: 
 					{
@@ -133,6 +135,7 @@ namespace rvm64::decoder {
 							case 0b011: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_ld); break;  }
 							default: break;
 						}
+						break;
 					}
 					default: break;
 				}
@@ -162,6 +165,7 @@ namespace rvm64::decoder {
 									case 0b00001: { unwrap_opcall(_rv_fcvt_s_d); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b0100001: 
 							{
@@ -170,6 +174,7 @@ namespace rvm64::decoder {
 									case 0b00000: { unwrap_opcall(_rv_fcvt_d_s); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b1100001: 
 							{
@@ -179,6 +184,7 @@ namespace rvm64::decoder {
 									case 0b00001: { unwrap_opcall(_rv_fcvt_wu_d); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b1101001: 
 							{
@@ -188,6 +194,7 @@ namespace rvm64::decoder {
 									case 0b00001: { unwrap_opcall(_rv_fcvt_d_wu); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b0010001: 
 							{
@@ -198,6 +205,7 @@ namespace rvm64::decoder {
 									case 0b010: { unwrap_opcall(_rv_fsgnjx_d); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b0010101: 
 							{
@@ -207,6 +215,7 @@ namespace rvm64::decoder {
 									case 0b001: { unwrap_opcall(_rv_fmax_d); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b1010001: 
 							{
@@ -217,6 +226,7 @@ namespace rvm64::decoder {
 									case 0b000: { unwrap_opcall(_rv_fle_d); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b1110001: 
 							{
@@ -225,9 +235,11 @@ namespace rvm64::decoder {
 									case 0b001: { unwrap_opcall(_rv_fclass_d); break; }
 									default: break;
 								}
+								break;
 							}
 							default: break;
 						}
+						break;
 					}
 					case 0b0101111: 
 					{
@@ -253,6 +265,7 @@ namespace rvm64::decoder {
 									case 0b11100: { unwrap_opcall(_rv_amomaxu_w); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b011: 
 							{
@@ -270,9 +283,11 @@ namespace rvm64::decoder {
 									case 0b11100: { unwrap_opcall(_rv_amomaxu_d); break; }
 									default: break;
 								}
+								break;
 							}
 							default: break;
 						}
+						break;
 					}
 					case 0b0111011: 
 					{
@@ -288,6 +303,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_mulw); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b101: 
 							{
@@ -297,6 +313,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_divuw); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b001: { unwrap_opcall(_rv_sllw); break; }
 							case 0b100: { unwrap_opcall(_rv_divw); break; }
@@ -304,6 +321,7 @@ namespace rvm64::decoder {
 							case 0b111: { unwrap_opcall(_rv_remuw); break; }
 							default: break;
 						}
+						break;
 					}
 					case 0b0110011: 
 					{
@@ -319,6 +337,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_mul); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b001: 
 							{
@@ -327,6 +346,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_mulh); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b010: 
 							{
@@ -335,6 +355,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_mulhsu); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b011: 
 							{
@@ -343,6 +364,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_mulhu); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b100: 
 							{
@@ -351,6 +373,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_div); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b101: 
 							{
@@ -360,6 +383,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_divu); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b110: 
 							{
@@ -368,6 +392,7 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_rem); break; }
 									default: break;
 								}
+								break;
 							}
 							case 0b111: 
 							{
@@ -376,9 +401,11 @@ namespace rvm64::decoder {
 									case 0b0000001: { unwrap_opcall(_rv_remu); break; }
 									default: break;
 								}
+								break;
 							}
 							default: break;
 						}
+						break;
 					}
 					default: break;
 				}
@@ -403,6 +430,7 @@ namespace rvm64::decoder {
 							case 0b011: { unwrap_opcall(_rv_sd); break; }
 							default: break;
 						}
+						break;
 					}
 					case 0b0100111: {
 						switch(func3) {
@@ -410,6 +438,7 @@ namespace rvm64::decoder {
 							case 0b011: { unwrap_opcall(_rv_fsd); break; }
 							default: break;
 						}
+						break;
 					}
 					default: break;
 				}
