@@ -38,16 +38,18 @@ namespace rvm64::entry {
 		if (setjmp(vmcs->exit_handler)) goto defer;	
 		vm_init(); 
 
-		if (setjmp(vmcs->trap_handler)) { }
+		if (setjmp(vmcs->trap_handler)) { 
+		}
 
 		while (!vmcs->halt) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
-			if (opcode == JALR_RA_ZERO) {
-				if (PROCESS_OOB(vmcs->vregs[ra])) {
+			if (opcode == RV64_RET) {
+				if (PROCESS_MEMORY_OOB(vmcs->vregs[ra])) {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
+
 			rvm64::decoder::vm_decode(opcode);
 			vmcs->pc += 4;
 		}
