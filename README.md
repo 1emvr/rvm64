@@ -6,4 +6,3 @@ very simple virtual machine for emulating risc-v code in Windows environments.
 ## TODO:
 - build scripts for other platforms
 - adding user binary input
-- actually testing the damn thing...
