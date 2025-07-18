@@ -112,7 +112,7 @@ namespace rvm64::decoder {
 							case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slliw); break; }
 							case 0b101: 
 							{
-								uint8_t func7 = (opcode >> 24) & 0x7F;
+								uint8_t func7 = (opcode >> 25) & 0x7F;
 								switch(func7) {
 									case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srliw); break; }
 									case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_sraiw); break; }
@@ -151,7 +151,7 @@ namespace rvm64::decoder {
 				switch(opcode7) {
 					case 0b1010011: 
 					{
-						uint8_t func7 = (opcode >> 24) & 0x7F;
+						uint8_t func7 = (opcode >> 25) & 0x7F;
 						switch(func7) {
 							case 0b0000001: { unwrap_opcall(_rv_fadd_d); break; }
 							case 0b0000101: { unwrap_opcall(_rv_fsub_d); break; }
@@ -244,7 +244,7 @@ namespace rvm64::decoder {
 					case 0b0101111: 
 					{
 						// TODO: func5 might be incorrect.
-						uint8_t func7 = (opcode >> 24) & 0x7F;
+						uint8_t func7 = (opcode >> 25) & 0x7F;
 						uint8_t func5 = (func7 >> 2) & 0x1F;
 						uint8_t func3 = (opcode >> 12) & 0x7;
 
@@ -291,7 +291,7 @@ namespace rvm64::decoder {
 					}
 					case 0b0111011: 
 					{
-						uint8_t func7 = (opcode >> 24) & 0x7F;
+						uint8_t func7 = (opcode >> 25) & 0x7F;
 						uint8_t func3 = (opcode >> 12) & 0x7;
 
 						switch(func3) {
@@ -325,7 +325,7 @@ namespace rvm64::decoder {
 					}
 					case 0b0110011: 
 					{
-						uint8_t func7 = (opcode >> 24) & 0x7F;
+						uint8_t func7 = (opcode >> 25) & 0x7F;
 						uint8_t func3 = (opcode >> 12) & 0x7;
 
 						switch(func3) {
