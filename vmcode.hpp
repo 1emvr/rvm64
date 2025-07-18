@@ -667,102 +667,102 @@ namespace rvm64::operations {
 
 		// NOTE: immediates are always signed unless there's a bitwise operation
 		_vmcall void rv_addi() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0, v1 = 0;
+			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 + _imm));
+			reg_read(int64_t, v1, _rs1);
+			reg_write(int64_t, _rd, (v1 + _imm));
 		}
 
 		_vmcall void rv_slti() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0, v1 = 0;
+			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, ((v1 < _imm) ? 1 : 0));
+			reg_read(int64_t, v1, _rs1);
+			reg_write(int64_t, _rd, ((v1 < _imm) ? 1 : 0));
 		}
 
 		_vmcall void rv_sltiu() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0, v1 = 0;
+			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uint64_t v1 = 0;
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			reg_read(uint32_t, v1, _rs1);
-			reg_write(uint32_t, _rd, ((v1 < (uint32_t)_imm) ? 1 : 0));
+			reg_read(uint64_t, v1, _rs1);
+			reg_write(uint64_t, _rd, ((v1 < (uint32_t)_imm) ? 1 : 0));
 		}
 
 		_vmcall void rv_xori() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0, v1 = 0;
+			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 ^ _imm));
+			reg_read(int64_t, v1, _rs1);
+			reg_write(int64_t, _rd, (v1 ^ _imm));
 		}
 
 		_vmcall void rv_ori() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0, v1 = 0;
+			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 | _imm));
+			reg_read(int64_t, v1, _rs1);
+			reg_write(int64_t, _rd, (v1 | _imm));
 		}
 
 		_vmcall void rv_andi() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0, v1 = 0;
+			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(int32_t, _rs1, rs1);
 			scr_read(int32_t, _imm, imm);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, (v1 & _imm));
+			reg_read(int64_t, v1, _rs1);
+			reg_write(int64_t, _rd, (v1 & _imm));
 		}
 
 		_vmcall void rv_slli() {
-			uint8_t _rd = 0, _rs1 = 0; uint32_t _shamt = 0, v1 = 0;
+			uint8_t _rd = 0, _rs1 = 0; uint32_t _shamt = 0; int64_t v1 = 0;
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			reg_read(uint32_t, _rs1, v1);
-			reg_write(uint32_t, _rd, (v1 << (_shamt & 0x1F)));
+			reg_read(uint64_t, v1, _rs1);
+			reg_write(uint64_t, _rd, (v1 << (_shamt & 0x1F)));
 		}
 
 		_vmcall void rv_srli() {
-			uint8_t _rd = 0, _rs1 = 0; intptr_t v1 = 0; uint32_t _shamt = 0;
+			uint8_t _rd = 0, _rs1 = 0; uint32_t _shamt = 0; uint64_t v1 = 0; 
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			reg_read(uint32_t, v1, _rs1);
-			reg_write(uint32_t, _rd, v1 >> (_shamt & 0x1F));
+			reg_read(uint64_t, v1, _rs1);
+			reg_write(uint64_t, _rd, v1 >> (_shamt & 0x1F));
 		}
 
 		_vmcall void rv_srai() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t v1 = 0; uint32_t _shamt = 0;
+			uint8_t _rd = 0, _rs1 = 0; uint32_t _shamt = 0; uint64_t v1 = 0; 
 
 			scr_read(uint8_t, _rd, rd);
 			scr_read(uint8_t, _rs1, rs1);
 			scr_read(uint32_t, _shamt, imm);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			reg_read(uint64_t, v1, _rs1);
+			reg_write(uint64_t, _rd, v1 >> (_shamt & 0x1F));
 		}
 
 		_vmcall void rv_addiw() {

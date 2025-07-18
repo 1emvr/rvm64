@@ -9,7 +9,6 @@
 	((addr) < (uintptr_t)vmcs->vstack || 								\
 	 (addr) >= (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
 
-
 #ifdef DEBUG
 #define DEBUGBREAK __debugbreak()
 
@@ -36,25 +35,19 @@ do {                                      									\
 
 
 #define reg_read_check(reg_idx)												\
-	if ((reg_idx) > t6) {													\
+	if ((reg_idx) > regenum::t6) {											\
 		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, reg_idx, 1);	\
 	}
 
 
 #define reg_write_check(reg_idx)											\
-	if ((reg_idx) == zr || (reg_idx) > t6) {								\
+	if ((reg_idx) == regenum::zr || (reg_idx) > regenum::t6) {				\
 		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, reg_idx, 1);	\
 	}
 
 
-#define scr_read_check(scr_idx)												\
-	if ((scr_idx) > imm) {													\
-		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, scr_idx, 1);	\
-	}
-
-
-#define scr_write_check(scr_idx)											\
-	if ((scr_idx) > imm) {													\
+#define scr_access_check(scr_idx)											\
+	if ((scr_idx) > screnum::imm) {											\
 		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, scr_idx, 1);	\
 	}
 
@@ -70,8 +63,7 @@ do {                                      									\
 #define mem_write_check(T, addr)	{}
 #define reg_read_check(reg_idx)		{}
 #define reg_write_check(reg_idx)	{}
-#define scr_read_check(scr_idx)		{}
-#define scr_write_check(scr_idx)	{}
+#define scr_access_check(scr_idx)	{}
 #define	opcall_check(hdl_idx)		{}
 #endif
 
@@ -110,13 +102,13 @@ do {                                      									\
 
 #define scr_read(T, dst, scr_idx) 								\
 	do { 														\
-		scr_read_check(scr_idx);								\
+		scr_access_check(scr_idx);								\
 		dst = (T)vmcs->vscratch[(scr_idx)];						\
 	} while(0)
 
 #define scr_write(T, scr_idx, src) 								\
 	do { 														\
-		scr_write_check(scr_idx);								\
+		scr_access_check(scr_idx);								\
 		vmcs->vscratch[(scr_idx)] = (T)(src);					\
 	} while(0)
 #endif // VMRWX_HPP
