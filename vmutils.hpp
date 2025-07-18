@@ -111,9 +111,17 @@ inline int32_t sign_extend(int32_t val, int bits) {
 	return (int32_t)(val << shift) >> shift;
 }
 
+#if defined(_M_X64) || defined(__x86_64__) || defined(_M_ARM64)
 inline uint8_t shamt_i(uint32_t opcode) {
-	return (opcode >> 20) & 0x1F;
+    return (opcode >> 20) & 0x3F;  
 }
+#elif defined(_M_IX86) || defined(__i386__) || defined(_M_ARM)
+inline uint8_t shamt_i(uint32_t opcode) {
+    return (opcode >> 20) & 0x1F;  
+}
+#else
+#error Unsupported architecture: Define shamt_i() masking manually.
+#endif
 
 // NOTE: annoying as fuck to read. just let GPT do the math and say fuck it.
 inline int32_t imm_u(uint32_t opcode) {
@@ -125,9 +133,6 @@ inline int32_t imm_i(uint32_t opcode) {
 	return sign_extend(raw_imm, 12);
 }
 
-inline uint32_t shamt_i(uint32_t opcode) {
-    return (opcode >> 20) & 0x3F;  // RV64: shamt is 6 bits
-}
 
 inline int32_t imm_s(uint32_t opcode) {
 	int32_t raw_imm =  ((opcode >> 25) << 5) | ((opcode >> 7) & 0x1F);
