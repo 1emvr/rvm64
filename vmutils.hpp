@@ -119,10 +119,16 @@ inline uint8_t shamt_i(uint32_t opcode) {
 inline int32_t imm_u(uint32_t opcode) {
 	return (int32_t) opcode & 0xFFFFF000;
 }
+
 inline int32_t imm_i(uint32_t opcode) {
 	int32_t raw_imm = opcode >> 20;
 	return sign_extend(raw_imm, 12);
 }
+
+inline uint32_t shamt_i(uint32_t opcode) {
+    return (opcode >> 20) & 0x3F;  // RV64: shamt is 6 bits
+}
+
 inline int32_t imm_s(uint32_t opcode) {
 	int32_t raw_imm =  ((opcode >> 25) << 5) | ((opcode >> 7) & 0x1F);
 	return sign_extend(raw_imm & 0xFFF, 12);
