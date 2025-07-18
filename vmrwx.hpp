@@ -18,30 +18,30 @@
 	 (addr) >= (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
 
 
-#define mem_read_check(T, addr)  											\
-do {                                       									\
-    if ((addr) % sizeof(T) != 0) {                                         	\
-        CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       	\
-    }                                                                      	\
-	if (STACK_MEMORY_OOB(addr)) { 											\
-		if (PROCESS_MEMORY_OOB(addr)) {              						\
-			CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);      	\
-		} 																	\
-	}                                                                      	\
-} while (0)
+#define mem_read_check(T, addr)  												\
+	do {                                       									\
+		if ((addr) % sizeof(T) != 0) {                                         	\
+			CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       	\
+		}                                                                      	\
+		if (STACK_MEMORY_OOB(addr)) { 											\
+			if (PROCESS_MEMORY_OOB(addr)) {              						\
+				CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);      	\
+			} 																	\
+		}                                                                      	\
+	} while (0)
 
 
-#define mem_write_check(T, addr) 											\
-do {                                      									\
-    if ((addr) % sizeof(T) != 0) {                                         	\
-        CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  	\
-    }                                                                      	\
-	if (STACK_MEMORY_OOB(addr)) {											\
-		if (PROCESS_MEMORY_OOB(addr)) {              						\							 
-			CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);     \
-		} 																	\
-	}                                                                      	\
-} while (0)
+#define mem_write_check(T, addr) 												\
+	do {                                      									\
+		if ((addr) % sizeof(T) != 0) {                                         	\
+			CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  	\
+		}                                                                      	\
+		if (STACK_MEMORY_OOB(addr)) {											\
+			if (PROCESS_MEMORY_OOB(addr)) {										\
+				CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);		\
+			} 																	\
+		}                                                                      	\
+	} while (0)
 
 
 #define unwrap_opcall(hdl_idx) 									\
