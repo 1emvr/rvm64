@@ -1,16 +1,22 @@
 #ifndef VMRWX_HPP
 #define VMRWX_HPP
 
+#ifdef DEBUG
+#define DEBUGBREAK __debugbreak()
+#else
+#define DEBUGBREAK
+#endif
+
+
 #define PROCESS_MEMORY_OOB(addr)  										\
 	((addr) < (uintptr_t)vmcs->process.address || 						\
 	 (addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size))
+
 
 #define STACK_MEMORY_OOB(addr) 											\
 	((addr) < (uintptr_t)vmcs->vstack || 								\
 	 (addr) >= (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
 
-#ifdef DEBUG
-#define DEBUGBREAK __debugbreak()
 
 #define mem_read_check(T, addr)  											\
 do {                                       									\
@@ -34,47 +40,14 @@ do {                                      									\
 } while (0)
 
 
-#define reg_read_check(reg_idx)												\
-	if ((reg_idx) > regenum::t6) {											\
-		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, reg_idx, 1);	\
-	}
-
-
-#define reg_write_check(reg_idx)											\
-	if ((reg_idx) == regenum::zr || (reg_idx) > regenum::t6) {				\
-		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, reg_idx, 1);	\
-	}
-
-
-#define scr_access_check(scr_idx)											\
-	if ((scr_idx) > screnum::imm) {											\
-		CSR_SET_TRAP(vmcs->pc, instruction_access_fault, 0, scr_idx, 1);	\
-	}
-
-
-#define	opcall_check(hdl_idx)												\
-	if ((hdl_idx) > 255) {													\
-		CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, hdl_idx, 1);			\
-	}
-
-#else
-#define DEBUGBREAK
-#define mem_read_check(T, addr)		{}
-#define mem_write_check(T, addr)	{}
-#define reg_read_check(reg_idx)		{}
-#define reg_write_check(reg_idx)	{}
-#define scr_access_check(scr_idx)	{}
-#define	opcall_check(hdl_idx)		{}
-#endif
-
 #define unwrap_opcall(hdl_idx) 									\
 	do { 														\
-		opcall_check(hdl_idx);									\
 		uintptr_t a = ((uintptr_t*)dispatch_table)[hdl_idx];	\
 		uintptr_t b = rvm64::crypt::decrypt_ptr((uintptr_t)a);	\
 		void (*fn)() = (void (*)())(b);							\
 		fn();													\
 	} while(0)
+
 
 #define mem_read(T, retval, addr)  								\
 	do {														\
@@ -82,33 +55,36 @@ do {                                      									\
 		retval = *(T *)((uintptr_t)addr); 						\
 	} while(0)
 
+
 #define mem_write(T, addr, value)  								\
 	do {														\
 		mem_write_check(T, ((uintptr_t)addr));					\
 		*(T *)((uintptr_t)addr) = value;  						\
 	} while(0)
 
+
 #define reg_read(T, dst, reg_idx) 								\
 	do { 														\
-		reg_read_check(reg_idx);								\
 		dst = (T)vmcs->vregs[(reg_idx)];						\
 	} while(0)
 
+
 #define reg_write(T, reg_idx, src) 								\
 	do { 														\
-		reg_write_check(reg_idx);								\
-		vmcs->vregs[(reg_idx)] = (T)(src);						\
+		if (reg_idx != 0) { 									\
+			vmcs->vregs[(reg_idx)] = (T)(src);					\
+		} 														\
 	} while(0)
+
 
 #define scr_read(T, dst, scr_idx) 								\
 	do { 														\
-		scr_access_check(scr_idx);								\
 		dst = (T)vmcs->vscratch[(scr_idx)];						\
 	} while(0)
 
+
 #define scr_write(T, scr_idx, src) 								\
 	do { 														\
-		scr_access_check(scr_idx);								\
 		vmcs->vscratch[(scr_idx)] = (T)(src);					\
 	} while(0)
 #endif // VMRWX_HPP
