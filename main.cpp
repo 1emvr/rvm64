@@ -60,14 +60,14 @@ defer:
 };
 
 namespace rvm64 {
-	_native int64_t vm_main() {
+	_native int vm_main() {
 		vmcs_t vm_instance = { };
 		vmcs = &vm_instance;
 
 		rvm64::rvni::resolve_ucrt_imports();
 		rvm64::entry::vm_entry();
 
-		return (int64_t)vmcs->csr.m_cause;
+		return vmcs->csr.m_cause;
 	}
 };
 
