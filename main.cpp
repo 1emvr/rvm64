@@ -55,7 +55,6 @@ namespace rvm64::entry {
 defer:
 		vm_exit();
 		restore_host_context();
-
 		return;
 	}
 };
