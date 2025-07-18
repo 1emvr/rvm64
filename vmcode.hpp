@@ -80,6 +80,7 @@ namespace rvm64::decoder {
 			case itype: 
 			{
 				uint8_t func3 = (opcode >> 12) & 0x7;
+				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
 				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
 
 				switch(opcode7) {
@@ -144,9 +145,9 @@ namespace rvm64::decoder {
 
 			case rtype: 
 			{
-				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
-				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
 				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
+				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
+				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
 
 				switch(opcode7) {
 					case 0b1010011: 
