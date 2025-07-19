@@ -2064,7 +2064,9 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(intptr_t, offset, imm);
 			reg_write(uintptr_t, _rd, vmcs->pc + 4);
+
 			vmcs->pc += offset;
+			CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
 		}
 	}
 
