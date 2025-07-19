@@ -138,6 +138,12 @@ namespace rvm64::decoder {
 						}
 						break;
 					}
+					case 0b1100111:
+					{
+						switch(func3) {
+							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_jalr); break; }
+						}
+					}
 					default: break;
 				}
 				break;
