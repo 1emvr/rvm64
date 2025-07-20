@@ -231,6 +231,7 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
+		void *win_func		= 0;
 		auto rela_entries 	= (elf64_rela*) (process + rela_plt_vaddr);
 		auto symtab 		= (elf64_sym*) (process + symtab_vaddr);
 		auto strtab 		= (const char*) (process + strtab_vaddr);
@@ -246,7 +247,8 @@ namespace rvm64::elf {
 			if (rel_type != R_RISCV_JUMP_SLOT && rel_type != R_RISCV_CALL_PLT) {
 				continue;
 			}
-			void *win_func = rvm64::rvni::windows_thunk_resolver(sym_name);
+
+			win_func = rvm64::rvni::windows_thunk_resolver(sym_name);
 			if (!win_func) {
 				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)sym_name, 1);
 			}
@@ -258,16 +260,6 @@ namespace rvm64::elf {
 		if (ehdr->e_shstrndx != SHN_UNDEF) {
 			auto& strtab_hdr = shdrs[ehdr->e_shstrndx];
 			strtab = (const char*)(process + strtab_hdr.sh_offset);
-		}
-
-		for (int i = 0; i < ehdr->e_shnum; ++i) {
-			const auto& shdr = shdrs[i]; 
-
-			if (shdr.sh_type == SHT_PROGBITS && strcmp(strtab + shdr.sh_name, ".plt") == 0) {
-				vmcs->process.plt.start = shdr.sh_addr;
-				vmcs->process.plt.end   = shdr.sh_addr + shdr.sh_size;
-				break;
-			}
 		}
 	}
 
