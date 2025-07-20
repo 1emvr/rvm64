@@ -231,13 +231,13 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		void *win_func		= 0;
 		auto rela_entries 	= (elf64_rela*) (process + rela_plt_vaddr);
 		auto symtab 		= (elf64_sym*) (process + symtab_vaddr);
 		auto strtab 		= (const char*) (process + strtab_vaddr);
 		size_t rela_count 	= rela_plt_size / sizeof(elf64_rela);
 
 		for (size_t i = 0; i < rela_count; ++i) {
+			void *win_func = 0;
 			uint32_t sym_idx = ELF64_R_SYM(rela_entries[i].r_info);
 			uint32_t rel_type = ELF64_REL_TYPE(rela_entries[i].r_info);
 
@@ -245,7 +245,7 @@ namespace rvm64::elf {
 			const char *sym_name = strtab + symtab[sym_idx].st_name;
 
 			if (rel_type != R_RISCV_JUMP_SLOT && rel_type != R_RISCV_CALL_PLT) {
-				continue;
+				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)sym_name, 1);
 			}
 
 			win_func = rvm64::rvni::windows_thunk_resolver(sym_name);
