@@ -60,18 +60,18 @@ namespace rvm64::rvni {
 			wrap.type = f.type;
 
 			switch (wrap.type) {
-				case ucrt_wrapper::PLT_OPEN:    wrap.open = (decltype(wrap.open))native; break;
-				case ucrt_wrapper::PLT_READ:    wrap.read = (decltype(wrap.read))native; break;
-				case ucrt_wrapper::PLT_WRITE:   wrap.write = (decltype(wrap.write))native; break;
-				case ucrt_wrapper::PLT_CLOSE:   wrap.close = (decltype(wrap.close))native; break;
-				case ucrt_wrapper::PLT_LSEEK:   wrap.lseek = (decltype(wrap.lseek))native; break;
-				case ucrt_wrapper::PLT_STAT64:  wrap.stat64 = (decltype(wrap.stat64))native; break;
-				case ucrt_wrapper::PLT_MALLOC:  wrap.malloc = (decltype(wrap.malloc))native; break;
-				case ucrt_wrapper::PLT_FREE:    wrap.free = (decltype(wrap.free))native; break;
-				case ucrt_wrapper::PLT_MEMCPY:  wrap.memcpy = (decltype(wrap.memcpy))native; break;
-				case ucrt_wrapper::PLT_MEMSET:  wrap.memset = (decltype(wrap.memset))native; break;
-				case ucrt_wrapper::PLT_STRLEN:  wrap.strlen = (decltype(wrap.strlen))native; break;
-				case ucrt_wrapper::PLT_STRCPY:  wrap.strcpy = (decltype(wrap.strcpy))native; break;
+				case ucrt_wrapper::PLT_OPEN:    wrap.typecaster.open = (decltype(wrap.typecaster.open))native; break;
+				case ucrt_wrapper::PLT_READ:    wrap.typecaster.read = (decltype(wrap.typecaster.read))native; break;
+				case ucrt_wrapper::PLT_WRITE:   wrap.typecaster.write = (decltype(wrap.typecaster.write))native; break;
+				case ucrt_wrapper::PLT_CLOSE:   wrap.typecaster.close = (decltype(wrap.typecaster.close))native; break;
+				case ucrt_wrapper::PLT_LSEEK:   wrap.typecaster.lseek = (decltype(wrap.typecaster.lseek))native; break;
+				case ucrt_wrapper::PLT_STAT64:  wrap.typecaster.stat64 = (decltype(wrap.typecaster.stat64))native; break;
+				case ucrt_wrapper::PLT_MALLOC:  wrap.typecaster.malloc = (decltype(wrap.typecaster.malloc))native; break;
+				case ucrt_wrapper::PLT_FREE:    wrap.typecaster.free = (decltype(wrap.typecaster.free))native; break;
+				case ucrt_wrapper::PLT_MEMCPY:  wrap.typecaster.memcpy = (decltype(wrap.typecaster.memcpy))native; break;
+				case ucrt_wrapper::PLT_MEMSET:  wrap.typecaster.memset = (decltype(wrap.typecaster.memset))native; break;
+				case ucrt_wrapper::PLT_STRLEN:  wrap.typecaster.strlen = (decltype(wrap.typecaster.strlen))native; break;
+				case ucrt_wrapper::PLT_STRCPY:  wrap.typecaster.strcpy = (decltype(wrap.typecaster.strcpy))native; break;
 				default: {
 					CSR_SET_TRAP(nullptr, image_bad_symbol, 0, 0, 1);
 				}
@@ -97,7 +97,7 @@ namespace rvm64::rvni {
 				reg_read(int, flags, regenum::a1);
 				reg_read(int, mode, regenum::a2);
 
-				int result = plt.open(pathname, flags, mode);
+				int result = plt.typecaster.open(pathname, flags, mode);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -110,7 +110,7 @@ namespace rvm64::rvni {
 				reg_read(void*, buf, regenum::a1);
 				reg_read(unsigned int, count, regenum::a2);
 
-				int result = plt.read(fd, buf, count);
+				int result = plt.typecaster.read(fd, buf, count);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -123,7 +123,7 @@ namespace rvm64::rvni {
 				reg_read(void*, buf, regenum::a1);
 				reg_read(unsigned int, count, regenum::a2);
 
-				int result = plt.write(fd, buf, count);
+				int result = plt.typecaster.write(fd, buf, count);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -131,7 +131,7 @@ namespace rvm64::rvni {
 				int fd = 0;
 				reg_read(int, fd, regenum::a0);
 
-				int result = plt.close(fd);
+				int result = plt.typecaster.close(fd);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -144,7 +144,7 @@ namespace rvm64::rvni {
 				reg_read(long, offset, regenum::a1);
 				reg_read(int, whence, regenum::a2);
 
-				long result = plt.lseek(fd, offset, whence);
+				long result = plt.typecaster.lseek(fd, offset, whence);
 				reg_write(long, regenum::a0, result);
 				break;
 			}
@@ -155,7 +155,7 @@ namespace rvm64::rvni {
 				reg_read(const char*, pathname, regenum::a0);
 				reg_read(void*, statbuf, regenum::a1);
 
-				int result = plt.stat64(pathname, statbuf);
+				int result = plt.typecaster.stat64(pathname, statbuf);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -163,7 +163,7 @@ namespace rvm64::rvni {
 				size_t size = 0;
 				reg_read(size_t, size, regenum::a0);
 
-				void* result = plt.malloc(size);
+				void* result = plt.typecaster.malloc(size);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
@@ -171,7 +171,7 @@ namespace rvm64::rvni {
 				void *ptr;
 				reg_read(void*, ptr, regenum::a0);
 
-				plt.free(ptr);
+				plt.typecaster.free(ptr);
 				break;
 			}
 			case ucrt_wrapper::PLT_MEMCPY: {
@@ -182,7 +182,7 @@ namespace rvm64::rvni {
 				reg_read(void*, src, regenum::a1);
 				reg_read(size_t, n, regenum::a2);
 
-				void* result = plt.memcpy(dest, src, n);
+				void* result = plt.typecaster.memcpy(dest, src, n);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
@@ -195,7 +195,7 @@ namespace rvm64::rvni {
 				reg_read(int, value, regenum::a1);
 				reg_read(size_t, n, regenum::a2);
 
-				void* result = plt.memset(dest, value, n);
+				void* result = plt.typecaster.memset(dest, value, n);
 				reg_write(uint64_t, regenum::a0, result);
 				break;
 			}
@@ -203,7 +203,7 @@ namespace rvm64::rvni {
 				char *s;
 				reg_read(char*, s, regenum::a0);
 
-				size_t result = plt.strlen(s);
+				size_t result = plt.typecaster.strlen(s);
 				reg_write(size_t, regenum::a0, result);
 				break;
 			}
@@ -213,7 +213,7 @@ namespace rvm64::rvni {
 				reg_read(char*, dest, regenum::a0);
 				reg_read(char*, src, regenum::a1);
 
-				char* result = plt.strcpy(dest, src);
+				char* result = plt.typecaster.strcpy(dest, src);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
