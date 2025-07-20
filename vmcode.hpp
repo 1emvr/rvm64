@@ -941,7 +941,7 @@ namespace rvm64::operations {
 			reg_write(uintptr_t, _rd, vmcs->pc);
 			vmcs->pc = address;
 
-			if (vmcs->pc >= vmcs->process.plt.start && vmcs->pc < vmcs->process.plt.end) {
+			if (PROCESS_MEMORY_OOB(vmcs->pc)) {
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
 		}

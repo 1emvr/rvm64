@@ -97,7 +97,7 @@ namespace rvm64::rvni {
 				reg_read(int, flags, regenum::a1);
 				reg_read(int, mode, regenum::a2);
 
-				SAVE_VM_CONTEXT(int result = plt.open(pathname, flags, mode));
+				int result = plt.open(pathname, flags, mode);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -110,7 +110,7 @@ namespace rvm64::rvni {
 				reg_read(void*, buf, regenum::a1);
 				reg_read(unsigned int, count, regenum::a2);
 
-				SAVE_VM_CONTEXT(int result = plt.read(fd, buf, count));
+				int result = plt.read(fd, buf, count);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -123,7 +123,7 @@ namespace rvm64::rvni {
 				reg_read(void*, buf, regenum::a1);
 				reg_read(unsigned int, count, regenum::a2);
 
-				SAVE_VM_CONTEXT(int result = plt.write(fd, buf, count));
+				int result = plt.write(fd, buf, count);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -131,7 +131,7 @@ namespace rvm64::rvni {
 				int fd = 0;
 				reg_read(int, fd, regenum::a0);
 
-				SAVE_VM_CONTEXT(int result = plt.close(fd));
+				int result = plt.close(fd);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -144,7 +144,7 @@ namespace rvm64::rvni {
 				reg_read(long, offset, regenum::a1);
 				reg_read(int, whence, regenum::a2);
 
-				SAVE_VM_CONTEXT(long result = plt.lseek(fd, offset, whence));
+				long result = plt.lseek(fd, offset, whence);
 				reg_write(long, regenum::a0, result);
 				break;
 			}
@@ -155,7 +155,7 @@ namespace rvm64::rvni {
 				reg_read(const char*, pathname, regenum::a0);
 				reg_read(void*, statbuf, regenum::a1);
 
-				SAVE_VM_CONTEXT(int result = plt.stat64(pathname, statbuf));
+				int result = plt.stat64(pathname, statbuf);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -163,7 +163,7 @@ namespace rvm64::rvni {
 				size_t size = 0;
 				reg_read(size_t, size, regenum::a0);
 
-				SAVE_VM_CONTEXT(void* result = plt.malloc(size));
+				void* result = plt.malloc(size);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
@@ -171,7 +171,7 @@ namespace rvm64::rvni {
 				void *ptr;
 				reg_read(void*, ptr, regenum::a0);
 
-				SAVE_VM_CONTEXT(plt.free(ptr));
+				plt.free(ptr);
 				break;
 			}
 			case ucrt_wrapper::PLT_MEMCPY: {
@@ -182,7 +182,7 @@ namespace rvm64::rvni {
 				reg_read(void*, src, regenum::a1);
 				reg_read(size_t, n, regenum::a2);
 
-				SAVE_VM_CONTEXT(void* result = plt.memcpy(dest, src, n));
+				void* result = plt.memcpy(dest, src, n);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
@@ -195,7 +195,7 @@ namespace rvm64::rvni {
 				reg_read(int, value, regenum::a1);
 				reg_read(size_t, n, regenum::a2);
 
-				SAVE_VM_CONTEXT(void* result = plt.memset(dest, value, n));
+				void* result = plt.memset(dest, value, n);
 				reg_write(uint64_t, regenum::a0, result);
 				break;
 			}
@@ -203,7 +203,7 @@ namespace rvm64::rvni {
 				char *s;
 				reg_read(char*, s, regenum::a0);
 
-				SAVE_VM_CONTEXT(size_t result = plt.strlen(s));
+				size_t result = plt.strlen(s);
 				reg_write(size_t, regenum::a0, result);
 				break;
 			}
@@ -213,7 +213,7 @@ namespace rvm64::rvni {
 				reg_read(char*, dest, regenum::a0);
 				reg_read(char*, src, regenum::a1);
 
-				SAVE_VM_CONTEXT(char* result = plt.strcpy(dest, src));
+				char* result = plt.strcpy(dest, src);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}

@@ -1,0 +1,74 @@
+
+test.elf:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+00000000000013dc <main>:
+    13dc:	fd010113          	addi	sp,sp,-48
+    13e0:	02113423          	sd	ra,40(sp)
+    13e4:	02813023          	sd	s0,32(sp)
+    13e8:	03010413          	addi	s0,sp,48
+    13ec:	00010537          	lui	a0,0x10
+    13f0:	fff5051b          	addiw	a0,a0,-1 # ffff <_DYNAMIC+0xdb3f>
+    13f4:	fea42623          	sw	a0,-20(s0)
+    13f8:	00100073          	ebreak
+    13fc:	00400513          	li	a0,4
+    1400:	fca43823          	sd	a0,-48(s0)
+    1404:	07c000ef          	jal	1480 <malloc@plt>
+    1408:	fd043603          	ld	a2,-48(s0)
+    140c:	fea43023          	sd	a0,-32(s0)
+    1410:	00100073          	ebreak
+    1414:	fe043503          	ld	a0,-32(s0)
+    1418:	fec40593          	addi	a1,s0,-20
+    141c:	074000ef          	jal	1490 <memcpy@plt>
+    1420:	fd043603          	ld	a2,-48(s0)
+    1424:	00100073          	ebreak
+    1428:	fe043503          	ld	a0,-32(s0)
+    142c:	00000593          	li	a1,0
+    1430:	fcb43c23          	sd	a1,-40(s0)
+    1434:	06c000ef          	jal	14a0 <memset@plt>
+    1438:	00100073          	ebreak
+    143c:	fe043503          	ld	a0,-32(s0)
+    1440:	070000ef          	jal	14b0 <free@plt>
+    1444:	fd843503          	ld	a0,-40(s0)
+    1448:	02813083          	ld	ra,40(sp)
+    144c:	02013403          	ld	s0,32(sp)
+    1450:	03010113          	addi	sp,sp,48
+    1454:	00008067          	ret
+
+Disassembly of section .plt:
+
+0000000000001460 <malloc@plt-0x20>:
+    1460:	00002397          	auipc	t2,0x2
+    1464:	41c30333          	sub	t1,t1,t3
+    1468:	1103be03          	ld	t3,272(t2) # 3570 <_DYNAMIC+0x10b0>
+    146c:	fd430313          	addi	t1,t1,-44
+    1470:	11038293          	addi	t0,t2,272
+    1474:	00135313          	srli	t1,t1,0x1
+    1478:	0082b283          	ld	t0,8(t0)
+    147c:	000e0067          	jr	t3
+
+0000000000001480 <malloc@plt>:
+    1480:	00002e17          	auipc	t3,0x2
+    1484:	100e3e03          	ld	t3,256(t3) # 3580 <malloc>
+    1488:	000e0367          	jalr	t1,t3
+    148c:	00000013          	nop
+
+0000000000001490 <memcpy@plt>:
+    1490:	00002e17          	auipc	t3,0x2
+    1494:	0f8e3e03          	ld	t3,248(t3) # 3588 <memcpy>
+    1498:	000e0367          	jalr	t1,t3
+    149c:	00000013          	nop
+
+00000000000014a0 <memset@plt>:
+    14a0:	00002e17          	auipc	t3,0x2
+    14a4:	0f0e3e03          	ld	t3,240(t3) # 3590 <memset>
+    14a8:	000e0367          	jalr	t1,t3
+    14ac:	00000013          	nop
+
+00000000000014b0 <free@plt>:
+    14b0:	00002e17          	auipc	t3,0x2
+    14b4:	0e8e3e03          	ld	t3,232(t3) # 3598 <free>
+    14b8:	000e0367          	jalr	t1,t3
+    14bc:	00000013          	nop
