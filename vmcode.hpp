@@ -944,6 +944,7 @@ namespace rvm64::operations {
 			if (PROCESS_MEMORY_OOB(vmcs->pc)) {
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
+			// TODO: probably want to branch regardless
 		}
 
 		_vmcall void rv_flq() {
