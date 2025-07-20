@@ -222,9 +222,8 @@ namespace rvm64::rvni {
 			}
 		}
 
-		uintptr_t ret = 0;
-		reg_read(uintptr_t, ret, regenum::ra);
-		vmcs->pc = ret;
+		reg_read(uintptr_t, vmcs->pc, regenum::ra);
+		CSR_SET_TRAP(0, environment_branch, 0, 0, 0);
 	}
 }
 #endif // RVNI_H
