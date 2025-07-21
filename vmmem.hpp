@@ -95,12 +95,12 @@ namespace rvm64::memory {
 		return success;
 	}
 
-	_native bool memory_check() {
+	_native bool memory_check(uintptr_t addr) {
 		for (auto& rgn : native_exec_regions) {
 			auto start = rgn.base;
 			auto end = start + rgn.size;
 
-			if (vmcs->pc >= start && vmcs->pc < end) {
+			if (addr >= start && addr < end) {
 				return true;
 			}
 		}

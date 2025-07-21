@@ -952,9 +952,11 @@ namespace rvm64::operations {
 			vmcs->pc = address;
 
 			if (PROCESS_MEMORY_OOB(vmcs->pc)) {
-				rvm64::memory::memory_check(vmcs->pc) 
-					? CSR_SET_TRAP(vmcs->pc, environment_execute, 0, 0, 0)
-					: CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
+				if (rvm64::memory::memory_check(vmcs->pc)) {
+					CSR_SET_TRAP(vmcs->pc, environment_execute, 0, 0, 0);
+				} else {
+					CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
+				}
 			}
 
 			// NOTE: Don't add support for listing malloc (heap) pointers
