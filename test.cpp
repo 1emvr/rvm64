@@ -1,21 +1,18 @@
 #include <string.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 #define ebreak()  asm volatile("ebreak")
 
-// NOTE: do not mangle "main"
 extern "C" int main() {
-	constexpr int result = 0xFFFF;
+	void *buffer = mmap(nullptr, 2, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, 3, 0);
+	memset(buffer, 0, 2);
 
-	void *buffer = malloc(sizeof(int));
-	memset(buffer, 0, sizeof(int));
-
-	memcpy(buffer, &result, sizeof(int));
-	ebreak();
+	char code[1024] = { 0xcc, 0xc3 };
+	memcpy(buffer, &code, 2);
 
 	void (*fn)() = (void(*)())buffer;
 	fn();
 
-	free(buffer);
-
+	munmap(buffer, 2);
 	return 0;
 }
