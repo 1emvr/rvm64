@@ -28,7 +28,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		case environment_branch: 	LONGJMP(vmcs->trap_handler, true);
 		case environment_execute:   
 		{
-			// NOTE: jump to executable code in host memory (intel mode, __stdcall)
 			void (__stdcall *memory)() = (void(__stdcall*)())vmcs->pc;
 			memory();
 			break;

@@ -8,7 +8,7 @@ struct exec_region_t {
 	size_t size;
 };
 
-_data exec_region_t native_exec_regions[128];
+_data exec_region_t native_exec_regions[128] = { };
 _data size_t native_exec_count = 0;
 
 
@@ -61,28 +61,50 @@ namespace rvm64::memory {
 		VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE);
 	}
 
-	_native bool register_memory() {
-		// TODO: when calling mmap() passthru this function first.
-		bool success = true;
-		return success;
+	_native bool register_memory(uintptr_t base, size_t size) {
+		if (native_exec_count >= 128) {
+			return false;
+		}
+
+		native_exec_regions[native_exec_count++] = { base, size };
+		return true;
 	}
 
-	_native bool unregister_memory() {
-		// TODO: when calling munmap() passthru this function first.
-		bool success = true;
+	_native bool unrgnister_memory(uintptr_t base) {
+		bool success = false;
+		for (size_t i = 0; i < native_exec_count; ++i) {
+			if (native_exec_regions[i].base == base) {
+
+				for (size_t j = 0; j < native_exec_count - 1; ++j) {
+					native_exec_regions[j] = native_exec_regions[j + 1];
+				}
+				native_exec_regions[native_exec_count - 1] = { 0, 0 };
+				--native_exec_count;
+
+				success = true;
+				break;
+			}
+		}
 		return success;
 	}
 
 	_native bool modify_protection() {
-		// TODO: when calling mprot() passthru this function first.
 		bool success = true;
+		// TODO: when calling mprot() passthru this function first.
+		// NOTE: is this necessary? we could just use mprotect -> VirtualProtect and whatever happens, happens...
 		return success;
 	}
 
 	_native bool check_memory() {
-		// TODO: when calling on the target address, passthru this function to check.
-		bool success = true;
-		return success;
+		for (auto& rgn : native_exec_rgnions) {
+			auto start = rgn.base;
+			auto end = start + rgn.size;
+
+			if (vmcs->pc >= start && vmcs->pc < end) {
+				return true;
+			}
+		}
+		return false;
 	}
 };
 
