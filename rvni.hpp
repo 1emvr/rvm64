@@ -7,6 +7,22 @@
 #include "vmcommon.hpp"
 #include "vmrwx.hpp"
 
+constexpr const char *C_OPEN = "_open";
+constexpr const char *C_READ = "_read";
+constexpr const char *C_WRITE = "_write";
+constexpr const char *C_CLOSE = "_close";
+constexpr const char *C_LSEEK = "_lseek";
+constexpr const char *C_STAT64 = "_stat64";
+constexpr const char *C_MALLOC = "malloc";
+constexpr const char *C_FREE = "free";
+constexpr const char *C_MEMCPY = "memcpy";
+constexpr const char *C_MEMSET = "memset";
+constexpr const char *C_STRLEN = "strlen";
+constexpr const char *C_STRCPY = "strcpy";
+constexpr const char *C_MMAP = "mmap";
+constexpr const char *C_MUNMAP = "munmap";
+constexpr const char *C_MPROTECT = "mprotect";
+
 namespace rvm64::rvni {
 	struct ucrt_alias {
 		const char *original;
@@ -47,21 +63,21 @@ namespace rvm64::rvni {
 	};
 
 	_data ucrt_function ucrt_function_table[] = {
-		{ .address = 0, .name = "_open", 	.typenum = ucrt_function::OPEN		}, 
-		{ .address = 0, .name = "_read", 	.typenum = ucrt_function::READ		}, 
-		{ .address = 0, .name = "_write", 	.typenum = ucrt_function::WRITE 	}, 
-		{ .address = 0, .name = "_close", 	.typenum = ucrt_function::CLOSE 	},
-		{ .address = 0, .name = "_lseek", 	.typenum = ucrt_function::LSEEK 	}, 
-		{ .address = 0, .name = "_stat64", 	.typenum = ucrt_function::STAT64 	}, 
-		{ .address = 0, .name = "malloc", 	.typenum = ucrt_function::MALLOC 	}, 
-		{ .address = 0, .name = "free", 	.typenum = ucrt_function::FREE 		},
-		{ .address = 0, .name = "memcpy", 	.typenum = ucrt_function::MEMCPY 	}, 
-		{ .address = 0, .name = "memset", 	.typenum = ucrt_function::MEMSET 	}, 
-		{ .address = 0, .name = "strlen", 	.typenum = ucrt_function::STRLEN 	}, 
-		{ .address = 0, .name = "strcpy", 	.typenum = ucrt_function::STRCPY 	},
-		{ .address = 0, .name = "mmap", 	.typenum = ucrt_function::MMAP 		}, 
-		{ .address = 0, .name = "munmap", 	.typenum = ucrt_function::MUNMAP 	}, 
-		{ .address = 0, .name = "mprotect", .typenum = ucrt_function::MPROTECT 	},
+		{ .address = 0, .name = C_OPEN, 	.typenum = ucrt_function::OPEN		}, 
+		{ .address = 0, .name = C_READ, 	.typenum = ucrt_function::READ		}, 
+		{ .address = 0, .name = C_WRITE, 	.typenum = ucrt_function::WRITE 	}, 
+		{ .address = 0, .name = C_CLOSE, 	.typenum = ucrt_function::CLOSE 	},
+		{ .address = 0, .name = C_LSEEK, 	.typenum = ucrt_function::LSEEK 	}, 
+		{ .address = 0, .name = C_STAT64, 	.typenum = ucrt_function::STAT64 	}, 
+		{ .address = 0, .name = C_MALLOC, 	.typenum = ucrt_function::MALLOC 	}, 
+		{ .address = 0, .name = C_FREE, 	.typenum = ucrt_function::FREE 		},
+		{ .address = 0, .name = C_MEMCPY, 	.typenum = ucrt_function::MEMCPY 	}, 
+		{ .address = 0, .name = C_MEMSET, 	.typenum = ucrt_function::MEMSET 	}, 
+		{ .address = 0, .name = C_STRLEN, 	.typenum = ucrt_function::STRLEN 	}, 
+		{ .address = 0, .name = C_STRCPY, 	.typenum = ucrt_function::STRCPY 	},
+		{ .address = 0, .name = C_MMAP, 	.typenum = ucrt_function::MMAP 		}, 
+		{ .address = 0, .name = C_MUNMAP, 	.typenum = ucrt_function::MUNMAP 	}, 
+		{ .address = 0, .name = C_MPROTECT, .typenum = ucrt_function::MPROTECT 	},
 	};
 
 	_native void *resolve_ucrt_import(char *sym_name) {
@@ -121,16 +137,15 @@ namespace rvm64::rvni {
 	}
 
 	_vmcall void vm_native_call() {
-		void *address = nullptr;
-		ucrt_function api = { };
+		ucrt_function *api = nullptr;
 
 		for (auto &f : ucrt_function_table) {
 			if (vmcs->pc == f.address) {
-				api = f;
+				api = &f;
 				break;
 			}
 		}
-		if (!api.address) {
+		if (!api) {
 			CSR_SET_TRAP(vmcs->pc, image_bad_symbol, 0, vmcs->pc, 1);
 		}
 
