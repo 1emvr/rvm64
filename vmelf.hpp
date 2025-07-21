@@ -237,6 +237,7 @@ namespace rvm64::elf {
 		size_t rela_count 	= rela_plt_size / sizeof(elf64_rela);
 
 		for (size_t i = 0; i < rela_count; ++i) {
+			__debugbreak();
 			void *win_func = 0;
 			uint32_t sym_idx = ELF64_R_SYM(rela_entries[i].r_info);
 			uint32_t rel_type = ELF64_REL_TYPE(rela_entries[i].r_info);
@@ -244,6 +245,7 @@ namespace rvm64::elf {
 			auto reloc_addr = (uint64_t*) (process + rela_entries[i].r_offset);
 			const char *sym_name = strtab + symtab[sym_idx].st_name;
 
+			// TODO: some of the reltypes do not get covered and fail
 			if (rel_type != R_RISCV_JUMP_SLOT && rel_type != R_RISCV_CALL_PLT) {
 				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)sym_name, 1);
 			}
