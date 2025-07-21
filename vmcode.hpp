@@ -952,11 +952,12 @@ namespace rvm64::operations {
 			vmcs->pc = address;
 
 			if (PROCESS_MEMORY_OOB(vmcs->pc)) {
+				// TODO: when executing native code, needs to exit into host-mode (not executing risc-v), setting pc back to _rd when completed.
 				/*
-				 if (vmcs->pc in memory_list) {
-					CSR_SET_TRAP(vmcs->pc, environment_branch, 0, 0, 0);
-				 }
-				 * */
+				if (vmcs->pc in memory_list) {
+				   CSR_SET_TRAP(vmcs->pc, environment_branch, 0, 0, 0);
+				}
+				*/
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
 			// TODO: probably want to branch regardless
