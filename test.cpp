@@ -4,15 +4,17 @@
 #define ebreak()  asm volatile("ebreak")
 
 extern "C" int main() {
-	void *buffer = mmap(nullptr, 2, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, 3, 0);
-	memset(buffer, 0, 2);
+	char code[] = { 0xcc,0x55,0x48,0x89,0xe5,0x90,0x5d,0xc3,0xcc };
+	size_t size = sizeof(code);
 
-	char code[1024] = { 0xcc, 0xc3 };
-	memcpy(buffer, &code, 2);
+	void *buffer = mmap(nullptr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, 3, 0);
+
+	memset(buffer, 0, size);
+	memcpy(buffer, &code, size);
 
 	void (*fn)() = (void(*)())buffer;
 	fn();
 
-	munmap(buffer, 2);
+	munmap(buffer, sizeof(code));
 	return 0;
 }
