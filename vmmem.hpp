@@ -62,18 +62,21 @@ namespace rvm64::memory {
 	}
 
 	_native bool register_memory() {
-		// TODO: when calling mmap() passthru this function first.
-		return false;
+		// TODO: when calling mmap() or munmap() passthru this function first.
+		bool success = true;
+		return success;
 	}
 
 	_native bool modify_protection() {
 		// TODO: when calling mprot() passthru this function first.
-		return false;
+		bool success = true;
+		return success;
 	}
 
 	_native bool check_memory() {
 		// TODO: when calling on the target address, passthru this function to check.
-		return false;
+		bool success = true;
+		return success;
 	}
 };
 
