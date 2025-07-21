@@ -240,8 +240,6 @@ namespace rvm64::elf {
 		for (size_t i = 0; i < rela_count; ++i) {
 			void *win_func = 0;
 			uint32_t sym_idx = ELF64_R_SYM(rela_entries[i].r_info);
-
-			__debugbreak();
 			uint32_t rel_type = ELF64_REL_TYPE(rela_entries[i].r_info);
 
 			auto reloc_addr = (uint64_t*) (process + rela_entries[i].r_offset);
