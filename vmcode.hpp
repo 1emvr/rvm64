@@ -957,7 +957,7 @@ namespace rvm64::operations {
 					: CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
 
-			reg_read(uintptr_t, vmcs->pc, regenum::ra);
+			reg_read(uintptr_t, vmcs->pc, _rd);
 		}
 
 		_vmcall void rv_flq() {
