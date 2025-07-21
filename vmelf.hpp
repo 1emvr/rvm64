@@ -146,6 +146,12 @@ typedef struct {
 } elf64_phdr;
 
 typedef struct {
+    uintptr_t  	r_offset;  // 8 bytes: Where to apply the relocation
+    uintptr_t 	r_info;    // 8 bytes: Symbol + type
+    intptr_t 	r_addend; // 8 bytes: Addend to add to symbol value
+} elf64_rela;
+
+typedef struct {
     uint64_t r_offset;
     uint64_t r_info;
 } elf64_rela;
@@ -237,9 +243,10 @@ namespace rvm64::elf {
 		size_t rela_count 	= rela_plt_size / sizeof(elf64_rela);
 
 		for (size_t i = 0; i < rela_count; ++i) {
-			__debugbreak();
 			void *win_func = 0;
 			uint32_t sym_idx = ELF64_R_SYM(rela_entries[i].r_info);
+
+			__debugbreak();
 			uint32_t rel_type = ELF64_REL_TYPE(rela_entries[i].r_info);
 
 			auto reloc_addr = (uint64_t*) (process + rela_entries[i].r_offset);
