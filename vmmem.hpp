@@ -61,7 +61,7 @@ namespace rvm64::memory {
 		VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE);
 	}
 
-	_native bool register_memory(uintptr_t base, size_t size) {
+	_native bool memory_register(uintptr_t base, size_t size) {
 		if (native_exec_count >= 128) {
 			return false;
 		}
@@ -70,7 +70,7 @@ namespace rvm64::memory {
 		return true;
 	}
 
-	_native bool unrgnister_memory(uintptr_t base) {
+	_native bool memory_unregister(uintptr_t base) {
 		bool success = false;
 		for (size_t i = 0; i < native_exec_count; ++i) {
 			if (native_exec_regions[i].base == base) {
@@ -95,7 +95,7 @@ namespace rvm64::memory {
 		return success;
 	}
 
-	_native bool check_memory() {
+	_native bool memory_check() {
 		for (auto& rgn : native_exec_rgnions) {
 			auto start = rgn.base;
 			auto end = start + rgn.size;
