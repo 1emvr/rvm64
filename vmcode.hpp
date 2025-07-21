@@ -90,7 +90,9 @@ namespace rvm64::decoder {
 						switch (imm) {
 							case 0b000000000000: { unwrap_opcall(_rv_ecall); break; }
 							case 0b000000000001: { unwrap_opcall(_rv_ebreak); break; }
+							default: break;
 						}
+						break;
 					}
 					case 0b0010011: 
 					{
