@@ -12,6 +12,10 @@ namespace rvm64::rvni {
 		const char *original;
 		const char *alias;
 	};
+	_data ucrt_alias alias_table[] = {
+		{ "open",  "_open"  }, { "read",  "_read"  }, { "write", "_write" }, { "close", "_close" }, { "exit",  "_exit"  }, 
+		{ "mmap", "VirtualAlloc" }, { "munmap", "VirtualFree" }, { "mprotect", "VirtualProtect" }, 
+	};
 
 	struct ucrt_function {
 		void *address;
@@ -42,12 +46,7 @@ namespace rvm64::rvni {
 		} typecaster;
 	};
 
-	_data ucrt_alias alias_table[] = {
-		{ "open",  "_open"  }, { "read",  "_read"  }, { "write", "_write" }, { "close", "_close" }, { "exit",  "_exit"  }, 
-		{ "mmap", "VirtualAlloc" }, { "munmap", "VirtualFree" }, { "mprotect", "VirtualProtect" }, 
-	};
-
-	_data ucrt_function ucrt_native_table[] = {
+	_data ucrt_function ucrt_function_table[] = {
 		{ .address = 0, .name = "_open", 	.typenum = ucrt_function::OPEN		}, 
 		{ .address = 0, .name = "_read", 	.typenum = ucrt_function::READ		}, 
 		{ .address = 0, .name = "_write", 	.typenum = ucrt_function::WRITE 	}, 
@@ -93,8 +92,7 @@ namespace rvm64::rvni {
 			}
 		}
 
-		// function found, search the ucrt_native_table for matching name and set the address/typecaster
-		for (auto& f : ucrt_native_table) {
+		for (auto& f : ucrt_function_table) {
 			if (strcmp(f.name, orig_name) == 0) {
 				f.address = native;
 				 
@@ -126,7 +124,7 @@ namespace rvm64::rvni {
 		void *address = nullptr;
 		ucrt_function api = { };
 
-		for (auto &f : ucrt_native_table) {
+		for (auto &f : ucrt_function_table) {
 			if (vmcs->pc == f.address) {
 				api = f;
 				break;
