@@ -150,7 +150,8 @@ namespace rvm64::rvni {
 		}
 
 		switch (api.typenum) {
-			case ucrt_function::OPEN: {
+			case ucrt_function::OPEN: 
+			{
 				char *pathname;
 				int flags = 0, mode = 0;
 
@@ -162,7 +163,8 @@ namespace rvm64::rvni {
 				reg_write(int, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::READ: {
+			case ucrt_function::READ: 
+			{
 				int fd = 0;
 				void *buf;
 				unsigned int count = 0;
@@ -175,7 +177,8 @@ namespace rvm64::rvni {
 				reg_write(int, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::WRITE: {
+			case ucrt_function::WRITE: 
+			{
 				int fd = 0;
 				void *buf;
 				unsigned int count = 0;
@@ -188,7 +191,8 @@ namespace rvm64::rvni {
 				reg_write(int, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::CLOSE: {
+			case ucrt_function::CLOSE: 
+			{
 				int fd = 0;
 				reg_read(int, fd, regenum::a0);
 
@@ -196,7 +200,8 @@ namespace rvm64::rvni {
 				reg_write(int, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::LSEEK: {
+			case ucrt_function::LSEEK: 
+			{
 				int fd = 0;
 				long offset = 0;
 				int whence = 0;
@@ -209,7 +214,8 @@ namespace rvm64::rvni {
 				reg_write(long, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::STAT64: {
+			case ucrt_function::STAT64: 
+			{
 				const char *pathname;
 				void *statbuf;
 
@@ -220,7 +226,8 @@ namespace rvm64::rvni {
 				reg_write(int, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::MALLOC: {
+			case ucrt_function::MALLOC: 
+			{
 				size_t size = 0;
 				reg_read(size_t, size, regenum::a0);
 
@@ -228,14 +235,16 @@ namespace rvm64::rvni {
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::FREE: {
+			case ucrt_function::FREE: 
+			{
 				void *ptr;
 				reg_read(void*, ptr, regenum::a0);
 
 				api.typecaster.free(ptr);
 				break;
 			}
-			case ucrt_function::MEMCPY: {
+			case ucrt_function::MEMCPY: 
+			{
 				void *dest, *src;
 				size_t n = 0;
 
@@ -247,7 +256,8 @@ namespace rvm64::rvni {
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::MEMSET: {
+			case ucrt_function::MEMSET: 
+			{
 				void *dest;
 				int value = 0;
 				size_t n = 0;
@@ -260,7 +270,8 @@ namespace rvm64::rvni {
 				reg_write(uint64_t, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::STRLEN: {
+			case ucrt_function::STRLEN: 
+			{
 				char *s;
 				reg_read(char*, s, regenum::a0);
 
@@ -268,7 +279,8 @@ namespace rvm64::rvni {
 				reg_write(size_t, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::STRCPY: {
+			case ucrt_function::STRCPY: 
+			{
 				char *dest, *src;
 
 				reg_read(char*, dest, regenum::a0);
@@ -276,6 +288,47 @@ namespace rvm64::rvni {
 
 				char* result = api.typecaster.strcpy(dest, src);
 				reg_write(uintptr_t, regenum::a0, result);
+				break;
+			}
+			case ucrt_function::PLT_MMAP: 
+			{
+				void *addr;
+				size_t len;
+				DWORD prot, flags;
+
+				reg_read(void*, addr, regenum::a0);
+				reg_read(size_t, len, regenum::a1);
+				reg_read(DWORD, prot, regenum::a2);
+				reg_read(DWORD, flags, regenum::a3);
+
+				auto result = (api.typecaster.mmap)(addr, len, flags, prot);
+				reg_write(void*, regenum::a0, result);
+				break;
+			}
+			case ucrt_function::PLT_MUNMAP: 
+			{
+				void *addr;
+				size_t len;
+
+				reg_read(void*, addr, regenum::a0);
+				reg_read(size_t, len, regenum::a1);
+
+				auto result = (api.typecaster.munmap)(addr, 0, MEM_RELEASE);
+				reg_write(int, regenum::a0, result ? 0 : -1); // emulate 0=OK, -1=fail
+				break;
+			}
+			case ucrt_function::PLT_MPROTECT: 
+			{
+				void *addr;
+				size_t len;
+				DWORD prot = 0, old = 0;
+
+				reg_read(void*, addr, regenum::a0);
+				reg_read(size_t, len, regenum::a1);
+				reg_read(DWORD, prot, regenum::a2);
+
+				auto func = (api.typecaster.mprotect)(addr, len, prot, &old);
+				reg_write(int, regenum::a0, func ? 0 : -1);
 				break;
 			}
 			default: {
