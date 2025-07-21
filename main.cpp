@@ -64,9 +64,7 @@ namespace rvm64 {
 		vmcs_t vm_instance = { };
 		vmcs = &vm_instance;
 
-		rvm64::rvni::resolve_ucrt_imports();
 		rvm64::entry::vm_entry();
-
 		return vmcs->csr.m_cause;
 	}
 };

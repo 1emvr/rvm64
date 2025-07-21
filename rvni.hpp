@@ -35,15 +35,15 @@ namespace rvm64::rvni {
 
 	struct ucrt_function {
 		void *address;
-		char *name;
+		const char *name;
 
-		typedef enum {
+		enum {
 			OPEN, READ, WRITE, CLOSE, LSEEK, STAT64, MALLOC, FREE,
 			MEMCPY, MEMSET, STRLEN, STRCPY, MMAP, MUNMAP, MPROTECT,
 			UNKNOWN
 		} typenum;
 
-		typedef union {
+		union {
 			int (__cdecl*open)(char *, int, int);
 			int (__cdecl*read)(int, void *, unsigned int);
 			int (__cdecl*write)(int, void *, unsigned int);
@@ -80,7 +80,7 @@ namespace rvm64::rvni {
 		{ .address = 0, .name = C_MPROTECT, .typenum = ucrt_function::MPROTECT 	},
 	};
 
-	_native void *resolve_ucrt_import(char *sym_name) {
+	_native void *resolve_ucrt_import(const char *sym_name) {
 		static HMODULE ucrt = LoadLibraryA("ucrtbase.dll");
 		static HMODULE kern32 = LoadLibraryA("kernel32.dll");
 
@@ -88,16 +88,17 @@ namespace rvm64::rvni {
 			CSR_SET_TRAP(nullptr, image_bad_symbol, 0, 0, 1);
 		}
 
-		char *orig_name = nullptr;
+		const char *orig_name = (const char*)sym_name;
+		bool found = false;
 
 		for (auto& i : alias_table) {
 			if (strcmp(i.original, sym_name) == 0) {
-				orig_name = i.original;
-				sym_name = i.alias;
+				sym_name = (const char*)i.alias;
+				found = true;
 				break;
 			}
 		}
-		if (!orig_name) {
+		if (!found) {
 			CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)&sym_name, 1);
 		}
 
@@ -140,7 +141,7 @@ namespace rvm64::rvni {
 		ucrt_function *api = nullptr;
 
 		for (auto &f : ucrt_function_table) {
-			if (vmcs->pc == f.address) {
+			if (vmcs->pc == (uintptr_t)f.address) {
 				api = &f;
 				break;
 			}
@@ -149,7 +150,7 @@ namespace rvm64::rvni {
 			CSR_SET_TRAP(vmcs->pc, image_bad_symbol, 0, vmcs->pc, 1);
 		}
 
-		switch (api.typenum) {
+		switch (api->typenum) {
 			case ucrt_function::OPEN: 
 			{
 				char *pathname;
@@ -159,7 +160,7 @@ namespace rvm64::rvni {
 				reg_read(int, flags, regenum::a1);
 				reg_read(int, mode, regenum::a2);
 
-				int result = api.typecaster.open(pathname, flags, mode);
+				int result = api->typecaster.open(pathname, flags, mode);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -173,7 +174,7 @@ namespace rvm64::rvni {
 				reg_read(void*, buf, regenum::a1);
 				reg_read(unsigned int, count, regenum::a2);
 
-				int result = api.typecaster.read(fd, buf, count);
+				int result = api->typecaster.read(fd, buf, count);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -187,7 +188,7 @@ namespace rvm64::rvni {
 				reg_read(void*, buf, regenum::a1);
 				reg_read(unsigned int, count, regenum::a2);
 
-				int result = api.typecaster.write(fd, buf, count);
+				int result = api->typecaster.write(fd, buf, count);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -196,7 +197,7 @@ namespace rvm64::rvni {
 				int fd = 0;
 				reg_read(int, fd, regenum::a0);
 
-				int result = api.typecaster.close(fd);
+				int result = api->typecaster.close(fd);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -210,7 +211,7 @@ namespace rvm64::rvni {
 				reg_read(long, offset, regenum::a1);
 				reg_read(int, whence, regenum::a2);
 
-				long result = api.typecaster.lseek(fd, offset, whence);
+				long result = api->typecaster.lseek(fd, offset, whence);
 				reg_write(long, regenum::a0, result);
 				break;
 			}
@@ -222,7 +223,7 @@ namespace rvm64::rvni {
 				reg_read(const char*, pathname, regenum::a0);
 				reg_read(void*, statbuf, regenum::a1);
 
-				int result = api.typecaster.stat64(pathname, statbuf);
+				int result = api->typecaster.stat64(pathname, statbuf);
 				reg_write(int, regenum::a0, result);
 				break;
 			}
@@ -231,7 +232,7 @@ namespace rvm64::rvni {
 				size_t size = 0;
 				reg_read(size_t, size, regenum::a0);
 
-				void* result = api.typecaster.malloc(size);
+				void* result = api->typecaster.malloc(size);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
@@ -240,7 +241,7 @@ namespace rvm64::rvni {
 				void *ptr;
 				reg_read(void*, ptr, regenum::a0);
 
-				api.typecaster.free(ptr);
+				api->typecaster.free(ptr);
 				break;
 			}
 			case ucrt_function::MEMCPY: 
@@ -252,7 +253,7 @@ namespace rvm64::rvni {
 				reg_read(void*, src, regenum::a1);
 				reg_read(size_t, n, regenum::a2);
 
-				void* result = api.typecaster.memcpy(dest, src, n);
+				void* result = api->typecaster.memcpy(dest, src, n);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
@@ -266,7 +267,7 @@ namespace rvm64::rvni {
 				reg_read(int, value, regenum::a1);
 				reg_read(size_t, n, regenum::a2);
 
-				void* result = api.typecaster.memset(dest, value, n);
+				void* result = api->typecaster.memset(dest, value, n);
 				reg_write(uint64_t, regenum::a0, result);
 				break;
 			}
@@ -275,7 +276,7 @@ namespace rvm64::rvni {
 				char *s;
 				reg_read(char*, s, regenum::a0);
 
-				size_t result = api.typecaster.strlen(s);
+				size_t result = api->typecaster.strlen(s);
 				reg_write(size_t, regenum::a0, result);
 				break;
 			}
@@ -286,11 +287,11 @@ namespace rvm64::rvni {
 				reg_read(char*, dest, regenum::a0);
 				reg_read(char*, src, regenum::a1);
 
-				char* result = api.typecaster.strcpy(dest, src);
+				char* result = api->typecaster.strcpy(dest, src);
 				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::PLT_MMAP: 
+			case ucrt_function::MMAP: 
 			{
 				void *addr;
 				size_t len;
@@ -301,11 +302,11 @@ namespace rvm64::rvni {
 				reg_read(DWORD, prot, regenum::a2);
 				reg_read(DWORD, flags, regenum::a3);
 
-				auto result = (api.typecaster.mmap)(addr, len, flags, prot);
-				reg_write(void*, regenum::a0, result);
+				auto result = (uintptr_t)api->typecaster.mmap(addr, len, flags, prot);
+				reg_write(uintptr_t, regenum::a0, result);
 				break;
 			}
-			case ucrt_function::PLT_MUNMAP: 
+			case ucrt_function::MUNMAP: 
 			{
 				void *addr;
 				size_t len;
@@ -313,11 +314,11 @@ namespace rvm64::rvni {
 				reg_read(void*, addr, regenum::a0);
 				reg_read(size_t, len, regenum::a1);
 
-				auto result = (api.typecaster.munmap)(addr, 0, MEM_RELEASE);
+				auto result = api->typecaster.munmap(addr, 0, MEM_RELEASE);
 				reg_write(int, regenum::a0, result ? 0 : -1); // emulate 0=OK, -1=fail
 				break;
 			}
-			case ucrt_function::PLT_MPROTECT: 
+			case ucrt_function::MPROTECT: 
 			{
 				void *addr;
 				size_t len;
@@ -327,12 +328,12 @@ namespace rvm64::rvni {
 				reg_read(size_t, len, regenum::a1);
 				reg_read(DWORD, prot, regenum::a2);
 
-				auto func = (api.typecaster.mprotect)(addr, len, prot, &old);
+				auto func = (api->typecaster.mprotect)(addr, len, prot, &old);
 				reg_write(int, regenum::a0, func ? 0 : -1);
 				break;
 			}
 			default: {
-				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, api.typenum, 1);
+				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, api->typenum, 1);
 			}
 		}
 	}
