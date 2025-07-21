@@ -62,7 +62,13 @@ namespace rvm64::memory {
 	}
 
 	_native bool register_memory() {
-		// TODO: when calling mmap() or munmap() passthru this function first.
+		// TODO: when calling mmap() passthru this function first.
+		bool success = true;
+		return success;
+	}
+
+	_native bool unregister_memory() {
+		// TODO: when calling munmap() passthru this function first.
 		bool success = true;
 		return success;
 	}
