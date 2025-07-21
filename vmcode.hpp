@@ -952,6 +952,11 @@ namespace rvm64::operations {
 			vmcs->pc = address;
 
 			if (PROCESS_MEMORY_OOB(vmcs->pc)) {
+				/*
+				 if (vmcs->pc in memory_list) {
+					CSR_SET_TRAP(vmcs->pc, environment_branch, 0, 0, 0);
+				 }
+				 * */
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
 			// TODO: probably want to branch regardless
