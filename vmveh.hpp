@@ -28,6 +28,10 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		case environment_execute:   
 		{
 			// NOTE: jump to executable code in host memory (intel mode)
+			// unknown behavior when returning here.
+			void (*memory)() = (void(*)())vmcs->pc;
+			memory();
+			break;
 		}
 		case environment_call_native: 
 		{
