@@ -75,7 +75,7 @@ namespace rvm64::memory {
 		for (size_t i = 0; i < native_exec_count; ++i) {
 			if (native_exec_regions[i].base == base) {
 
-				for (size_t j = 0; j < native_exec_count - 1; ++j) {
+				for (size_t j = i; j < native_exec_count - 1; ++j) {
 					native_exec_regions[j] = native_exec_regions[j + 1];
 				}
 				native_exec_regions[native_exec_count - 1] = { 0, 0 };
@@ -96,7 +96,7 @@ namespace rvm64::memory {
 	}
 
 	_native bool memory_check() {
-		for (auto& rgn : native_exec_rgnions) {
+		for (auto& rgn : native_exec_regions) {
 			auto start = rgn.base;
 			auto end = start + rgn.size;
 
