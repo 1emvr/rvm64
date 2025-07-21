@@ -3,6 +3,14 @@
 #include "vmmain.hpp"
 #include "vmelf.hpp"
 
+struct exec_region_t {
+	uintptr_t base;
+	size_t size;
+};
+
+_data exec_region_t native_exec_regions[128];
+_data size_t native_exec_count = 0;
+
 namespace rvm64::memory {
     _vmcall void vm_set_load_rsv(int hart_id, uintptr_t address) {
         WaitForSingleObject(vmcs_mutex, INFINITE);
@@ -45,11 +53,15 @@ namespace rvm64::memory {
 
 	_native void memory_end() {
     	NTSTATUS status = 0;
-
 		if (vmcs->process.address == nullptr) {
 			return;
 		}
+
 		VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE);
+	}
+
+	_native void native_allocate() {
+
 	}
 };
 
