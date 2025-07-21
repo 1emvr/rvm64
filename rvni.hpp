@@ -264,7 +264,7 @@ namespace rvm64::rvni {
 				break;
 			}
 			default: {
-				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, plt.type, 1);
+				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, api.typenum, 1);
 			}
 		}
 	}
