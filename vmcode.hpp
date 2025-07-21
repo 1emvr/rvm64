@@ -957,6 +957,7 @@ namespace rvm64::operations {
 					: CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
 
+			// NOTE: Don't add support for listing malloc (heap) pointers
 			reg_read(uintptr_t, vmcs->pc, _rd);
 		}
 

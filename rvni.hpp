@@ -16,6 +16,7 @@ namespace rvm64::rvni {
 		{ "close", "_close" }, { "exit",  "_exit"  },
 	};
 
+	// TODO: add support for mmap, munmap, mprotect
 	_data ucrt_function unresolved[] = {
 		{"_open", ucrt_wrapper::PLT_OPEN}, {"_read", ucrt_wrapper::PLT_READ}, {"_write", ucrt_wrapper::PLT_WRITE}, {"_close", ucrt_wrapper::PLT_CLOSE},
 		{"_lseek", ucrt_wrapper::PLT_LSEEK}, {"_stat64", ucrt_wrapper::PLT_STAT64}, {"malloc", ucrt_wrapper::PLT_MALLOC}, {"free", ucrt_wrapper::PLT_FREE},
