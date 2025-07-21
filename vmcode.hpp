@@ -84,6 +84,14 @@ namespace rvm64::decoder {
 				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
 
 				switch(opcode7) {
+					case 0b1110011:
+					{
+						auto imm = imm_i(opcode);
+						switch (imm) {
+							case 0b000000000000: { unwrap_opcall(_rv_ecall); break; }
+							case 0b000000000001: { unwrap_opcall(_rv_ebreak); break; }
+						}
+					}
 					case 0b0010011: 
 					{
 						switch(func3) {
@@ -983,7 +991,7 @@ namespace rvm64::operations {
 			   RaiseException(Breakpoint)
 			   */
 
-			CSR_SET_TRAP(vmcs->pc, breakpoint, 0, vmcs->pc, 0);
+			__debugbreak();
 		}
 
 		// NOTE: csr operations aren't needed rn.
