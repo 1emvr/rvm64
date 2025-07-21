@@ -61,12 +61,19 @@ namespace rvm64::memory {
 		VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE);
 	}
 
-	_native void register_memory() {
+	_native bool register_memory() {
 		// TODO: when calling mmap() passthru this function first.
+		return false;
 	}
 
-	_native void modify_protection() {
+	_native bool modify_protection() {
 		// TODO: when calling mprot() passthru this function first.
+		return false;
+	}
+
+	_native bool check_memory() {
+		// TODO: when calling on the target address, passthru this function to check.
+		return false;
 	}
 };
 

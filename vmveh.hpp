@@ -3,6 +3,7 @@
 #include <setjmp.h>
 
 #include "vmmain.hpp"
+#include "vmmem.hpp"
 #include "rvni.hpp"
 
 
@@ -28,7 +29,10 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		case environment_execute:   
 		{
 			// NOTE: jump to executable code in host memory (intel mode)
-			// unknown behavior when returning here.
+			// if (rvm64::memory::check_memory(memory)) {
+			//	 memory();
+			// }
+
 			void (*memory)() = (void(*)())vmcs->pc;
 			memory();
 			break;
