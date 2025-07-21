@@ -88,29 +88,24 @@ namespace rvm64::rvni {
 			CSR_SET_TRAP(nullptr, image_bad_symbol, 0, 0, 1);
 		}
 
-		const char *orig_name = (const char*)sym_name;
-		bool found = false;
+		const char *alias_name = sym_name;
 
 		for (auto& i : alias_table) {
-			if (strcmp(i.original, sym_name) == 0) {
-				sym_name = (const char*)i.alias;
-				found = true;
+			if (strcmp(sym_name, i.original) == 0) {
+				alias_name = (const char*)i.alias;
 				break;
 			}
 		}
-		if (!found) {
-			CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)&sym_name, 1);
-		}
 
-		void* native = (void*)GetProcAddress(ucrt, sym_name);
+		void* native = (void*)GetProcAddress(ucrt, alias_name);
 		if (!native) {
-			if (!(native = (void*)GetProcAddress(kern32, sym_name))) {
-				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)&sym_name, 1);
+			if (!(native = (void*)GetProcAddress(kern32, alias_name))) {
+				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)alias_name, 1);
 			}
 		}
 
 		for (auto& f : ucrt_function_table) {
-			if (strcmp(f.name, orig_name) == 0) {
+			if (strcmp(sym_name, f.name) == 0) {
 				f.address = native;
 				 
 				switch (f.typenum) {
@@ -131,6 +126,7 @@ namespace rvm64::rvni {
 					case ucrt_function::MPROTECT:	f.typecaster.mprotect 	= (decltype(f.typecaster.mprotect))native; break;
 					default:  CSR_SET_TRAP(nullptr, image_bad_symbol, 0, 0, 1);
 				}
+				break;
 			}
 		}
 
