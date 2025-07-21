@@ -11,6 +11,7 @@ struct exec_region_t {
 _data exec_region_t native_exec_regions[128];
 _data size_t native_exec_count = 0;
 
+
 namespace rvm64::memory {
     _vmcall void vm_set_load_rsv(int hart_id, uintptr_t address) {
         WaitForSingleObject(vmcs_mutex, INFINITE);
@@ -60,8 +61,12 @@ namespace rvm64::memory {
 		VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE);
 	}
 
-	_native void native_allocate() {
+	_native void register_memory() {
+		// TODO: when calling mmap() passthru this function first.
+	}
 
+	_native void modify_protection() {
+		// TODO: when calling mprot() passthru this function first.
 	}
 };
 
