@@ -25,6 +25,10 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 	switch (vmcs->csr.m_cause) {
 		case environment_exit: 		LONGJMP(vmcs->exit_handler, true);
 		case environment_branch: 	LONGJMP(vmcs->trap_handler, true);
+		case environment_execute:   
+		{
+			// NOTE: jump to executable code in host memory (intel mode)
+		}
 		case environment_call_native: 
 		{
 			rvm64::rvni::vm_native_call();

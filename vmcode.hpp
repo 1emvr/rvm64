@@ -955,7 +955,7 @@ namespace rvm64::operations {
 				// TODO: when executing native code, needs to exit into host-mode (not executing risc-v), setting pc back to _rd when completed.
 				/*
 				if (vmcs->pc in memory_list) {
-				   CSR_SET_TRAP(vmcs->pc, environment_branch, 0, 0, 0);
+				   CSR_SET_TRAP(vmcs->pc, environment_execute, 0, 0, 0);
 				}
 				*/
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);

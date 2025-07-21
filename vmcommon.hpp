@@ -96,7 +96,7 @@ enum causenum {
 	image_bad_symbol = 0xb025,
 	image_bad_load = 0xb026,
 	image_bad_type = 0xb027,
-	designated_for_custom_use_5 = 0xb028,
+	environment_execute = 0xb028,
 	designated_for_custom_use_6 = 0xb029,
 	environment_branch = 0xb030,
 	environment_exit = 0xb031,
