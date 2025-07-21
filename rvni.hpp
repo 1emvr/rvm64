@@ -221,9 +221,6 @@ namespace rvm64::rvni {
 				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, plt.type, 1);
 			}
 		}
-
-		reg_read(uintptr_t, vmcs->pc, regenum::ra);
-		CSR_SET_TRAP(0, environment_branch, 0, 0, 0);
 	}
 }
 #endif // RVNI_H

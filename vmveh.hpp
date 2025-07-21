@@ -29,10 +29,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		case environment_execute:   
 		{
 			// NOTE: jump to executable code in host memory (intel mode)
-			// if (rvm64::memory::check_memory(memory)) {
-			//	 memory();
-			// }
-
 			void (*memory)() = (void(*)())vmcs->pc;
 			memory();
 			break;
