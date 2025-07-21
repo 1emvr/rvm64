@@ -152,11 +152,6 @@ typedef struct {
 } elf64_rela;
 
 typedef struct {
-    uint64_t r_offset;
-    uint64_t r_info;
-} elf64_rela;
-
-typedef struct {
     uint32_t st_name;
     uint8_t  st_info;
     uint8_t  st_other;
