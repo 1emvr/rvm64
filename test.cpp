@@ -12,6 +12,7 @@ extern "C" int main() {
 	memset(buffer, 0, size);
 	memcpy(buffer, &code, size);
 
+	ebreak();
 	void (*fn)() = (void(*)())buffer;
 	fn();
 
