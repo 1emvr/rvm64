@@ -238,6 +238,7 @@ namespace rvm64::rvni {
 				reg_read(void*, ptr, regenum::a0);
 
 				api->typecaster.free(ptr);
+				reg_write(uintptr_t, regenum::a0, 0);
 				break;
 			}
 			case ucrt_function::MEMCPY: 
