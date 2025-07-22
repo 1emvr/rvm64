@@ -306,10 +306,12 @@ namespace rvm64::rvni {
 					reg_write(int, regenum::a0, -1);
 					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_mem, 1);
 				} 
+				if (!rvm64::mmu::memory_register(guest_mem, host_mem, len)) {
+					reg_write(int, regenum::a0, -1);
+					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, guest_mem, 1);
+				}
 
-				rvm64::mmu::memory_register(guest_mem, host_mem, len);
 				reg_write(uintptr_t, regenum::a0, guest_mem);
-
 				break;
 			}
 			case ucrt_function::MUNMAP: 
@@ -328,8 +330,8 @@ namespace rvm64::rvni {
 					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_mem, 1);
 				} 
 
-				int result = api->typecaster.munmap(host_mem, len);
 				rvm64::mmu::memory_unregister(guest_mem);
+				int result = api->typecaster.munmap(host_mem, len);
 
 				reg_write(int, regenum::a0, result ? 0 : -1);
 				break;
