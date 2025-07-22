@@ -43,7 +43,7 @@ namespace rvm64::mmu {
 		for (const auto& entry : native_exec_regions) {
 			if (guest >= entry.guest_addr && guest < entry.guest_addr + entry.length) {
 				uintptr_t offset = guest - entry.guest_addr;
-				return (uint8_t*) entry.host_addr + offset;
+				return (uint8_t*) entry.host_addr + offset; // risc-v usable address for calculating non-zero offsets
 			}
 		}
 		return nullptr;

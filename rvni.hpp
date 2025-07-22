@@ -301,10 +301,9 @@ namespace rvm64::rvni {
 				void *guest_mem = addr;
 				void *host_mem = api->typecaster.mmap(0, len, prot, flags);
 
-				size_t page_idx = GUEST_PAGE_INDEX(guest_mem);
-				vmcs->process.page_table[page_idx] = host_mem;
+				rvm64::mmu::memory_register(guest_mem, host_mem, len);
+				reg_write(uintptr_t, regenum::a0, guest_addr);
 
-				reg_write(uintptr_t, regenum::a0, host_mem);
 				break;
 			}
 			case ucrt_function::MUNMAP: 
@@ -315,12 +314,17 @@ namespace rvm64::rvni {
 				reg_read(void*, addr, regenum::a0);
 				reg_read(size_t, len, regenum::a1);
 
-				if (!(PROCESS_MEMORY_OOB((uintptr_t)addr))) {
-					// is in bounds
-					
-				} else {
-					// is out of bounds
-				}
+				void* host_mem = rvm64::mmu::memory_check(guest_addr);
+				if (!host_mem) {
+					reg_write(int, regenum::a0, -1);
+					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_addr, 1);
+				} 
+
+				int result = api->typecaster.munmap(host_mem, len);
+
+				rvm64::mmu::memory_unregister(guest_addr);
+				reg_write(int, regenum::a0, result ? 0 : -1);
+
 				break;
 			}
 			case ucrt_function::MPROTECT: 
