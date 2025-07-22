@@ -301,6 +301,11 @@ namespace rvm64::rvni {
 				void *guest_mem = addr;
 				void *host_mem = api->typecaster.mmap(0, len, prot, flags);
 
+				if (!host_mem) {
+					reg_write(int, regenum::a0, -1);
+					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_mem, 1);
+				} 
+
 				rvm64::mmu::memory_register(guest_mem, host_mem, len);
 				reg_write(uintptr_t, regenum::a0, guest_mem);
 
@@ -316,9 +321,10 @@ namespace rvm64::rvni {
 
 				void *guest_mem = addr;
 				void* host_mem = rvm64::mmu::memory_check(guest_mem);
+
 				if (!host_mem) {
 					reg_write(int, regenum::a0, -1);
-					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_addr, 1);
+					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_mem, 1);
 				} 
 
 				int result = api->typecaster.munmap(host_mem, len);
