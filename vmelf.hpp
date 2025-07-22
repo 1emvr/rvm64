@@ -304,10 +304,8 @@ namespace rvm64::elf {
 		}
 
 		vmcs->process.size = image_size;
-		vmcs->process.base_vaddr = base;
-		vmcs->process.entry = (uintptr_t)vmcs->process.address + (ehdr->e_entry - base);
-
-		vmcs->pc = vmcs->process.entry;
+		vmcs->process.address = (uint8_t*)base;
+		vmcs->pc = (uintptr_t)vmcs->process.address + (ehdr->e_entry - base);
 	}
 };
 #endif // VMELF_H

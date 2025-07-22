@@ -69,6 +69,14 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 	((addr) < (uintptr_t)vmcs->vstack || 								\
 	 (addr) >= (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
 
+// Translate virtual address to page index
+#define GUEST_PAGE_INDEX(addr) (((uintptr_t)(addr) - (uintptr_t)vmcs->process.address) / 0x1000)
+
+// Lookup host pointer from guest virtual address
+#define GUEST_TO_HOST_PTR(addr) 						\
+	(vmcs->process.page_table[GUEST_PAGE_INDEX(addr)] 	\
+	 ? ((uint8_t*)vmcs->process.page_table[GUEST_PAGE_INDEX(addr)] + ((uintptr_t)(addr) % 0x1000)) \
+	 : nullptr)
 
 enum causenum {
 	supervisor_software_interrupt = 0xb11,
@@ -97,7 +105,7 @@ enum causenum {
 	image_bad_load = 0xb026,
 	image_bad_type = 0xb027,
 	environment_execute = 0xb028,
-	designated_for_custom_use_6 = 0xb029,
+	out_of_memory = 0xb029,
 	environment_branch = 0xb030,
 	environment_exit = 0xb031,
 	undefined = 0xffff,

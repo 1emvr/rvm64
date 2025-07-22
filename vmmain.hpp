@@ -9,7 +9,13 @@
 typedef struct {
 	uintptr_t start;
 	uintptr_t end;
-} vm_range_t;
+} vm_range;
+
+
+struct vm_page_entry {
+	void *host_ptr;
+	uint32_t protection;
+};
 
 
 typedef struct {
@@ -21,11 +27,10 @@ typedef struct {
 
 typedef struct {
 	uint8_t *address;
-	uintptr_t base_vaddr;
-	uintptr_t entry;
 	size_t size;
-	vm_range_t plt;
-} vm_process_t;
+	vm_page_entry *page_table;
+	size_t page_count;
+} vm_process;
 
 
 struct intel_t {
@@ -43,7 +48,7 @@ typedef struct {
 	uintptr_t load_rsv_addr;
 	uintptr_t load_rsv_valid;
 
-	vm_process_t process;
+	vm_process process;
 	jmp_buf trap_handler;
 	jmp_buf exit_handler;
 

@@ -91,4 +91,7 @@
 	do { 														\
 		vmcs->vscratch[(scr_idx)] = (T)(src);					\
 	} while(0)
+
+
+
 #endif // VMRWX_HPP

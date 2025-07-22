@@ -3,15 +3,6 @@
 #include "vmmain.hpp"
 #include "vmelf.hpp"
 
-struct exec_region_t {
-	uintptr_t base;
-	size_t size;
-};
-
-_data exec_region_t native_exec_regions[128] = { };
-_data size_t native_exec_count = 0;
-
-
 namespace rvm64::memory {
     _vmcall void vm_set_load_rsv(int hart_id, uintptr_t address) {
         WaitForSingleObject(vmcs_mutex, INFINITE);
@@ -42,69 +33,32 @@ namespace rvm64::memory {
     }
 
 	_native void memory_init(size_t process_size) {
-    	NTSTATUS status = 0;
-
 		vmcs->process.size = process_size;
 	    vmcs->process.address = (uint8_t*)VirtualAlloc(nullptr, vmcs->process.size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-		if (vmcs->process.address == nullptr) {
-		    CSR_SET_TRAP(nullptr, load_access_fault, status, 0, 1);
+		if (!vmcs->process.address) {
+		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
 	    }
+
+		size_t num_pages = (process_size + 0xfff) / 0x1000;
+		vmcs->process.page_table = (vm_page_entry*)VirtualAlloc(nullptr, num_pages * sizeof(vm_page_entry), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		vmcs->process.page_count = num_pages;
+
+		if (!vmcs->process.page_table) {
+		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 2);
+		}
 	}
 
 	_native void memory_end() {
-    	NTSTATUS status = 0;
-		if (vmcs->process.address == nullptr) {
-			return;
-		}
-
-		VirtualFree(vmcs->process.address, vmcs->process.size, MEM_RELEASE);
-	}
-
-	_native bool memory_register(uintptr_t base, size_t size) {
-		if (native_exec_count >= 128) {
-			return false;
-		}
-
-		native_exec_regions[native_exec_count++] = { base, size };
-		return true;
-	}
-
-	_native bool memory_unregister(uintptr_t base) {
-		bool success = false;
-		for (size_t i = 0; i < native_exec_count; ++i) {
-			if (native_exec_regions[i].base == base) {
-
-				for (size_t j = i; j < native_exec_count - 1; ++j) {
-					native_exec_regions[j] = native_exec_regions[j + 1];
-				}
-				native_exec_regions[native_exec_count - 1] = { 0, 0 };
-				--native_exec_count;
-
-				success = true;
-				break;
+		if (vmcs->process.address) {
+			if (vmcs->process.page_table) {
+				VirtualFree(vmcs->process.page_table, 0, MEM_RELEASE);	
+				vmcs->process.page_table = nullptr;
+				vmcs->process.page_count = 0;
 			}
+
+			VirtualFree(vmcs->process.address, 0, MEM_RELEASE);
 		}
-		return success;
-	}
-
-	_native bool modify_protection() {
-		bool success = true;
-		// TODO: when calling mprot() passthru this function first.
-		// NOTE: is this necessary? we could just use mprotect -> VirtualProtect and whatever happens, happens...
-		return success;
-	}
-
-	_native bool memory_check(uintptr_t addr) {
-		for (auto& rgn : native_exec_regions) {
-			auto start = rgn.base;
-			auto end = start + rgn.size;
-
-			if (addr >= start && addr < end) {
-				return true;
-			}
-		}
-		return false;
 	}
 };
 
