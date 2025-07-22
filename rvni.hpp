@@ -24,15 +24,6 @@ constexpr const char *C_MUNMAP = "munmap";
 constexpr const char *C_MPROTECT = "mprotect";
 
 namespace rvm64::rvni {
-	struct ucrt_alias {
-		const char *original;
-		const char *alias;
-	};
-	_data ucrt_alias alias_table[] = {
-		{ "open",  "_open"  }, { "read",  "_read"  }, { "write", "_write" }, { "close", "_close" }, { "exit",  "_exit"  }, 
-		{ "mmap", "VirtualAlloc" }, { "munmap", "VirtualFree" }, { "mprotect", "VirtualProtect" }, 
-	};
-
 	struct ucrt_function {
 		void *address;
 		const char *name;
@@ -78,6 +69,15 @@ namespace rvm64::rvni {
 		{ .address = 0, .name = C_MMAP, 	.typenum = ucrt_function::MMAP 		}, 
 		{ .address = 0, .name = C_MUNMAP, 	.typenum = ucrt_function::MUNMAP 	}, 
 		{ .address = 0, .name = C_MPROTECT, .typenum = ucrt_function::MPROTECT 	},
+	};
+
+	struct ucrt_alias {
+		const char *original;
+		const char *alias;
+	};
+	_data ucrt_alias alias_table[] = {
+		{ "open",  "_open"  }, { "read",  "_read"  }, { "write", "_write" }, { "close", "_close" }, { "exit",  "_exit"  }, 
+		{ "mmap", "VirtualAlloc" }, { "munmap", "VirtualFree" }, { "mprotect", "VirtualProtect" }, 
 	};
 
 	_native void *resolve_ucrt_import(const char *sym_name) {
