@@ -22,7 +22,7 @@
 	do {                                       									\
 		auto m = rvm64::mmu::memory_check(addr);  								\
 		if (m) { 																\
-			addr = (T)m; 														\
+			addr = m; 															\
 			break; 																\
 		} 																		\
 		if ((addr) % sizeof(T) != 0) {                                         	\
@@ -39,7 +39,7 @@
 	do {                                      									\
 		auto m = rvm64::mmu::memory_check(addr);  								\
 		if (m) { 																\
-			addr = (T)m; 														\
+			addr = m; 															\
 			break; 																\
 		} 																		\
 		if ((addr) % sizeof(T) != 0) {                                         	\
