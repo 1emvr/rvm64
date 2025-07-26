@@ -29,9 +29,8 @@
 			CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       	\
 		}                                                                      	\
 		if (!STACK_MEMORY_IN_BOUNDS(addr) && !PROCESS_MEMORY_IN_BOUNDS(addr)) {	\
-				CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);      	\
-			} 																	\
-		}                                                                      	\
+			CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);      		\
+		} 																		\
 	} while (0)
 
 
@@ -46,9 +45,8 @@
 			CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  	\
 		}                                                                      	\
 		if (!STACK_MEMORY_IN_BOUNDS(addr) && !PROCESS_MEMORY_IN_BOUNDS(addr)) {	\
-				CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);		\
-			} 																	\
-		}                                                                      	\
+			CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);			\
+		} 																		\
 	} while (0)
 
 
