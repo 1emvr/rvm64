@@ -322,7 +322,6 @@ namespace rvm64::rvni {
 
 				int result = api->typecaster.munmap(host_mem, len, MEM_RELEASE);
 				reg_write(int, regenum::a0, (result && unregister) ? 0 : -1);
-
 				break;
 			}
 			case ucrt_function::MPROTECT: 
