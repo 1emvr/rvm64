@@ -305,9 +305,11 @@ namespace rvm64::rvni {
 				void *host_mem = api->typecaster.mmap(0, len, prot, flags);
 				
 				// NOTE: if the address is not successfully registered (out of slots), and we don't raise exceptions, it may cause issues later.
-				bool registered = rvm64::mmu::memory_register(guest_mem, host_mem, len);
+				if (!rvm64::mmu::memory_register(guest_mem, host_mem, len)) {
+					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, guest_mem, 1);
+				}
 
-				reg_write(uintptr_t, regenum::a0, (host_mem && registered) ? guest_mem : -1);
+				reg_write(uintptr_t, regenum::a0, host_mem ? guest_mem : -1);
 				break;
 			}
 			case ucrt_function::MUNMAP: 
