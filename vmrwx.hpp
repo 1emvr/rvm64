@@ -20,14 +20,14 @@
 
 #define mem_read_check(T, addr)  												\
 	do {                                       									\
+		auto m = rvm64::mmu::memory_check(addr);  								\
+		if (m) { 																\
+			addr = (T)m; 														\
+			break; 																\
+		} 																		\
 		if ((addr) % sizeof(T) != 0) {                                         	\
 			CSR_SET_TRAP(vmcs->pc, load_address_misaligned, 0, addr, 1);       	\
 		}                                                                      	\
-		auto mem = rvm64::mmu::memory_check(addr);  							\
-		if (mem) { 																\
-			addr = (T)mem; 														\
-			break; 																\
-		} 																		\
 		if (!STACK_MEMORY_IN_BOUNDS(addr) && !PROCESS_MEMORY_IN_BOUNDS(addr)) {	\
 				CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);      	\
 			} 																	\
@@ -37,14 +37,14 @@
 
 #define mem_write_check(T, addr) 												\
 	do {                                      									\
+		auto m = rvm64::mmu::memory_check(addr);  								\
+		if (m) { 																\
+			addr = (T)m; 														\
+			break; 																\
+		} 																		\
 		if ((addr) % sizeof(T) != 0) {                                         	\
 			CSR_SET_TRAP(vmcs->pc, store_amo_address_misaligned, 0, addr, 1);  	\
 		}                                                                      	\
-		auto mem = rvm64::mmu::memory_check(addr);  							\
-		if (mem) { 																\
-			addr = (T)mem; 														\
-			break; 																\
-		} 																		\
 		if (!STACK_MEMORY_IN_BOUNDS(addr) && !PROCESS_MEMORY_IN_BOUNDS(addr)) {	\
 				CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);		\
 			} 																	\
