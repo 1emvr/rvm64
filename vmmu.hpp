@@ -39,7 +39,7 @@ namespace rvm64::mmu {
 		return success;
 	}
 
-	_native void* memory_check(uintptr_t guest) {
+	_native uint8_t* memory_check(uintptr_t guest) {
 		for (const auto& entry : native_exec_regions) {
 			if (guest >= entry.guest_addr && guest < entry.guest_addr + entry.length) {
 				uintptr_t offset = guest - entry.guest_addr;
