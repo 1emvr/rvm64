@@ -4,6 +4,7 @@
 #include "vmcrypt.hpp"
 #include "vmmem.hpp"
 #include "vmrwx.hpp"
+#include "vmmu.hpp"
 #include "vmutils.hpp"
 
 namespace rvm64::decoder {

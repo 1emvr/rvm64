@@ -50,33 +50,18 @@
 	} while (0)
 
 
+#define reg_read(T, dst, reg_idx) 	dst = (T)vmcs->vregs[(reg_idx)]
+#define scr_read(T, dst, scr_idx) 	dst = (T)vmcs->vscratch[(scr_idx)]
+#define mem_read(T, retval, addr)  	mem_read_check((T), (addr)); retval = *(T *)((uintptr_t)addr);
+
+#define reg_write(T, reg_idx, src) 	if (reg_idx != 0) vmcs->vregs[(reg_idx)] = (T)(src);
+#define scr_write(T, scr_idx, src) 	if (scr_idx <= imm) vmcs->vscratch[(scr_idx)] = (T)(src);
+#define mem_write(T, addr, value)  	mem_write_check((T), (addr)); *(T *)(addr) = value;
+
 #define unwrap_opcall(hdl_idx) 								\
 	uintptr_t a = ((uintptr_t*)dispatch_table)[hdl_idx];	\
 	uintptr_t b = rvm64::crypt::decrypt_ptr((uintptr_t)a);	\
 	void (*fn)() = (void (*)())(b);							\
 	fn();													
 
-
-#define mem_read(T, retval, addr)  							\
-	mem_read_check(T, ((uintptr_t)addr));					\
-	retval = *(T *)((uintptr_t)addr); 						\
-
-
-#define mem_write(T, addr, value)  							\
-	mem_write_check(T, ((uintptr_t)addr));					\
-	*(T *)((uintptr_t)addr) = value;  						\
-
-
-#define scr_read(T, dst, scr_idx) 	dst = (T)vmcs->vscratch[(scr_idx)]
-#define reg_read(T, dst, reg_idx) 	dst = (T)vmcs->vregs[(reg_idx)]
-
-#define reg_write(T, reg_idx, src) 							\
-	if (reg_idx != 0) { 									\
-		vmcs->vregs[(reg_idx)] = (T)(src);					\
-	} 														\
-
-#define scr_write(T, scr_idx, src) 							\
-	if (scr_idx <= screnum::imm) { 							\
-		vmcs->vscratch[(scr_idx)] = (T)(src);				\
-	} 														\
 #endif // VMRWX_HPP
