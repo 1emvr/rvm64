@@ -150,7 +150,7 @@ namespace rvm64::rvni {
 		switch (api->typenum) {
 			case ucrt_function::OPEN: 
 			{
-				char *pathname;
+				char *pathname = { };
 				int flags = 0, mode = 0;
 
 				reg_read(char*, pathname, regenum::a0);
@@ -164,7 +164,7 @@ namespace rvm64::rvni {
 			case ucrt_function::READ: 
 			{
 				int fd = 0;
-				void *buf;
+				void *buf = { };
 				unsigned int count = 0;
 
 				reg_read(int, fd, regenum::a0);
@@ -178,7 +178,7 @@ namespace rvm64::rvni {
 			case ucrt_function::WRITE: 
 			{
 				int fd = 0;
-				void *buf;
+				void *buf = { };
 				unsigned int count = 0;
 
 				reg_read(int, fd, regenum::a0);
@@ -214,8 +214,8 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::STAT64: 
 			{
-				const char *pathname;
-				void *statbuf;
+				const char *pathname = { };
+				void *statbuf = { };
 
 				reg_read(const char*, pathname, regenum::a0);
 				reg_read(void*, statbuf, regenum::a1);
@@ -235,7 +235,7 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::FREE: 
 			{
-				void *ptr;
+				void *ptr = { };
 				reg_read(void*, ptr, regenum::a0);
 
 				api->typecaster.free(ptr);
@@ -244,7 +244,7 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::MEMCPY: 
 			{
-				void *dest, *src;
+				void *dest = { }, *src = { };
 				size_t n = 0;
 
 				reg_read(void*, dest, regenum::a0);
@@ -257,7 +257,7 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::MEMSET: 
 			{
-				void *dest;
+				void *dest = { };
 				int value = 0;
 				size_t n = 0;
 
@@ -271,7 +271,7 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::STRLEN: 
 			{
-				char *s;
+				char *s = { };
 				reg_read(char*, s, regenum::a0);
 
 				size_t result = api->typecaster.strlen(s);
@@ -280,7 +280,7 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::STRCPY: 
 			{
-				char *dest, *src;
+				char *dest = { }, *src = { };
 
 				reg_read(char*, dest, regenum::a0);
 				reg_read(char*, src, regenum::a1);
@@ -291,9 +291,9 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::MMAP: 
 			{
-				void *addr;
-				size_t len;
-				DWORD prot, flags;
+				void *addr = { };
+				size_t len = 0;
+				DWORD prot = 0, flags = 0;
 
 				// TODO: needs testing
 				reg_read(void*, addr, regenum::a0);
@@ -314,8 +314,8 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::MUNMAP: 
 			{
-				void *addr;
-				size_t len;
+				void *addr = { };
+				size_t len = 0;
 
 				reg_read(void*, addr, regenum::a0);
 				reg_read(size_t, len, regenum::a1);
@@ -330,8 +330,8 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::MPROTECT: 
 			{
-				void *addr;
-				size_t len;
+				void *addr = { };
+				size_t len = 0;
 				DWORD prot = 0, old = 0;
 
 				reg_read(void*, addr, regenum::a0);
