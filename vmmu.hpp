@@ -17,8 +17,14 @@ namespace rvm64::mmu {
 			return false;
 		}
 
-		native_exec_regions[native_exec_count++] = { guest, host, length };
-		return true;
+		for (auto& exec : native_exec_regions) {
+			if (exec.guest_addr == 0) {
+				exec = { guest, host, length };
+				native_exec_count++;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	_native bool memory_unregister(uintptr_t guest) {
