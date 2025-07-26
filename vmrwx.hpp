@@ -8,14 +8,14 @@
 #endif
 
 
-#define PROCESS_MEMORY_OOB(addr)  										\
-	((addr) < (uintptr_t)vmcs->process.address || 						\
-	 (addr) >= (uintptr_t)(vmcs->process.address + vmcs->process.size))
+#define PROCESS_MEMORY_IN_BOUNDS(addr)  								\
+	((addr) >= (uintptr_t)vmcs->process.address && 						\
+	 (addr) < (uintptr_t)(vmcs->process.address + vmcs->process.size))
 
 
-#define STACK_MEMORY_OOB(addr) 											\
-	((addr) < (uintptr_t)vmcs->vstack || 								\
-	 (addr) >= (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
+#define STACK_MEMORY_IN_BOUNDS(addr) 									\
+	((addr) >= (uintptr_t)vmcs->vstack && 								\
+	 (addr) < (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY))
 
 
 #define mem_read_check(T, addr)  												\
@@ -28,7 +28,7 @@
 			addr = (T)mem; 														\
 			break; 																\
 		} 																		\
-		if (STACK_MEMORY_OOB(addr) && PROCESS_MEMORY_OOB(addr)) { 				\
+		if (!STACK_MEMORY_IN_BOUNDS(addr) && !PROCESS_MEMORY_IN_BOUNDS(addr)) {	\
 				CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, addr, 1);      	\
 			} 																	\
 		}                                                                      	\
@@ -45,8 +45,7 @@
 			addr = (T)mem; 														\
 			break; 																\
 		} 																		\
-		if (STACK_MEMORY_OOB(addr)) {											\
-			if (PROCESS_MEMORY_OOB(addr)) {										\
+		if (!STACK_MEMORY_IN_BOUNDS(addr) && !PROCESS_MEMORY_IN_BOUNDS(addr)) {	\
 				CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, addr, 1);		\
 			} 																	\
 		}                                                                      	\
