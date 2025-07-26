@@ -13,6 +13,7 @@ namespace rvm64::mmu {
 	_data size_t native_exec_count = 0;
 
 	_native bool memory_register(uintptr_t guest, void *host, size_t length) {
+		bool success = false;
 		if (native_exec_count >= 128) {
 			return false;
 		}
@@ -21,17 +22,17 @@ namespace rvm64::mmu {
 			if (exec.guest_addr == 0) {
 				exec = { guest, host, length };
 				native_exec_count++;
-				return true;
+				success = true;
 			}
 		}
-		return false;
+		return success;
 	}
 
 	_native bool memory_unregister(uintptr_t guest) {
 		bool success = false;
 		for (size_t i = 0; i < native_exec_count; ++i) {
-			if (native_exec_regions[i].guest_addr == guest) {
 
+			if (native_exec_regions[i].guest_addr == guest) {
 				for (size_t j = i; j < native_exec_count - 1; ++j) {
 					native_exec_regions[j] = native_exec_regions[j + 1];
 				}
