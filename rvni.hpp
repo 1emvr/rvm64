@@ -300,16 +300,16 @@ namespace rvm64::rvni {
 				reg_read(DWORD, prot, regenum::a2);
 				reg_read(DWORD, flags, regenum::a3);
 
-				void *guest_mem = addr;
+				auto guest_mem = (uintptr_t)addr;
 				void *host_mem = api->typecaster.mmap(0, len, prot, flags);
 
 				if (!host_mem) {
 					reg_write(int, regenum::a0, -1);
-					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, (uintptr_t)guest_mem, 1);
+					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_mem, 1);
 				} 
 				if (!rvm64::mmu::memory_register(guest_mem, host_mem, len)) {
 					reg_write(int, regenum::a0, -1);
-					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, (uintptr_t)guest_mem, 1);
+					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, guest_mem, 1);
 				}
 
 				reg_write(uintptr_t, regenum::a0, guest_mem);
@@ -323,12 +323,12 @@ namespace rvm64::rvni {
 				reg_read(void*, addr, regenum::a0);
 				reg_read(size_t, len, regenum::a1);
 
-				void *guest_mem = addr;
+				auto guest_mem = (uintptr_t)addr;
 				void* host_mem = rvm64::mmu::memory_check(guest_mem);
 
 				if (!host_mem) {
 					reg_write(int, regenum::a0, -1);
-					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, (uintptr_t)guest_mem, 1);
+					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_mem, 1);
 				} 
 
 				rvm64::mmu::memory_unregister(guest_mem);

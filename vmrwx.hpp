@@ -20,7 +20,7 @@
 
 #define mem_read_check(T, addr)  													\
 	do {                                       										\
-		auto m = rvm64::mmu::memory_check((void*)addr);  							\
+		auto m = rvm64::mmu::memory_check(addr);  									\
 		if (m) { 																	\
 			addr = (uintptr_t)m; 													\
 			break; 																	\
@@ -36,7 +36,7 @@
 
 #define mem_write_check(T, addr) 													\
 	do {                                      										\
-		auto m = rvm64::mmu::memory_check((void*)addr);  							\
+		auto m = rvm64::mmu::memory_check(addr);  									\
 		if (m) { 																	\
 			addr = (uintptr_t)m; 													\
 			break; 																	\
