@@ -295,6 +295,7 @@ namespace rvm64::rvni {
 				size_t len;
 				DWORD prot, flags;
 
+				// TODO: needs testing
 				reg_read(void*, addr, regenum::a0);
 				reg_read(size_t, len, regenum::a1);
 				reg_read(DWORD, prot, regenum::a2);
@@ -302,13 +303,9 @@ namespace rvm64::rvni {
 
 				auto guest_mem = (uintptr_t)addr;
 				void *host_mem = api->typecaster.mmap(0, len, prot, flags);
+				bool registered = rvm64::mmu::memory_register(guest_mem, host_mem, len);
 
-				if (!host_mem || !rvm64::mmu::memory_register(guest_mem, host_mem, len)) {
-					reg_write(int, regenum::a0, -1);
-					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, guest_mem, 1); 
-				}
-
-				reg_write(uintptr_t, regenum::a0, guest_mem);
+				reg_write(uintptr_t, regenum::a0, (host_mem && registered) ? guest_mem : -1);
 				break;
 			}
 			case ucrt_function::MUNMAP: 
@@ -321,16 +318,11 @@ namespace rvm64::rvni {
 
 				auto guest_mem = (uintptr_t)addr;
 				void* host_mem = rvm64::mmu::memory_check(guest_mem);
+				bool unregister = rvm64::mmu::memory_unregister(guest_mem);
 
-				if (!host_mem) {
-					reg_write(int, regenum::a0, -1);
-					CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, guest_mem, 1);
-				} 
-
-				rvm64::mmu::memory_unregister(guest_mem);
 				int result = api->typecaster.munmap(host_mem, len, MEM_RELEASE);
+				reg_write(int, regenum::a0, (result && unregister) ? 0 : -1);
 
-				reg_write(int, regenum::a0, result ? 0 : -1);
 				break;
 			}
 			case ucrt_function::MPROTECT: 
