@@ -40,6 +40,7 @@ namespace rvm64::memory {
 		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
 	    }
 
+		// NOTE: not actually using these page tables for anything.
 		size_t num_pages = (process_size + 0xfff) / 0x1000;
 		vmcs->process.page_table = (vm_page_entry*)VirtualAlloc(nullptr, num_pages * sizeof(vm_page_entry), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		vmcs->process.page_count = num_pages;
