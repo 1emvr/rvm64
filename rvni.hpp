@@ -302,6 +302,7 @@ namespace rvm64::rvni {
 				reg_read(DWORD, flags, regenum::a3);
 
 				DWORD win_prot = rvm64::mmu::translate_linux_prot(prot);
+
 				auto guest_mem = (uintptr_t)addr;
 				void *host_mem = api->typecaster.mmap(nullptr, len, MEM_COMMIT | MEM_RESERVE, win_prot);
 				
