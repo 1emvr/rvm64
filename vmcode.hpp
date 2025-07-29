@@ -953,7 +953,6 @@ namespace rvm64::operations {
 			vmcs->pc = address;
 
 			__debugbreak();
-			// NOTE: mmu::memory_check returns a host pointer
 			if (auto host_mem = rvm64::mmu::memory_check(vmcs->pc)) {
 				vmcs->pc = host_mem;
 				CSR_SET_TRAP(vmcs->pc, environment_execute, 0, 0, 0);
