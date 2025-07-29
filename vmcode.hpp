@@ -959,6 +959,7 @@ namespace rvm64::operations {
 			if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->pc)) {
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
+			// NOTE: when falling through, we're jumping back to previous vm code and not modifying vmcs->pc
 		}
 
 		_vmcall void rv_flq() {
