@@ -18,12 +18,12 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 	}
 
 	CSR_GET(exception_info);
-
+	winctx->EFlags &= ~0x100;  // Clear TF before returning
+							   
 	if (vmcs->halt || code != RVM_TRAP_EXCEPTION) {
 		LONGJMP(vmcs->exit_handler, true);
 	}
-
-	winctx->EFlags &= ~0x100;  // Clear TF before returning
+							   //
 	switch (vmcs->csr.m_cause) {
 		case environment_exit: 		LONGJMP(vmcs->exit_handler, true);
 		case environment_branch: 	LONGJMP(vmcs->trap_handler, true);
@@ -40,7 +40,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 			__debugbreak();
 			rvm64::rvni::vm_native_call();
 			vmcs->pc = vmcs->vregs[ra];
-			// NOTE: Program seems to skip 1 instruction when returning from here. Needs tested.
 			break;
 		}
 		default: 

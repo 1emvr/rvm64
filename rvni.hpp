@@ -305,10 +305,8 @@ namespace rvm64::rvni {
 				auto guest_mem = (uintptr_t)addr;
 				void *host_mem = api->typecaster.mmap(nullptr, len, MEM_COMMIT | MEM_RESERVE, win_prot);
 				
-				// NOTE: Raise exception when no host memory slots are available.
 				__debugbreak();
-				if (!rvm64::mmu::memory_register(guest_mem, host_mem, len)) {
-					volatile long test = GetLastError();
+				if (!rvm64::mmu::memory_register(&guest_mem, host_mem, len)) {
 					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, guest_mem, 1);
 				}
 

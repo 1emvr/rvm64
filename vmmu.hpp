@@ -12,17 +12,17 @@ namespace rvm64::mmu {
 	_data exec_region native_exec_regions[128] = { };
 	_data size_t native_exec_count = 0;
 
-	_native bool memory_register(uintptr_t guest, void *host, size_t length) {
+	_native bool memory_register(uintptr_t* guest, void *host, size_t length) {
 		if (native_exec_count >= 128 || (uintptr_t)host == 0) {
 			return false;
 		}
-		if (guest == 0) {
-			guest = (uintptr_t)host;
+		if (*guest == 0) {
+			*guest = (uintptr_t)host;
 		}
 
 		for (auto& exec : native_exec_regions) {
 			if (exec.guest_addr == 0) {
-				exec = { guest, host, length };
+				exec = { *guest, host, length };
 				native_exec_count++;
 				return true;
 			}
