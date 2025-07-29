@@ -57,5 +57,35 @@ namespace rvm64::mmu {
 		}
 		return 0;
 	}
+
+#define PROT_READ	0x1		
+#define PROT_WRITE	0x2		
+#define PROT_EXEC	0x4		
+#define PROT_SEM	0x8	
+
+	DWORD translate_linux_prot(DWORD prot) {
+		if (prot == 0) {
+			return PAGE_NOACCESS;
+		}
+
+		bool can_read  = prot & PROT_READ;
+		bool can_write = prot & PROT_WRITE;
+		bool can_exec  = prot & PROT_EXEC;
+
+		if (can_exec) {
+			if (can_write)
+				return PAGE_EXECUTE_READWRITE;
+			if (can_read)
+				return PAGE_EXECUTE_READ;
+			return PAGE_EXECUTE;
+		} else {
+			if (can_write)
+				return PAGE_READWRITE;
+			if (can_read)
+				return PAGE_READONLY;
+		}
+
+		return PAGE_NOACCESS;
+	}
 };
 #endif // VMMU_H
