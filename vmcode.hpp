@@ -954,7 +954,7 @@ namespace rvm64::operations {
 
 			__debugbreak();
 			if (auto host_mem = rvm64::mmu::memory_check(vmcs->pc)) {
-				vmcs->pc = host_mem;
+				vmcs->pc = (uintptr_t)host_mem;
 				CSR_SET_TRAP(vmcs->pc, environment_execute, 0, 0, 0);
 			}
 			if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->pc)) {

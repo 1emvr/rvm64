@@ -321,7 +321,7 @@ namespace rvm64::rvni {
 				reg_read(size_t, len, regenum::a1);
 
 				auto guest_mem = (uintptr_t)addr;
-				void* host_mem = rvm64::mmu::memory_check(guest_mem);
+				void *host_mem = rvm64::mmu::memory_check(guest_mem);
 				bool unregister = rvm64::mmu::memory_unregister(guest_mem);
 
 				int result = api->typecaster.munmap(host_mem, len, MEM_RELEASE);

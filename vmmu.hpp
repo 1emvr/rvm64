@@ -43,14 +43,14 @@ namespace rvm64::mmu {
 		return false;
 	}
 
-	_native uintptr_t memory_check(uintptr_t guest) {
+	_native uint8_t* memory_check(uintptr_t guest) {
 		for (const auto& entry : native_exec_regions) {
 			if (guest >= entry.guest_addr && guest < entry.guest_addr + entry.length) {
 				uintptr_t offset = guest - entry.guest_addr;
-				return entry.host_addr + offset; // risc-v usable address for calculating non-zero offsets (host[n + i])
+				return (uint8_t*) entry.host_addr + offset; // risc-v usable address for calculating non-zero offsets (host[n + i])
 			}
 		}
-		return nullptr;
+		return 0;
 	}
 };
 #endif // VMMU_H
