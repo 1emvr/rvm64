@@ -46,6 +46,7 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		}
 	}
 
+	winctx->EFlags &= ~0x100;  // Clear TF before returning
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 #endif //VMVEH_H
