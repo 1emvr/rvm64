@@ -23,11 +23,13 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		LONGJMP(vmcs->exit_handler, true);
 	}
 
+	winctx->EFlags &= ~0x100;  // Clear TF before returning
 	switch (vmcs->csr.m_cause) {
 		case environment_exit: 		LONGJMP(vmcs->exit_handler, true);
 		case environment_branch: 	LONGJMP(vmcs->trap_handler, true);
 		case environment_execute:   
 		{
+			__debugbreak();
 			void (__stdcall *memory)() = (void(__stdcall*)())vmcs->pc;
 			memory();
 			vmcs->pc = vmcs->vregs[ra];
@@ -35,6 +37,7 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		}
 		case environment_call_native: 
 		{
+			__debugbreak();
 			rvm64::rvni::vm_native_call();
 			vmcs->pc = vmcs->vregs[ra];
 			// NOTE: Program seems to skip 1 instruction when returning from here. Needs tested.
@@ -47,7 +50,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		}
 	}
 
-	winctx->EFlags &= ~0x100;  // Clear TF before returning
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 #endif //VMVEH_H

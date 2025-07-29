@@ -13,7 +13,7 @@ namespace rvm64::mmu {
 	_data size_t native_exec_count = 0;
 
 	_native bool memory_register(uintptr_t guest, void *host, size_t length) {
-		if (native_exec_count >= 128) {
+		if (native_exec_count >= 128 || guest == 0 || (uintptr_t)host == 0) {
 			return false;
 		}
 
@@ -28,8 +28,10 @@ namespace rvm64::mmu {
 	}
 
 	_native bool memory_unregister(uintptr_t guest) {
+		if (guest == 0) {
+			return false;
+		}
 		for (size_t i = 0; i < native_exec_count; ++i) {
-
 			if (native_exec_regions[i].guest_addr == guest) {
 				for (size_t j = i; j < native_exec_count - 1; ++j) {
 					native_exec_regions[j] = native_exec_regions[j + 1];
@@ -44,6 +46,9 @@ namespace rvm64::mmu {
 	}
 
 	_native uint8_t* memory_check(uintptr_t guest) {
+		if (guest == 0) {
+			return 0;
+		}
 		for (const auto& entry : native_exec_regions) {
 			if (guest >= entry.guest_addr && guest < entry.guest_addr + entry.length) {
 				uintptr_t offset = guest - entry.guest_addr;

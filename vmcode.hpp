@@ -952,7 +952,6 @@ namespace rvm64::operations {
 			reg_write(uintptr_t, _rd, vmcs->pc);
 			vmcs->pc = address;
 
-			__debugbreak();
 			if (auto host_mem = rvm64::mmu::memory_check(vmcs->pc)) {
 				vmcs->pc = (uintptr_t)host_mem;
 				CSR_SET_TRAP(vmcs->pc, environment_execute, 0, 0, 0);

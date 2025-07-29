@@ -296,16 +296,20 @@ namespace rvm64::rvni {
 				DWORD prot = 0, flags = 0;
 
 				// TODO: needs testing
-				reg_read(void*, addr, regenum::a0);
-				reg_read(size_t, len, regenum::a1);
+				reg_read(LPVOID, addr, regenum::a0);
+				reg_read(SIZE_T, len, regenum::a1);
 				reg_read(DWORD, prot, regenum::a2);
 				reg_read(DWORD, flags, regenum::a3);
 
+				// TODO: translate linux flags/prot to windows
+
 				auto guest_mem = (uintptr_t)addr;
-				void *host_mem = api->typecaster.mmap(0, len, prot, flags);
+				void *host_mem = api->typecaster.mmap(nullptr, len, flags, prot);
 				
 				// NOTE: Raise exception when no host memory slots are available.
+				__debugbreak();
 				if (!rvm64::mmu::memory_register(guest_mem, host_mem, len)) {
+					volatile long test = GetLastError();
 					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, guest_mem, 1);
 				}
 
@@ -317,8 +321,8 @@ namespace rvm64::rvni {
 				void *addr = { };
 				size_t len = 0;
 
-				reg_read(void*, addr, regenum::a0);
-				reg_read(size_t, len, regenum::a1);
+				reg_read(LPVOID, addr, regenum::a0);
+				reg_read(SIZE_T, len, regenum::a1);
 
 				auto guest_mem = (uintptr_t)addr;
 				void *host_mem = rvm64::mmu::memory_check(guest_mem);
