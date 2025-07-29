@@ -12,12 +12,6 @@ typedef struct {
 } vm_range;
 
 
-struct vm_page_entry {
-	void *host_ptr;
-	uint32_t protection;
-};
-
-
 typedef struct {
 	uint8_t *address;
 	size_t size;
@@ -28,8 +22,6 @@ typedef struct {
 typedef struct {
 	uint8_t *address;
 	size_t size;
-	vm_page_entry *page_table;
-	size_t page_count;
 } vm_process;
 
 
