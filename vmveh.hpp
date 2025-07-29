@@ -37,6 +37,7 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		{
 			rvm64::rvni::vm_native_call();
 			vmcs->pc = vmcs->vregs[ra];
+			// NOTE: Program seems to skip 1 instruction when returning from here. Needs tested.
 			break;
 		}
 		default: 
