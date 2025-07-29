@@ -953,14 +953,12 @@ namespace rvm64::operations {
 			vmcs->pc = address;
 
 			__debugbreak();
-
 			if (rvm64::mmu::memory_check(vmcs->pc)) {
 				CSR_SET_TRAP(vmcs->pc, environment_execute, 0, 0, 0);
 			}
 			if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->pc)) {
 				CSR_SET_TRAP(vmcs->pc, environment_call_native, 0, 0, 0);
 			}
-			reg_read(uintptr_t, vmcs->pc, _rd);
 		}
 
 		_vmcall void rv_flq() {

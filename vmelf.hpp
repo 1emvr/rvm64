@@ -265,17 +265,14 @@ namespace rvm64::elf {
 	_native void load_elf_image(uint8_t *image_data, size_t image_size) {
 		auto ehdr = (elf64_ehdr*)(image_data);
 
-		if (ehdr->e_ident[0] != 0x7F ||
-		    ehdr->e_ident[1] != 'E' ||
-		    ehdr->e_ident[2] != 'L' ||
-		    ehdr->e_ident[3] != 'F') {
+		if (ehdr->e_ident[0] != 0x7F || ehdr->e_ident[1] != 'E' || ehdr->e_ident[2] != 'L' || ehdr->e_ident[3] != 'F') {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
 		if (ehdr->e_ident[EI_CLAS] != ELFCLASS64 || ehdr->e_machine != EM_RISC) {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
 
-		elf64_phdr* phdrs = (elf64_phdr*) ((uint8_t*)image_data + ehdr->e_phoff);
+		elf64_phdr* phdrs = (elf64_phdr*)((uint8_t*)image_data + ehdr->e_phoff);
 		uint64_t base = UINT64_MAX;
 		uint64_t limit = 0;
 
@@ -285,6 +282,7 @@ namespace rvm64::elf {
 				limit = MAX(limit, phdrs[i].p_vaddr + phdrs[i].p_memsz);
 			}
 		}
+
 		if (base == UINT64_MAX || limit <= base) {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
@@ -293,6 +291,7 @@ namespace rvm64::elf {
 			if (phdrs[i].p_type != PT_LOAD) {
 				continue;
 			}
+
 			void *dest = (uint8_t*)vmcs->process.address + (phdrs[i].p_vaddr - base);
 			void *src = (uint8_t*)image_data + phdrs[i].p_offset;
 
@@ -302,9 +301,7 @@ namespace rvm64::elf {
 				x_memset((uint8_t*)dest + phdrs[i].p_filesz, 0, phdrs[i].p_memsz - phdrs[i].p_filesz);
 			}
 		}
-
 		vmcs->process.size = image_size;
-		vmcs->process.address = (uint8_t*)base;
 		vmcs->pc = (uintptr_t)vmcs->process.address + (ehdr->e_entry - base);
 	}
 };
