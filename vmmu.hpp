@@ -66,7 +66,7 @@ namespace rvm64::mmu {
 #define PROT_EXEC	0x4		
 #define PROT_SEM	0x8	
 
-	DWORD translate_linux_prot(DWORD prot) {
+	DWORD translate_linux_prot(uint32_t prot) {
 		if (prot == 0) {
 			return PAGE_NOACCESS;
 		}
