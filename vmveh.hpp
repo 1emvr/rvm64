@@ -28,7 +28,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		case environment_branch: 	LONGJMP(vmcs->trap_handler, true);
 		case environment_execute:   
 		{
-			__debugbreak();
 			void (__stdcall *memory)() = (void(__stdcall*)())vmcs->pc;
 			memory();
 			vmcs->pc = vmcs->vregs[ra];
@@ -36,7 +35,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		}
 		case environment_call_native: 
 		{
-			__debugbreak();
 			rvm64::rvni::vm_native_call();
 			vmcs->pc = vmcs->vregs[ra];
 			break;
