@@ -16,10 +16,13 @@ namespace rvm64::mmu {
 		if (native_exec_count >= 128 || (uintptr_t)host == 0 || guest == nullptr) {
 			return false;
 		}
-		if (*guest == 0) {
+		if (*guest == (uintptr_t)-1) { // NOTE: allow the v_program to handle on it's own.
+			return true;
+		}
+		__debugbreak();
+		if (*guest == (uintptr_t)0) {
 			*guest = (uintptr_t)host;
 		}
-
 		for (auto& exec : native_exec_regions) {
 			if (exec.guest_addr == 0) {
 				exec = { *guest, host, length };

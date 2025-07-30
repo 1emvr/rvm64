@@ -129,8 +129,8 @@ inline int32_t imm_u(uint32_t opcode) {
 }
 
 inline int32_t imm_i(uint32_t opcode) {
-	int32_t raw_imm = opcode >> 20;
-	return sign_extend(raw_imm, 12);
+	int32_t imm = opcode >> 20;
+	return sign_extend(imm, 12);
 }
 
 
@@ -139,23 +139,23 @@ inline int32_t imm_s(uint32_t opcode) {
 	uint32_t imm4_0 = (opcode >> 7) & 0x1f;
 	uint32_t imm = (imm11_5 << 5) | imm4_0;
 
-	return sign_extend(raw_imm, 12);
+	return sign_extend(imm, 12);
 }
 
 inline int32_t imm_b(uint32_t opcode) {
-	int32_t raw_imm = (((opcode >> 31) & 1) << 12)
+	int32_t imm = (((opcode >> 31) & 1) << 12)
 	              | (((opcode >> 25) & 0x3F) << 5)
 	              | (((opcode >> 8) & 0xF) << 1)
 	              | (((opcode >> 7) & 1) << 11);
-	return sign_extend(raw_imm, 13);
+	return sign_extend(imm, 13);
 }
 
 inline int32_t imm_j(uint32_t opcode) {
-	int32_t raw_imm = (((opcode >> 31) & 1) << 20)
+	int32_t imm = (((opcode >> 31) & 1) << 20)
 	              | (((opcode >> 21) & 0x3FF) << 1)
 	              | (((opcode >> 20) & 1) << 11)
 	              | (((opcode >> 12) & 0xFF) << 12);
-	return sign_extend(raw_imm, 21);
+	return sign_extend(imm, 21);
 }
 
 #endif //VMUTILS_H

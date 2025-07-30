@@ -291,8 +291,8 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::MMAP: 
 			{
-				void *addr = { };
-				size_t len = 0;
+				LPVOID addr = { };
+				SIZE_T len = 0;
 				DWORD prot = 0, flags = 0;
 
 				reg_read(LPVOID, addr, regenum::a0);
@@ -300,17 +300,15 @@ namespace rvm64::rvni {
 				reg_read(DWORD, prot, regenum::a2);
 				reg_read(DWORD, flags, regenum::a3);
 
-				DWORD win_prot = rvm64::mmu::translate_linux_prot(prot);
-
-				auto guest_mem = (uintptr_t)addr;
-				void *host_mem = api->typecaster.mmap(nullptr, len, MEM_COMMIT | MEM_RESERVE, win_prot);
+				void *host_mem = api->typecaster.mmap(
+						nullptr, len, MEM_COMMIT | MEM_RESERVE, rvm64::mmu::translate_linux_prot(prot));
 				
 				__debugbreak();
-				if (!rvm64::mmu::memory_register(&guest_mem, host_mem, len)) {
-					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, guest_mem, 1);
+				if (!rvm64::mmu::memory_register((uintptr_t*)&addr, host_mem, len)) {
+					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, (uintptr_t)addr, 1);
 				}
 
-				reg_write(uintptr_t, regenum::a0, host_mem ? guest_mem : -1);
+				reg_write(uintptr_t, regenum::a0, addr);
 				break;
 			}
 			case ucrt_function::MUNMAP: 
