@@ -19,9 +19,9 @@ namespace rvm64::mmu {
 		if (*guest == (uintptr_t)0) {
 			*guest = (uintptr_t)host;
 		}
-		for (auto& exec : page_table) {
-			if (exec.guest_addr == 0) {
-				exec = { *guest, host, length };
+		for (auto& entry : page_table) {
+			if (entry.guest_addr == 0) {
+				entry = { *guest, host, length };
 				page_count++;
 				return true;
 			}
