@@ -146,9 +146,9 @@ typedef struct {
 } elf64_phdr;
 
 typedef struct {
-    uintptr_t  	r_offset;  // 8 bytes: Where to apply the relocation
-    uintptr_t 	r_info;    // 8 bytes: Symbol + type
-    intptr_t 	r_addend; // 8 bytes: Addend to add to symbol value
+    uintptr_t  	r_offset;  	// 8 bytes: Where to apply the relocation
+    uintptr_t 	r_info;    	// 8 bytes: Symbol + type
+    intptr_t 	r_addend; 	// 8 bytes: Addend to add to symbol value
 } elf64_rela;
 
 typedef struct {
@@ -173,7 +173,6 @@ typedef struct {
     uint64_t sh_entsize;    // Entry size if section holds table (e.g., symbol table)
 } elf64_shdr;
 
-
 typedef struct {
     int64_t d_tag;
     union {
@@ -181,6 +180,7 @@ typedef struct {
         uint64_t d_ptr;
     } d_un;
 } elf64_dyn;
+
 
 // NOTE: I do not understand the elf format.
 namespace rvm64::elf {
