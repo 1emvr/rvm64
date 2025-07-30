@@ -31,7 +31,7 @@ namespace rvm64::mmu {
 	}
 
 	_native bool memory_unregister(uintptr_t guest) {
-		if (guest == 0) {
+		if (guest == 0 || native_exec_count == 0) {
 			return false;
 		}
 		for (size_t i = 0; i < native_exec_count; ++i) {
