@@ -295,7 +295,6 @@ namespace rvm64::rvni {
 				size_t len = 0;
 				DWORD prot = 0, flags = 0;
 
-				// TODO: needs testing
 				reg_read(LPVOID, addr, regenum::a0);
 				reg_read(SIZE_T, len, regenum::a1);
 				reg_read(DWORD, prot, regenum::a2);

@@ -8,8 +8,9 @@ extern "C" int main() {
 	size_t size = sizeof(code);
 
 	void *buffer = mmap(nullptr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, 3, 0);
+	__debugbreak();
+
 	if (!buffer) {
-		__debugbreak();
 		exit(1);
 	}
 
