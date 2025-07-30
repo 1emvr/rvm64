@@ -135,8 +135,11 @@ inline int32_t imm_i(uint32_t opcode) {
 
 
 inline int32_t imm_s(uint32_t opcode) {
-	int32_t raw_imm =  ((opcode >> 25) << 5) | ((opcode >> 7) & 0x1F);
-	return sign_extend(raw_imm & 0xFFF, 12);
+	uint32_t imm11_5 = (opcode >> 25) & 0x7f;
+	uint32_t imm4_0 = (opcode >> 7) & 0x1f;
+	uint32_t imm = (imm11_5 << 5) | imm4_0;
+
+	return sign_extend(raw_imm, 12);
 }
 
 inline int32_t imm_b(uint32_t opcode) {
