@@ -313,8 +313,8 @@ namespace rvm64::rvni {
 			}
 			case ucrt_function::MUNMAP: 
 			{
-				void *addr = { };
-				size_t len = 0;
+				LPVOID addr = { };
+				SIZE_T len = 0;
 
 				reg_read(LPVOID, addr, regenum::a0);
 				reg_read(SIZE_T, len, regenum::a1);
@@ -324,20 +324,20 @@ namespace rvm64::rvni {
 				bool unregister = rvm64::mmu::memory_unregister(guest_mem);
 
 				int result = api->typecaster.munmap(host_mem, len, MEM_RELEASE);
-				reg_write(int, regenum::a0, (result && unregister) ? 0 : -1);
+				reg_write(int, regenum::a0, ((result && unregister) ? 0 : -1));
 				break;
 			}
 			case ucrt_function::MPROTECT: 
 			{
-				void *addr = { };
-				size_t len = 0;
+				LPVOID addr = { };
+				SIZE_T len = 0;
 				DWORD prot = 0, old = 0;
 
-				reg_read(void*, addr, regenum::a0);
-				reg_read(size_t, len, regenum::a1);
+				reg_read(LPVOID, addr, regenum::a0);
+				reg_read(SIZE_T, len, regenum::a1);
 				reg_read(DWORD, prot, regenum::a2);
 
-				auto func = (api->typecaster.mprotect)(addr, len, prot, &old);
+				auto func = api->typecaster.mprotect(addr, len, prot, &old);
 				reg_write(int, regenum::a0, func ? 0 : -1);
 				break;
 			}
