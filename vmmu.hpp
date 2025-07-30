@@ -16,7 +16,6 @@ namespace rvm64::mmu {
 		if (native_exec_count >= 128 || (uintptr_t)host == 0 || guest == nullptr) {
 			return false;
 		}
-		__debugbreak();
 		if (*guest == (uintptr_t)0) {
 			*guest = (uintptr_t)host;
 		}
