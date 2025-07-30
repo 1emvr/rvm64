@@ -106,7 +106,7 @@ namespace simple_map {
 	};
 };
 
-inline int32_t sign_extend(int32_t val, int bits) {
+inline int32_t sign_extend(uint32_t val, int bits) {
 	int shift = 32 - bits;
 	return (int32_t)(val << shift) >> shift;
 }
