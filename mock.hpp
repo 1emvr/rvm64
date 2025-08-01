@@ -55,6 +55,7 @@ namespace rvm64::mock {
 			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
 		}
 
+		CloseHandle(handle);
 		return data;
 	}
 };

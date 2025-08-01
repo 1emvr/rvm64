@@ -303,7 +303,6 @@ namespace rvm64::rvni {
 				void *host_mem = api->typecaster.mmap(
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, rvm64::mmu::translate_linux_prot(prot));
 				
-				__debugbreak();
 				if (!rvm64::mmu::memory_register((uintptr_t*)&addr, host_mem, len)) {
 					CSR_SET_TRAP(vmcs->pc, out_of_memory, 0, (uintptr_t)addr, 1);
 				}

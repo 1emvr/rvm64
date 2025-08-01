@@ -60,7 +60,7 @@ defer:
 };
 
 namespace rvm64 {
-	_native int vm_main() {
+	_native int32_t vm_main() {
 		vmcs_t vm_instance = { };
 		vmcs = &vm_instance;
 
@@ -70,6 +70,6 @@ namespace rvm64 {
 };
 
 int main() {
-    rvm64::vm_main();
+    return rvm64::vm_main();
 }
 
