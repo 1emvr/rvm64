@@ -21,7 +21,7 @@ namespace rvm64::entry {
 
 		data->size += VM_PROCESS_PADDING;
 
-		rvm64::memory::memory_init(data->size); // init vmcs->process.address and vmcs->process.page_table
+		rvm64::memory::memory_init(data->size); // init vmcs->process.address 
 		rvm64::elf::load_elf_image(data->address, data->size);
 		rvm64::elf::patch_elf_plt(vmcs->process.address);
 

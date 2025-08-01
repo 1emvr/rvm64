@@ -33,10 +33,10 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 
 #define CSR_SET_TRAP(epc, cause, stat, val, hlt)		\
 	DEBUGBREAK; 										\
-	vmcs->vcsr.m_epc = (uintptr_t)epc;					\
-	vmcs->vcsr.m_cause = cause;							\
-	vmcs->vcsr.m_status = stat;							\
-	vmcs->vcsr.m_tval = val;							\
+	vmcs->csr.m_epc = (uintptr_t)epc;					\
+	vmcs->csr.m_cause = cause;							\
+	vmcs->csr.m_status = stat;							\
+	vmcs->csr.m_tval = val;							\
 	vmcs->halt = hlt;									\
 	RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	\
 	__builtin_unreachable()
@@ -44,10 +44,10 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define CSR_GET(ctx_ptr)							\
 	do {											\
 		DEBUGBREAK; 								\
-		uintptr_t csr1 = vmcs->vcsr.m_epc;			\
-		uintptr_t csr2 = vmcs->vcsr.m_cause; 		\
-		uintptr_t csr3 = vmcs->vcsr.m_status;		\
-		uintptr_t csr4 = vmcs->vcsr.m_tval;			\
+		uintptr_t csr1 = vmcs->csr.m_epc;			\
+		uintptr_t csr2 = vmcs->csr.m_cause; 		\
+		uintptr_t csr3 = vmcs->csr.m_status;		\
+		uintptr_t csr4 = vmcs->csr.m_tval;			\
 		uintptr_t ip = ctx_ptr->ContextRecord->Rip; \
 	} while (0)
 
