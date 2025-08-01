@@ -30,13 +30,11 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		{
 			void (__stdcall *memory)() = (void(__stdcall*)())vmcs->pc;
 			memory();
-			vmcs->pc = vmcs->vregs[regenum::ra];
 			break;
 		}
 		case environment_call_native: 
 		{
 			rvm64::rvni::vm_native_call();
-			vmcs->pc = vmcs->vregs[regenum::ra];
 			break;
 		}
 		default: 
@@ -45,6 +43,9 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 			break;
 		}
 	}
+
+	reg_read(uintptr_t, vmcs->pc, regenum::ra); 
+	LONGJMP(vmcs->trap_handler, true); 
 
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
