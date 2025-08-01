@@ -19,17 +19,24 @@ typedef struct {
 } vm_buffer_t;
 
 
-typedef struct {
-	uint8_t *address;
-	size_t size;
-} vm_process;
-
-
 struct intel_t {
     uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
     uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
     uint64_t rflags;
 };
+
+
+typedef struct {
+	uint8_t *address;
+	size_t size;
+} vm_process;
+
+typedef struct {
+	uintptr_t m_epc;
+	uintptr_t m_cause;
+	uintptr_t m_status;
+	uintptr_t m_tval;
+} csr;
 
 typedef struct {
 	uintptr_t pc;
@@ -44,13 +51,7 @@ typedef struct {
 	jmp_buf trap_handler;
 	jmp_buf exit_handler;
 
-	struct {
-		uintptr_t m_epc;
-		uintptr_t m_cause;
-		uintptr_t m_status;
-		uintptr_t m_tval;
-	} csr;
-
+	csr vcsr;
 	int trap;
 	int cache;
 	int halt;
@@ -77,5 +78,6 @@ _externc {
 
 #ifdef __cplusplus
 }
+auto test = vmcs->vregs[regenum::t0];
 #endif
 #endif //VMCS_H

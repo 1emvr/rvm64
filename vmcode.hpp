@@ -949,6 +949,7 @@ namespace rvm64::operations {
 			address += (intptr_t)_imm;
 			address &= ~((intptr_t)1);
 
+			__debugbreak();
 			reg_write(uintptr_t, _rd, vmcs->pc);
 			vmcs->pc = address;
 
