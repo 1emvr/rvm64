@@ -19,12 +19,12 @@ struct intel_t {
     uint64_t rflags;
 };
 
-struct {
+typedef struct {
 	uint8_t *address;
 	size_t size;
 } vm_process;
 
-struct {
+typedef struct {
 	uintptr_t m_epc;
 	uintptr_t m_cause;
 	uintptr_t m_status;
