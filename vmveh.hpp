@@ -38,13 +38,10 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 			rvm64::rvni::vm_native_call();
 			break;
 		}
-		default: 
-		{
-			__debugbreak();
-			break;
-		}
+		default: break;
 	}
 
+	__debugbreak();
 	reg_read(uintptr_t, vmcs->pc, regenum::ra); 
 	LONGJMP(vmcs->trap_handler, true); 
 
