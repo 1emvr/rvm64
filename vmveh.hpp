@@ -41,7 +41,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		default: break;
 	}
 
-	__debugbreak();
 	reg_read(uintptr_t, vmcs->pc, regenum::ra); 
 	LONGJMP(vmcs->trap_handler, true); 
 
