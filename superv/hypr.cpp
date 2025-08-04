@@ -196,6 +196,7 @@ defer:
 
 
 namespace superv {
+	// NOTE: probably unused.
 	typedef struct {
 		uintptr_t offset;
 		uintptr_t original;
@@ -238,7 +239,6 @@ namespace superv {
 		uintptr_t original_entry = entry_call + 5 + original_rel;
 		{
 			// modifying the stub: getting rip-displaced address to shmem->ready and vm_entry 
-			// disp32 = target_address - rip_after_instruction
 			int32_t rel1 = (int32_t)(ready_addr - (hook_addr + 0x06)); 
 			memcpy(&hook_stub[0x02], &rel1, sizeof(rel1));
 
