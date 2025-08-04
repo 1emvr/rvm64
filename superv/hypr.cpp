@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "hypr_load.hpp"
+
 #define SHMEM_NAME L"Local\\VMSharedBuffer"
 
 typedef struct {
@@ -31,7 +33,7 @@ namespace superv::process {
 			size_t patch_size = (address + length) - page_start;
 
 			DWORD oldprot = 0;
-			if (!VirtualProtectEx(hprocess, (LPVOID)address, length, PAGE_EXECUTE_READWRITE, &oldprot)) {
+			if (!VirtualProtectEx(hprocess, (LPVOID)page_start, patch_size, PAGE_EXECUTE_READWRITE, &oldprot)) {
 				printf();
 				return false;
 			}
@@ -39,7 +41,7 @@ namespace superv::process {
 			size_t written = 0;
 			bool result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &written);
 
-			VirtualProtectEx(hprocess, (LPVOID)address, length, oldprot, &oldprot);
+			VirtualProtectEx(hprocess, (LPVOID)page_start, patch_size, oldprot, &oldprot);
 			FlushInstructionCache(hprocess, (LPCVOID)address, length);
 
 			return result && written == length;
@@ -214,7 +216,7 @@ defer:
 		}
 
 		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(hook_stub), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-		if (!hook) {
+		if (!hook_addr) {
 			return false;
 		}
 
