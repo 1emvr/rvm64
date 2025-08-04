@@ -70,7 +70,6 @@ namespace rvm64::mock {
 		if (!packet->buffer) {
 			CloseHandle(h_map);
 			UnmapViewOfFile(view);
-			destroy_shared_buffer(&packet);
 			return nullptr;
 		}
 
