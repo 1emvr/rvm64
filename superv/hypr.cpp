@@ -202,7 +202,7 @@ namespace superv {
 		uintptr_t trampoline;
 	} patch_t;
 
-	patch_t* install_entry_patch(process_t *proc, uintptr_t read_addr) {
+	patch_t* install_entry_patch(process_t *proc, uintptr_t ready_addr) {
 		uint8_t entry_sig[] = {
 			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 	// 0x00: mov     cs:vmcs, rax
 			0xe8, 0x3d, 0xfe, 0xff, 0xff,             	// 0x07: call    rvm64::entry::vm_entry(void)
@@ -228,36 +228,38 @@ namespace superv {
 			return nullptr;
 		}
 
+		uintptr_t entry_call = entry_offset + 7;
 		int32_t original_rel = 0;
-		if (!superv::process::memory::read_proc_memory(proc->handle, entry_offset + 7 + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
+
+		if (!superv::process::memory::read_proc_memory(proc->handle, entry_call + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
 			return nullptr;
 		}
 
-		uintptr_t original_entry = entry_offset + 7 + 5 + original_rel;
+		uintptr_t original_entry = entry_call + 5 + original_rel;
 		{
-			int32_t rel1 = (int32_t)(ready_addr - (hook_addr + 0x06)); // shmem->ready - (&hook + (i + &next_ins))
+			// modifying the stub: getting rip-displaced address to shmem->ready and vm_entry 
+			// disp32 = target_address - rip_after_instruction
+			int32_t rel1 = (int32_t)(ready_addr - (hook_addr + 0x06)); 
 			memcpy(&hook_stub[0x02], &rel1, sizeof(rel1));
 
 			int32_t rel2 = (int32_t)(ready_addr - (hook_addr + 0x10));
 			memcpy(&hook_stub[0x0c], &rel2, sizeof(rel2));
 
-			int32_t rel3 = (int32_t)(original_entry - (hook_addr + 0x19));
-			memcpy(&hook_stub[0x15], &rel3, sizeof(rel3));
+			int32_t entry_rel = (int32_t)(original_entry - (hook_addr + 0x19));
+			memcpy(&hook_stub[0x15], &entry_rel, sizeof(entry_rel));
 		}
 
 		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
 			return nullptr;
 		}
 
-
-		int32_t hook_offset = (int32_t)(hook_addr - (entry_offset + 8 + 5));
-
-		if (!superv::process::memory::write_proc_memory(proc->handle, entry_offset + 8 + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
+		int32_t hook_offset = (int32_t)(hook_addr - (entry_call + 5));
+		if (!superv::process::memory::write_proc_memory(proc->handle, entry_call + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
 			return nullptr;
 		}
 
 		patch_t *patch = (patch_t*)HeapAlloc(GetProcessHeap(), 0, sizeof(patch_t));
-		patch->offset = entry_offset + 8 + 1;
+		patch->offset = entry_call + 1;
 		patch->original = original_entry;
 		patch->trampoline = hook_addr;
 

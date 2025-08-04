@@ -32,7 +32,7 @@ namespace rvm64::entry {
 	_vmcall void vm_entry() {
 		if (setjmp(vmcs->trap_handler)) {}
 
-		while (!vmcs->halt) {
+		while (true) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
 
 			if (opcode == RV64_RET) {
