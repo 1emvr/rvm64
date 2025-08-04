@@ -3,28 +3,48 @@
 
 namespace superv::loader {
 	typedef struct {
-		uint8_t* address;
+		HANDLE map;
+		void* view;
+		uint8_t* buffer;
 		size_t size;
 		volatile int ready;
 	} shared_buffer;
 
 
-	bool write_shared_buffer(const char* filepath) {
+	shared_buffer* create_shared_buffer() {
 		HANDLE hmap = CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, sizeof(shared_buffer) + 0x100000, SHMEM_NAME);
 		if (!hmap) {
 			printf("[-] CreateFileMappingW failed: %lu\n", GetLastError());
-			return false;
+			return nullptr;
 		}
 
 		LPVOID view = MapViewOfFile(hmap, FILE_MAP_WRITE, 0, 0, 0);
 		if (!view) {
 			printf("[-] MapViewOfFile failed: %lu\n", GetLastError());
 			CloseHandle(hmap);
-			return false;
+			return nullptr;
 		}
 
-		shared_buffer* shbuf = (shared_buffer*)view;
+		auto shbuf = (shared_buffer*)HeapAlloc(GetProcessHeap(), 0, sizeof(shared_buffer));
+		shbuf->map = hmap;
+		shbuf->view = view;
+		return shbuf;
+	}
 
+	void destroy_shared_buffer(shared_buffer** shbuf) {
+		if (*shbuf) {
+			if ((*shbuf)->view) {
+				UnmapViewOfFile((*shbuf)->view);
+			}
+			if ((*shbuf)->map) {
+				CloseHandle((*shbuf)->map);
+			}
+			HeapFree(GetProcessHeap(), 0, (*shbuf));
+			*shbuf = nullptr;
+		}
+	}
+
+	bool write_shared_buffer(shared_buffer* shbuf, const char* filepath) {
 		FILE* f = fopen(filepath, "rb");
 		if (!f) {
 			printf("[-] Failed to open file: %s\n", filepath);
@@ -40,25 +60,22 @@ namespace superv::loader {
 		if (fsize > 0x100000) {
 			printf("[-] ELF too large\n");
 			fclose(f);
-			UnmapViewOfFile(view);
-			CloseHandle(hmap);
+			destroy_shared_buffer(&shbuf);
 			return false;
 		}
 
-		uint8_t* data = (uint8_t*)(shbuf + 1); // right after the shared_buffer struct
+		uint8_t* data = (uint8_t*)(shbuf->view + sizeof(shared_buffer)); // right after the shared_buffer struct
 		fread(data, 1, fsize, f);
 		fclose(f);
 
-		shbuf->address = data;  // VM will memcpy this out
+		shbuf->buffer = data;  // VM will memcpy this out
 		shbuf->size = fsize;
 		shbuf->ready = 1;
 
 		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
 		printf("[*] Press ENTER to exit and release shared memory...\n");
-		getchar();
 
-		UnmapViewOfFile(view);
-		CloseHandle(hmap);
+		getchar();
 		return true;
 	}
 }

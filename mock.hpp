@@ -10,6 +10,14 @@
 #define SHMEM_NAME L"Local\\VMSharedBuffer"
 
 namespace rvm64::mock {
+	typedef struct {
+		HANDLE map;
+		void* view;
+		uint8_t* buffer;
+		size_t size;
+		volatile int ready;
+	} shared_buffer;
+
 	_native void cache_file(shared_buffer *data) {
 		// only for mock-up
 	};

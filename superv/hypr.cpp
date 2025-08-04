@@ -254,7 +254,7 @@ namespace superv {
 	}
 
 	void modify_trampoline(process_t* proc) {
-
+		
 	}
 
 	int main(int argc, char** argv) {
@@ -274,10 +274,9 @@ namespace superv {
 			return 1;
 		}
 
-		// TODO: create polling thread (?)
-		if (!write_shared_buffer(argv[1])) {
-			return 1;
-		}
+		shared_buffer *shbuf = create_shared_buffer();
+		write_shared_buffer(shbuf, argv[1]);
+		destroy_shared_buffer(&shbuf);
 
 		printf("VM Should be starting now..\n");
 		return 0;
