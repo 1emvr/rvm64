@@ -11,11 +11,6 @@
 
 #define SHMEM_NAME L"Local\\VMSharedBuffer"
 
-// TODO: create an internal shmem structure for vm communications
-// NOTE: the vm does not need knowledge of this structure as the supervisor will take full control.
-// Mapped view RW is a single entity operation. Injected code forces the vm to write it's data and allow
-// the supervisor to read and write vm internal memory.
-
 namespace superv {
 	int main(int argc, char** argv) {
 		if (argc < 2) {
@@ -34,8 +29,7 @@ namespace superv {
 			return 1;
 		}
 
-		// TODO: Either calculate everything or pass the mapped view.
-		if (!superv::patch::install_entry_hook(proc, (uintptr_t)shbuf->view + offsetof(shared_buffer, ready))) {
+		if (!superv::patch::install_entry_hook(proc, shbuf)) {
 			return 1;
 		}
 		if (!superv::patch::install_decoder_hook(proc, shbuf)) {
