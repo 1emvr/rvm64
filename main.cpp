@@ -40,7 +40,7 @@ namespace rvm64::entry {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
-			rvm64::decoder::vm_decode(opcode); // decoder patch here -> hook dbg_decoder stub
+			rvm64::decoder::vm_decode(opcode); // decoder patch here -> hook for every new ins.
 			vmcs->pc += 4;
 		}
 	}
@@ -55,7 +55,7 @@ namespace rvm64 {
 		}
 
 		rvm64::entry::vm_init(packet->address, packet->size); 
-		rvm64::entry::vm_entry(); // entrypoint patch here -> hook dbg_init stub
+		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 
 defer:
 		rvm64::entry::vm_exit();

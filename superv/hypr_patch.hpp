@@ -4,6 +4,7 @@
 #include "hypr_proc.hpp"
 
 namespace superv::patch {
+
 	bool install_entry_patch(process_t *proc, uintptr_t ready_addr) {
 		uint8_t entry_sig[] = {
 			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 	// 0x00: mov     cs:vmcs, rax
