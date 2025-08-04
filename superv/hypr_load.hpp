@@ -9,6 +9,7 @@ namespace superv::loader {
 		LPVOID 			view;
 		PBYTE 			buffer;
 		SIZE_T 			size;
+		volatile int 	signal;
 		volatile int 	ready;
 	} mapped_view;
 
@@ -46,7 +47,7 @@ namespace superv::loader {
 		}
 	}
 
-	// TODO: change this and separeate mapped view RW from file loading
+	// TODO: refactor this and separeate mapped view RW from file loading
 	bool write_mapped_view(mapped_view* shbuf, const char* filepath) {
 		FILE* f = fopen(filepath, "rb");
 		if (!f) {
