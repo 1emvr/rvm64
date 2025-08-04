@@ -10,8 +10,8 @@
 typedef struct {
 	uint8_t *address;
 	size_t size;
-	uintptr_t stat;
-} vm_buffer_t;
+	volatile long ready;
+} shared_buffer;
 
 struct intel_t {
     uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
