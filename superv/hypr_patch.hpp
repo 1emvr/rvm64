@@ -89,7 +89,7 @@ namespace superv::patch {
 		0xE9, 0x00, 0x00, 0x00, 0x00              // jmp rel32 -> vm_decode
 	};
 
-	bool install_step_patch(process_t* proc, uintptr_t ready_addr) {
+	bool install_decoder_patch(process_t* proc, uintptr_t ready_addr) {
 	}
 }
 #endif // HYPRPATCH_HPP
