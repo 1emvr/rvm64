@@ -274,6 +274,7 @@ namespace superv {
 			return 1;
 		}
 
+		// patch_trampoline(patch);
 		shared_buffer *shbuf = create_shared_buffer();
 		write_shared_buffer(shbuf, argv[1]);
 		destroy_shared_buffer(&shbuf);
