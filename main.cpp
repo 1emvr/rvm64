@@ -16,6 +16,8 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_init() {
+		// TODO: replace read_file with something else. VM_BOOT waiting for new program.
+		
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 		vm_buffer_t *data = rvm64::mock::read_file();
 
