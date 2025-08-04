@@ -10,7 +10,7 @@
 typedef struct {
 	uint8_t *address;
 	size_t size;
-	volatile long ready;
+	volatile int ready;
 } shared_buffer;
 
 struct intel_t {

@@ -70,8 +70,7 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-	// NOTE: vm_exception_handler is not set-up so halt cannot be called on.
-	while (!vmcs->halt) {
+	while (true) {
 		if ((packet = rvm64::mock::read_shared_memory())) {
 			break;
 		}

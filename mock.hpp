@@ -28,35 +28,47 @@ namespace rvm64::mock {
 	}
 
 	_native shared_buffer* read_shared_memory() {
-		auto data = (shared_buffer*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(shared_buffer));
-		if (!data) {
-			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
-		}
-
 		HANDLE h_map = OpenFileMappingW(FILE_MAP_READ, FALSE, SHMEM_NAME);
 		if (!h_map) {
-			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
+			return nullptr;
 		}
 
 		LPVOID view = MapViewOfFile(h_map, FILE_MAP_READ, 0, 0, 0);
 		if (!view) {
 			CloseHandle(h_map);
-			CSR_SET_TRAP(nullptr, image_bad_load, GetLastError(), 0, 1);
+			return nullptr;
 		}
-
-		typedef struct {
-			size_t size;
-			uint8_t payload[1];
-		} shared_payload;
-
-		auto shared = (shared_payload*)view;
-		if (shared->size == 0) {
+	
+		shared_buffer *remote = (shared_buffer*)view;
+		if (!remote->ready) {
 			UnmapViewOfFile(view);
 			CloseHandle(h_map);
-			CSR_SET_TRAP(nullptr, image_bad_load, ERROR_INVALID_DATA, 0, 1);
+			return nullptr;
 		}
 
-		return data;
+		auto packet = (shared_buffer*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(shared_buffer));
+		if (!packet) {
+			UnmapViewOfFile(view);
+			CloseHandle(h_map);
+			return nullptr;
+		}
+
+		packet->size = remote->size;
+		packet->address = (uint8_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, packet->size);
+
+		if (!packet->address) {
+			HeapFree(GetProcessHeap(), 0, packet);
+			UnmapViewOfFile(view);
+			CloseHandle(h_map);
+			return nullptr;
+		}
+
+		memcpy(packet->address, remote->address, packet->size);
+
+		UnmapViewOfFile(view);
+		CloseHandle(h_map);
+
+		return packet;
 	}
 };
 #endif // MOCK_H
