@@ -9,21 +9,14 @@
 
 #define SHMEM_NAME L"Local\\VMSharedBuffer"
 
-typedef struct {
-	DWORD pid;
-	DWORD address;
-	SIZE_T size;
-	HANDLE handle;
-} process_t;
-
-typedef struct {
-    uint8_t* address;
-    size_t size;
-    volatile int ready;
-} shared_buffer;
-
-
 namespace superv::process {
+	typedef struct {
+		DWORD pid;
+		DWORD address;
+		SIZE_T size;
+		HANDLE handle;
+	} process_t;
+
 	namespace memory {
 		bool write_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
 			DWORD oldprot = 0;
@@ -120,6 +113,57 @@ namespace superv::process {
 			CloseHandle(snapshot);
 			return base_address;
 		}
+
+		void destroy_process_info(process_t** proc) {
+			if (*proc) {
+				if ((*proc)->address) {
+					HeapFree(GetProcessHeap(), 0, (*proc)->address);
+					(*proc)->address = nullptr;
+				}
+				if ((*proc)->handle) {
+					CloseHandle((*proc)->handle);
+					(*proc)->handle = 0;
+				}
+			}
+
+			HeapFree(GetProcessHeap(), 0, *proc);
+			*proc = nullptr;
+		}
+
+		process_t* get_process_info(std::wstring target_name) {
+			bool success = false;
+			process_t *proc = (process_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(process_t));
+			if (!proc) {
+				goto defer;
+			}
+
+			proc->pid = superv::process::information::get_procid(target_name);
+			if (!proc->pid) {
+				goto defer;
+			}
+
+			proc->address = superv::process::information::get_module_base(proc->pid, target_name);
+			if (!proc->address) {
+				goto defer;
+			}
+
+			proc->handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, proc->pid);
+			if (!proc->handle) {
+				goto defer;
+			}
+
+			proc->size = superv::process::information::get_proc_size(proc->handle, proc->address);
+			if (!proc->size) {
+				goto defer;
+			}
+			success = true;
+defer:
+			if (!success) {
+				superv::process::information::destroy_process_info(&proc);
+			}
+
+			return proc;
+		}
 	}
 
 
@@ -152,58 +196,7 @@ namespace superv::process {
 
 
 namespace superv {
-	void destroy_process_info(process_t** proc) {
-		if (*proc) {
-			if ((*proc)->address) {
-				HeapFree(GetProcessHeap(), 0, (*proc)->address);
-				(*proc)->address = nullptr;
-			}
-			if ((*proc)->handle) {
-				CloseHandle((*proc)->handle);
-				(*proc)->handle = 0;
-			}
-		}
-
-		HeapFree(GetProcessHeap(), 0, *proc);
-		*proc = nullptr;
-	}
-
-	process_t* get_process_info(std::wstring target_name) {
-		bool success = false;
-		process_t *proc = (process_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(process_t));
-		if (!proc) {
-			goto defer;
-		}
-
-		proc->pid = superv::process::information::get_procid(target_name);
-		if (!proc->pid) {
-			goto defer;
-		}
-
-		proc->address = superv::process::information::get_module_base(proc->pid, target_name);
-		if (!proc->address) {
-			goto defer;
-		}
-
-		proc->handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, proc->pid);
-		if (!proc->handle) {
-			goto defer;
-		}
-
-		proc->size = superv::process::information::get_proc_size(proc->handle, proc->address);
-		if (!proc->size) {
-			goto defer;
-		}
-		success = true;
-defer:
-		if (!success) {
-			destroy_process_info(&proc);
-		}
-
-		return proc;
-	}
-
-	bool install_entry_patch(process_t *proc) {
+	uintptr_t install_entry_patch(process_t *proc) {
 		uint8_t entry_sig[] = {
  			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 		// mov     cs:vmcs, rax
  			0xe8, 0x3d, 0xfe, 0xff, 0xff,             		// call    rvm64::entry::vm_entry(void)
@@ -220,26 +213,31 @@ defer:
 
 		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(hook_stub), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!hook_addr) {
-			return false;
+			return 0;
 		}
+
 		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
-			return false;
+			return 0;
 		}
 
-		const char *entry_mask = "xxxxxxxx????xxxxxxx";
-		uintptr_t offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
-		if (!offset) {
-			return false;
+		uintptr_t entry_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, "xxxxxxxx????xxxxxxx");
+		if (!entry_offset) {
+			return 0;
 		}
 
-		uint32_t old_bytes = *(uint32_t*)entry_sig + 8;
-		uint32_t rel_offset = (int32_t)(hook_addr - (offset + 8 + 5));
-
-		if (!superv::process::memory::write_proc_memory(proc->handle, offset + 8 + 1, (const uint8_t*)&rel_offset, sizeof(rel_offset))) {
-			return false;
+		int32_t original_rel = 0;
+		if (!superv::process::memory::read_proc_memory(proc->handle, entry_offset + 8 + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
+			return 0;
 		}
 
-		return true;
+		uintptr_t original_entry = entry_offset + 8 + 5 + original_rel;
+		uint32_t hook_offset = (int32_t)(hook_addr - (entry_offset + 8 + 5));
+
+		if (!superv::process::memory::write_proc_memory(proc->handle, entry_offset + 8 + 1, (const uint8_t*)&hook_offset, sizeof(hook_offset))) {
+			return 0;
+		}
+
+		return original_entry;
 	}
 
 	int main(int argc, char** argv) {
@@ -249,7 +247,7 @@ defer:
 		}
 
 		std::wstring target_name = "rvm64";
-		process_t *proc = superv::get_process_info(target_name);
+		process_t *proc = superv::process::information::get_process_info(target_name);
 		if (!proc) {
 			return 1;
 		}

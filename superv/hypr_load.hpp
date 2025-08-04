@@ -2,6 +2,13 @@
 #include <windows.h>
 
 namespace superv::loader {
+	typedef struct {
+		uint8_t* address;
+		size_t size;
+		volatile int ready;
+	} shared_buffer;
+
+
 	bool write_shared_buffer(const char* filepath) {
 		HANDLE hmap = CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, sizeof(shared_buffer) + 0x100000, SHMEM_NAME);
 		if (!hmap) {
