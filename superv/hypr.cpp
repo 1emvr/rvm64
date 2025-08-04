@@ -34,7 +34,7 @@ namespace superv::process {
 			return result && written == length;
 		}
 
-		bool read_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *read_bytes, size_t length) {
+		bool read_proc_memory(HANDLE hprocess, uintptr_t address, uint8_t *read_bytes, size_t length) {
 			size_t read = 0;
 
 			bool result = ReadProcessMemory(hprocess, (LPCVOID)address, (LPVOID)read_bytes, length, &read);
@@ -209,7 +209,7 @@ namespace superv {
  			0xe8, 0x3d, 0xfe, 0xff, 0xff,             		// call    rvm64::entry::vm_entry(void)
  			0x48, 0x8b, 0x05, 0xf5, 0x3e, 0x01, 0x00  		// mov     rax, cs:vmcs
 		};
-		uint8_t hook_stub[32] = {
+		uint8_t hook_stub[] = {
 			0x8B, 0x05, 0x00, 0x00, 0x00, 0x00,             // mov eax, [rip+disp32] (offset 2)
 			0x85, 0xC0,                                     // test eax, eax
 			0x75, 0xF8,                                     // jne spin (-8)
@@ -233,14 +233,14 @@ namespace superv {
 		}
 
 		int32_t original_rel = 0;
-		if (!superv::process::memory::read_proc_memory(proc->handle, entry_offset + 8 + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
+		if (!superv::process::memory::read_proc_memory(proc->handle, entry_offset + 8 + 1, (const uint8_t*)&original_rel, sizeof(original_rel))) {
 			return nullptr;
 		}
 
 		uintptr_t original_entry = entry_offset + 8 + 5 + original_rel;
 		int32_t hook_offset = (int32_t)(hook_addr - (entry_offset + 8 + 5));
 
-		if (!superv::process::memory::write_proc_memory(proc->handle, entry_offset + 8 + 1, (const uint8_t*)&hook_offset, sizeof(hook_offset))) {
+		if (!superv::process::memory::write_proc_memory(proc->handle, entry_offset + 8 + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
 			return nullptr;
 		}
 
@@ -264,7 +264,8 @@ namespace superv {
 			return 1;
 		}
 
-		if (!install_entry_patch(proc)) {
+		patch_t *patch = install_entry_patch(proc); 
+		if (!patch) {
 			return 1;
 		}
 
