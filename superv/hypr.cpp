@@ -1,9 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <tlhelp32.h>
-#include <string>
-#include <vector>
 
 #include "hypr_load.hpp"
 #include "hypr_proc.hpp"
@@ -33,7 +30,7 @@ namespace superv {
 			return 1;
 		}
 		/*
-			if (!install_step_patch(proc, shbuf) {
+			if (!superv::patch::install_step_patch(proc, shbuf->view) {
 				return 1;
 			}
 		*/ 

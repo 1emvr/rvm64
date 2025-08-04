@@ -4,11 +4,11 @@
 
 namespace superv::loader {
 	typedef struct {
-		HANDLE map;
-		void* view;
-		uint8_t* buffer;
-		size_t size;
-		volatile int ready;
+		HANDLE 			map;
+		LPVOID 			view;
+		PBYTE 			buffer;
+		SIZE_T 			size;
+		volatile int 	ready;
 	} shared_buffer;
 
 
