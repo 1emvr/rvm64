@@ -13,8 +13,8 @@ namespace superv::process {
 	typedef struct {
 		DWORD pid;
 		DWORD address;
-		SIZE_T size;
 		HANDLE handle;
+		SIZE_T size;
 	} process_t;
 
 	namespace memory {
@@ -36,8 +36,8 @@ namespace superv::process {
 
 		bool read_proc_memory(HANDLE hprocess, uintptr_t address, uint8_t *read_bytes, size_t length) {
 			size_t read = 0;
-
 			bool result = ReadProcessMemory(hprocess, (LPCVOID)address, (LPVOID)read_bytes, length, &read);
+
 			return result && read == length;
 		}
 	}
@@ -252,10 +252,6 @@ namespace superv {
 		}
 
 		return true;
-	}
-
-	void modify_trampoline(process_t* proc) {
-		
 	}
 
 	int main(int argc, char** argv) {
