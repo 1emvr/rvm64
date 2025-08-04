@@ -97,7 +97,7 @@ namespace superv::process {
 							base_address = (DWORD)me32.modBaseAddr;
 							break;
 						}
-					} while (Module32Next(snapshot, &moduleEntry));
+					} while (Module32Next(snapshot, &me32));
 				}
 				CloseHandle(snapshot);
 			}
@@ -163,7 +163,7 @@ namespace superv {
 			goto defer;
 		}
 
-		proc->address = superv::process::information::get_module_base(pid, target_name);
+		proc->address = superv::process::information::get_module_base(proc->pid, target_name);
 		if (!proc->address) {
 			goto defer;
 		}
