@@ -196,14 +196,7 @@ defer:
 
 
 namespace superv {
-	// NOTE: probably unused.
-	typedef struct {
-		uintptr_t offset;
-		uintptr_t original;
-		uintptr_t trampoline;
-	} patch_t;
-
-	patch_t* install_entry_patch(process_t *proc, uintptr_t ready_addr) {
+	bool install_entry_patch(process_t *proc, uintptr_t ready_addr) {
 		uint8_t entry_sig[] = {
 			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 	// 0x00: mov     cs:vmcs, rax
 			0xe8, 0x3d, 0xfe, 0xff, 0xff,             	// 0x07: call    rvm64::entry::vm_entry(void)
@@ -221,19 +214,19 @@ namespace superv {
 		size_t stub_size = sizeof(hook_stub);
 		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, stub_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!hook_addr) {
-			return nullptr;
+			return false;
 		}
 
 		uintptr_t entry_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, "xxxxxxxx????xxxxxxx");
 		if (!entry_offset) {
-			return nullptr;
+			return false;
 		}
 
 		uintptr_t entry_call = entry_offset + 7;
 		int32_t original_rel = 0;
 
 		if (!superv::process::memory::read_proc_memory(proc->handle, entry_call + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
-			return nullptr;
+			return false;
 		}
 
 		uintptr_t original_entry = entry_call + 5 + original_rel;
@@ -250,20 +243,15 @@ namespace superv {
 		}
 
 		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
-			return nullptr;
+			return false;
 		}
 
 		int32_t hook_offset = (int32_t)(hook_addr - (entry_call + 5));
 		if (!superv::process::memory::write_proc_memory(proc->handle, entry_call + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
-			return nullptr;
+			return false;
 		}
 
-		patch_t *patch = (patch_t*)HeapAlloc(GetProcessHeap(), 0, sizeof(patch_t));
-		patch->offset = entry_call + 1;
-		patch->original = original_entry;
-		patch->trampoline = hook_addr;
-
-		return patch;
+		return true;
 	}
 
 	void modify_trampoline(process_t* proc) {
@@ -287,9 +275,7 @@ namespace superv {
 			return 1;
 		}
 
-		// NOTE: probably unused.
-		patch_t *patch = install_entry_patch(proc, (uintptr_t)shbuf->view + offsetof(shared_buffer, ready)); 
-		if (!patch) {
+		if (!install_entry_patch(proc, (uintptr_t)shbuf->view + offsetof(shared_buffer, ready))) {
 			return 1;
 		}
 
