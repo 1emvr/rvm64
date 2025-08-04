@@ -2,11 +2,19 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "hypr_ipc.hpp"
 #include "hypr_load.hpp"
 #include "hypr_proc.hpp"
 #include "hypr_patch.hpp"
 
+#include "../vmmain.hpp"
+
 #define SHMEM_NAME L"Local\\VMSharedBuffer"
+
+// TODO: create an internal shmem structure for vm communications
+// NOTE: the vm does not need knowledge of this structure as the supervisor will take full control.
+// Mapped view RW is a single entity operation. Injected code forces the vm to write it's data and allow
+// the supervisor to read and write vm internal memory.
 
 namespace superv {
 	int main(int argc, char** argv) {
@@ -35,7 +43,7 @@ namespace superv {
 			}
 		*/ 
 
-		if (!write_shared_buffer(shbuf, argv[1])) {
+		if (!write_elf_file(shbuf, argv[1])) {
 			return 1;
 		}
 

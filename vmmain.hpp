@@ -51,6 +51,21 @@ typedef struct {
 	int halt;
 } vmcs_t;
 
+typedef struct {
+	HANDLE 	map;
+
+	struct {
+		uintptr_t 	address; 
+		size_t		size;
+	} buffer;
+
+	struct {
+		uintptr_t 	vmcs;
+		uint8_t 	signal;
+		uint8_t 	signal_type;
+	} ipc;
+} mapped_view;
+
 
 #ifdef __cplusplus
 _externc {
