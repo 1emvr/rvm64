@@ -61,5 +61,20 @@ namespace superv::patch {
 
 		return true;
 	}
+
+	bool install_step_patch() {
+		uint8_t decoder_sig[] = { 
+			0x8B, 0x45, 0xFC,							// 0x00: mov     eax, [rbp+opcode]
+			0x89, 0xC1,                                 // 0x03: mov     ecx, eax        ; opcode
+			0xE8, 0x85, 0x07, 0xFF, 0xFF,               // 0x05: call    rvm64::decoder::vm_decode(uint)
+			0x48, 0x8B, 0x05, 0x75, 0x3F, 0x01, 0x00,   // 0x0a: mov     rax, cs:vmcs
+		};
+		uint8_t hook_stub[] = {
+			0x50,                                     // push rax
+			0xE8, 0x00, 0x00, 0x00, 0x00,             // call rel32 -> debugger_decode
+			0x58,                                     // pop rax
+			0xE9, 0x00, 0x00, 0x00, 0x00              // jmp rel32 -> vm_decode
+		};
+	}
 }
 #endif // HYPRPATCH_HPP
