@@ -205,17 +205,16 @@ namespace superv {
 
 	patch_t* install_entry_patch(process_t *proc) {
 		uint8_t entry_sig[] = {
- 			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 		// mov     cs:vmcs, rax
- 			0xe8, 0x3d, 0xfe, 0xff, 0xff,             		// call    rvm64::entry::vm_entry(void)
- 			0x48, 0x8b, 0x05, 0xf5, 0x3e, 0x01, 0x00  		// mov     rax, cs:vmcs
+ 			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 					// 0x00: mov     cs:vmcs, rax
+ 			0xe8, 0x3d, 0xfe, 0xff, 0xff,             					// 0x07: call    rvm64::entry::vm_entry(void)
+ 			0x48, 0x8b, 0x05, 0xf5, 0x3e, 0x01, 0x00  					// 0x0c: mov     rax, cs:vmcs
 		};
 		uint8_t hook_stub[] = {
-			0x8B, 0x05, 0x00, 0x00, 0x00, 0x00,             // mov eax, [rip+disp32] (offset 2)
-			0x85, 0xC0,                                     // test eax, eax
-			0x75, 0xF8,                                     // jne spin (-8)
-			0xC7, 0x05, 0x00, 0x00, 0x00, 0x00,             // mov dword ptr [rip+disp32], imm32 (offset 11)
-			0x00, 0x00, 0x00, 0x00,                         // imm32 (offset 15)
-			0xE9, 0x00, 0x00, 0x00, 0x00                    // jmp rel32 (offset 19)
+			0x8B, 0x05, 0x00, 0x00, 0x00, 0x00,             			// 0x00: mov eax, [rip+disp32] (offset 2)
+			0x85, 0xC0,                                     			// 0x06: test eax, eax
+			0x75, 0xF8,                                     			// 0x08: jne spin (-8)
+			0xC7, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 	// 0x0a: mov dword ptr [rip+disp32], imm32 (offset 11)
+			0xE9, 0x00, 0x00, 0x00, 0x00                    			// 0x14: jmp rel32 (offset 19)
 		};
 
 		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(hook_stub), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
@@ -223,6 +222,7 @@ namespace superv {
 			return nullptr;
 		}
 
+		memset(hook_addr, 0, sizeof(hook_stub));
 		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
 			return nullptr;
 		}
