@@ -37,11 +37,9 @@ namespace superv {
 		if (!superv::patch::install_entry_patch(proc, (uintptr_t)shbuf->view + offsetof(shared_buffer, ready))) {
 			return 1;
 		}
-		/*
-			if (!superv::patch::install_step_patch(proc, shbuf->view) {
-				return 1;
-			}
-		*/ 
+		if (!superv::patch::install_decoder_patch(proc, shbuf)) {
+			return 1;
+		}
 
 		if (!write_elf_file(shbuf, argv[1])) {
 			return 1;
