@@ -34,10 +34,11 @@ namespace superv {
 			return 1;
 		}
 
-		if (!superv::patch::install_entry_patch(proc, (uintptr_t)shbuf->view + offsetof(shared_buffer, ready))) {
+		// TODO: Either calculate everything or pass the mapped view.
+		if (!superv::patch::install_entry_hook(proc, (uintptr_t)shbuf->view + offsetof(shared_buffer, ready))) {
 			return 1;
 		}
-		if (!superv::patch::install_decoder_patch(proc, shbuf)) {
+		if (!superv::patch::install_decoder_hook(proc, shbuf)) {
 			return 1;
 		}
 

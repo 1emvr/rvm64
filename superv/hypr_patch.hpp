@@ -21,11 +21,12 @@ namespace superv::patch {
 		0xe9, 0x00, 0x00, 0x00, 0x00,               // jmp rel32
 	};
 
-	bool install_entry_patch(process_t *proc, mapped_view* shbuf) {
+	bool install_entry_hook(process_t *proc, mapped_view* shbuf) {
 		size_t stub_size = sizeof(entry_hook);
 
-		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, stub_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		uintptr_t hook_addr = (uintptr_t)rvm64::process::memory::allocate_remote_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
 		if (!hook_addr) {
+			printf("[ERR] Could not find suitable address in the remote process for entry_hook\n");
 			return false;
 		}
 
@@ -34,14 +35,14 @@ namespace superv::patch {
 			return false;
 		}
 
-		uintptr_t entry_call = entry_offset + 7;
+		uintptr_t call_site = entry_offset + 7;
 		int32_t original_rel = 0;
 
-		if (!superv::process::memory::read_proc_memory(proc->handle, entry_call + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
+		if (!superv::process::memory::read_proc_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
 			return false;
 		}
 
-		uintptr_t original_entry = entry_call + 5 + original_rel;
+		uintptr_t original_entry = call_site + 5 + original_rel;
 		uintptr_t signal = &shbuf->ipc.signal;
 		{
 			// modifying the stub: getting RIP-displaced addresss to shmem->signal + vm_entry and 
@@ -59,8 +60,8 @@ namespace superv::patch {
 			return false;
 		}
 
-		int32_t hook_offset = (int32_t)(hook_addr - (entry_call + 5));
-		if (!superv::process::memory::write_proc_memory(proc->handle, entry_call + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
+		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
+		if (!superv::process::memory::write_proc_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
 			return false;
 		}
 
@@ -92,7 +93,7 @@ namespace superv::patch {
 	};
 	
 
-	bool install_decoder_patch(process_t* proc, mapped_view* shbuf) {
+	bool install_decoder_hook(process_t* proc, mapped_view* shbuf) {
 		size_t stub_size = sizeof(decoder_hook);
 
 		uintptr_t hook_addr = (uintptr_t)rvm64::process::memory::allocate_remote_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
