@@ -26,26 +26,29 @@ namespace superv::process {
 			}
 
 			SIZE_T bytes_written = 0;
-			BOOL result = WriteProcessMemory(hprocess, (LVPOID)address, new_bytes, length, &bytes_written);
+			BOOL result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &bytes_written);
 
 			VirtualProtectEx(hprocess, (LPVOID)address, length, oldprot, &olprot);
 			return result && bytes_written == length;
 		}
-
-		BOOL install_hook(HANDLE hprocess, uintptr_t base, size_t pattern_len, uint8_t *pattern, const char *mask) {
-			UINT_PTR offset = superv::scanner::signature_scan(hprocess, base, pattern_len, pattern, mask);
-			if (!offset) {
-				return false;
-			}
-
-			BOOL patched = superv::memory::patch_proc_memory(offset);
-			if (!patched) {
-				return false;
-			}
-		}
 	}
 
 	namespace information {
+		VOID destroy_process(process **proc) {
+			if (*proc) {
+				if ((*proc)->address) {
+					HeapFree(GetProcessHeap(), 0, (*proc)->address);
+					(*proc)->address = nullptr;
+				}
+				if ((*proc)->handle) {
+					CloseHandle((*proc)->handle);
+					(*proc)->handle = 0;
+				}
+			}
+			HeapFree(GetProcessHeap(), 0, *proc);
+			*proc = nullptr;
+		}
+
 		SIZE_T get_proc_size(HANDLE hprocess, uintptr_t base) {
 			MEMORY_BASIC_INFORMATION mbi;
 			SIZE_T total_size = 0;
@@ -107,6 +110,7 @@ namespace superv::process {
 			}
 			return base_address;
 		}
+
 	}
 
 	namespace scanner {
@@ -193,35 +197,59 @@ namespace superv::loader {
 }
 
 
+typedef struct {
+	DWORD pid;
+	DWORD address;
+	SIZE_T size;
+	HANDLE handle;
+} process;
+
+
 namespace superv {
+	process* get_process_info(std::wstring target_name) {
+		bool success = false;
+		process *proc = (process*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(process));
+		if (!proc) {
+			goto defer;
+		}
+
+		proc->pid = superv::process::information::get_procid(target_name);
+		if (!proc->pid) {
+			goto defer;
+		}
+
+		proc->address = superv::process::information::get_module_base(pid, target_name);
+		if (!proc->address) {
+			goto defer;
+		}
+
+		proc->handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, proc->pid);
+		if (!proc->handle) {
+			goto defer;
+		}
+
+		proc->size = superv::process::information::get_proc_size(proc->handle, proc->address);
+		if (!proc->size) {
+			goto defer;
+		}
+
+		success = true;
+defer:
+		if (!success) {
+			destroy_process(&proc);
+		}
+
+		return proc;
+	}
 	int main(int argc, char** argv) {
 		if (argc < 2) {
 			printf("Usage: %s <riscv_elf_file>\n", argv[0]);
 			return 1;
 		}
 
-		DWORD pid = 0;
-		LPVOID base = 0;
-
 		std::wstring target_name = "rvm64";
-
-		DWORD pid = superv::process::information::get_procid(target_name);
-		if (!pid) {
-			return 1;
-		}
-
-		UINT_PTR proc_base = superv::process::information::get_module_base(pid, target_name);
-		if (!proc_base) {
-			return 1;
-		}
-
-		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, TRUE, pid);
-		if (!hprocess) {
-			return 1;
-		}
-
-		UINT_PTR proc_size = superv::process::information::get_proc_size(hprocess, proc_base);
-		if (!proces_size) {
+		process *proc = superv::process::information::get_process_info(target_name);
+		if (!proc) {
 			return 1;
 		}
 
@@ -229,8 +257,7 @@ namespace superv {
 			0x90, 0x90, 0x48, 0x89, 0xE5, 0x90, 0x90, 0x90,
 			0x48, 0x89, 0xE5, 0x55, 0x48, 0x8B, 0xEC, 0x90
 		};
-
-		if (!superv::process::memory::install_hook(hprocess, proc_base, proc_size, dummy, "xxx")) {
+		if (!superv::process::memory::install_hook(proc->handle, proc->address, proc->size, dummy, "xxx")) {
 			return 1;
 		}
 
