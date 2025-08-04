@@ -40,7 +40,7 @@ namespace superv {
 			}
 		*/ 
 
-		if (!write_shared_buffer(shbuf, argv[1])) {
+		if (!write_elf_file(shbuf, argv[1])) {
 			return 1;
 		}
 

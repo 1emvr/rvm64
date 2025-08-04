@@ -51,6 +51,19 @@ typedef struct {
 	int halt;
 } vmcs_t;
 
+typedef struct {
+	HANDLE 			map;
+	void* 			view; 
+	size_t 			size;
+	volatile int 	ready;
+
+	struct {
+		void* 			vmcs_ptr;
+		volatile int 	signal;
+	} ipc;
+
+} mapped_view;
+
 
 #ifdef __cplusplus
 _externc {
