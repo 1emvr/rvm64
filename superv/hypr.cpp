@@ -24,24 +24,28 @@ namespace superv {
 			return 1;
 		}
 
-		shared_buffer *shbuf = create_shared_buffer();
+		shared_buffer *shbuf = superv::ipc::create_mapped_view();
 		if (!shbuf) {
 			return 1;
 		}
-
 		if (!superv::patch::install_entry_hook(proc, shbuf)) {
 			return 1;
 		}
 		if (!superv::patch::install_decoder_hook(proc, shbuf)) {
 			return 1;
 		}
-
-		if (!write_elf_file(shbuf, argv[1])) {
+		if (!superv::loader::write_elf_file(shbuf, argv[1])) {
 			return 1;
 		}
 
-		destroy_shared_buffer(&shbuf);
 		printf("VM Should be starting now..\n");
+		/*
+		 while (true) { 
+		 	break;
+		}
+		*/
+		
+		superv::ipc::destroy_mapped_view(&shbuf);
 
 		return 0;
 	}
