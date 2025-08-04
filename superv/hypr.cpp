@@ -197,8 +197,8 @@ defer:
 
 	bool install_entry_patch(process_t *proc) {
 		uint8_t hook_stub[] = {
-			0xCC,                         // int3 (breakpoint for testing)
-			0xC3                          // ret (return immediately)
+			0xc6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01,   // mov byte ptr [shared_flag], 1
+			0xeb, 0xfe,                                 // jmp $
 		};
 		uint8_t entry_sig[] = {
 			0x90, 0x90, 0x48, 0x89, 0xe5, 0x90, 0x90, 0x90,
@@ -209,9 +209,8 @@ defer:
 		};
 
 		const char *entry_mask = "xxxxx????xxxxxxx";
-		uintptr_t offset = 0;
-
-		if (!(offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask))) {
+		uintptr_t offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
+		if (!offset) {
 			return false;
 		}
 
@@ -224,9 +223,11 @@ defer:
 		if (!superv::process::memory::patch_proc_memory(proc->handle, offset + 5, entry_patch, 4)) {
 			return false;
 		}
+
 		if (!superv::process::memory::patch_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
 			return false;
 		}
+
 		return true;
 	}
 
