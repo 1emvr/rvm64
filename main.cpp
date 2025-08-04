@@ -58,6 +58,7 @@ namespace rvm64 {
 
 defer:
 		rvm64::entry::vm_exit();
+
 		restore_host_context();
 		return vmcs->csr.m_cause;
 	}
