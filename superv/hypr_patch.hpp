@@ -67,6 +67,14 @@ namespace superv::patch {
 		return true;
 	}
 
+	/*
+	 TODO:
+	 decoder hook:
+	 	- save vmcs pointer to mapped_view
+		- superv reads state of regs, stack, etc.
+		- send debugger signal to vm 
+		- vm passes opcode to vm_decode
+	 */
 	_data uint8_t decoder_sig[] = { 
 		0x8B, 0x45, 0xFC,							// 0x00: mov     eax, [rbp+opcode]
 		0x89, 0xC1,                                 // 0x03: mov     ecx, eax        ; opcode
