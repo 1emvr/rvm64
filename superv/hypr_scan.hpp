@@ -25,6 +25,7 @@ namespace scanner {
 			if (data_compare(buffer.data() + i, pattern, mask))
 				return base + i;
 		}
+
 		return 0;
 	}
 }
