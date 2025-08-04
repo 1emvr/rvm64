@@ -2,6 +2,7 @@
 #define HYPRIPC_HPP
 #include "../vmmain.hpp"
 
+#define SHMEM_NAME L"Local\\VMSharedBuffer"
 #define MAPPED_VIEW_BUFFER_SIZE 0x100000
 
 namespace ipc {

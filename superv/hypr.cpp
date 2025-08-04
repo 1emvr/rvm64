@@ -9,8 +9,6 @@
 
 #include "../vmmain.hpp"
 
-#define SHMEM_NAME L"Local\\VMSharedBuffer"
-
 namespace superv {
 	int main(int argc, char** argv) {
 		if (argc < 2) {
@@ -24,7 +22,7 @@ namespace superv {
 			return 1;
 		}
 
-		shared_buffer *shbuf = superv::ipc::create_mapped_view();
+		mapped_view *shbuf = superv::ipc::create_mapped_view();
 		if (!shbuf) {
 			return 1;
 		}
@@ -40,6 +38,7 @@ namespace superv {
 
 		printf("VM Should be starting now..\n");
 		/*
+		TODO: IPC/Decoder loop
 		 while (true) { 
 		 	break;
 		}
