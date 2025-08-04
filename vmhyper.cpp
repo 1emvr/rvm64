@@ -17,7 +17,7 @@ typedef struct {
 
 
 namespace superv::process {
-	namespace proc_memory {
+	namespace memory {
 		BOOL patch_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
 			DWORD oldprot = 0;
 
@@ -45,7 +45,23 @@ namespace superv::process {
 		}
 	}
 
-	namespace proc_enum {
+	namespace information {
+		SIZE_T get_proc_size(HANDLE hprocess, uintptr_t base) {
+			MEMORY_BASIC_INFORMATION mbi;
+			SIZE_T total_size = 0;
+
+			uintptr_t address = base;
+			while (VirtualQueryEx(hprocess, (LPCVOID)address, &mbi, sizeof(mbi))) {
+				if ((uintptr_t)mbi.AllocationBase != base) {
+					break;
+				}
+				total_size += mbi.RegionSize;
+				address += mbi.RegionSize;
+			}
+
+			return total_size;
+		}
+
 		DWORD get_procid(const std::wstring& target_name) {
 			DWORD pid = 0;
 			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -93,7 +109,7 @@ namespace superv::process {
 		}
 	}
 
-	namespace proc_scan {
+	namespace scanner {
 		bool data_compare(const uint8_t* data, const uint8_t* pattern, const char* mask) {
 			for (; *mask; ++mask, ++data, ++pattern) {
 				if (*mask == 'x' && *data != *pattern)
@@ -177,7 +193,6 @@ namespace superv::loader {
 }
 
 
-
 namespace superv {
 	int main(int argc, char** argv) {
 		if (argc < 2) {
@@ -190,19 +205,23 @@ namespace superv {
 
 		std::wstring target_name = "rvm64";
 
-		DWORD pid = superv::process::proc_enum::get_procid(target_name);
+		DWORD pid = superv::process::information::get_procid(target_name);
 		if (!pid) {
 			return 1;
 		}
 
-		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, TRUE, pid);
-		if (!h_process) {
+		UINT_PTR proc_base = superv::process::information::get_module_base(pid, target_name);
+		if (!proc_base) {
 			return 1;
 		}
 
-		// TODO: get process size
-		UINT_PTR base = superv::process::proc_enum::get_module_base(pid, target_name);
-		if (!base) {
+		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, TRUE, pid);
+		if (!hprocess) {
+			return 1;
+		}
+
+		UINT_PTR proc_size = superv::process::information::get_proc_size(hprocess, proc_base);
+		if (!proces_size) {
 			return 1;
 		}
 
@@ -210,7 +229,10 @@ namespace superv {
 			0x90, 0x90, 0x48, 0x89, 0xE5, 0x90, 0x90, 0x90,
 			0x48, 0x89, 0xE5, 0x55, 0x48, 0x8B, 0xEC, 0x90
 		};
-		superv::process::proc_memory::install_patch(hprocess, base, sizeof(dummy), dummy, "xxx");
+
+		if (!superv::process::memory::install_hook(hprocess, proc_base, proc_size, dummy, "xxx")) {
+			return 1;
+		}
 
 		if (!write_shared_buffer(argv[1])) {
 			return 1;
