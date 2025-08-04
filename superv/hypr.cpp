@@ -25,26 +25,27 @@ typedef struct {
 
 namespace superv::process {
 	namespace memory {
-		bool patch_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
-			SYSTEM_INFO si = { };
-			GetSystemInfo(&si);
-
-			uintptr_t page_start = address & ~(si.dwPageSize - 1);
-			size_t patch_size = (address + length) - page_start;
-
+		bool write_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
 			DWORD oldprot = 0;
-			if (!VirtualProtectEx(hprocess, (LPVOID)page_start, patch_size, PAGE_EXECUTE_READWRITE, &oldprot)) {
-				printf();
+
+			if (!VirtualProtectEx(hprocess, (LPVOID)address, length, PAGE_EXECUTE_READWRITE, &oldprot)) {
 				return false;
 			}
 
 			size_t written = 0;
 			bool result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &written);
 
-			VirtualProtectEx(hprocess, (LPVOID)page_start, patch_size, oldprot, &oldprot);
+			VirtualProtectEx(hprocess, (LPVOID)address, length, oldprot, &oldprot);
 			FlushInstructionCache(hprocess, (LPCVOID)address, length);
 
 			return result && written == length;
+		}
+
+		bool read_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *read_bytes, size_t length) {
+			size_t read = 0;
+
+			bool result = ReadProcessMemory(hprocess, (LPCVOID)address, (LPVOID)read_bytes, length, &read);
+			return result && read == length;
 		}
 	}
 
@@ -60,6 +61,7 @@ namespace superv::process {
 				if ((uintptr_t)mbi.AllocationBase != base) {
 					break;
 				}
+
 				total_size += mbi.RegionSize;
 				address += mbi.RegionSize;
 			}
@@ -71,24 +73,27 @@ namespace superv::process {
 			DWORD pid = 0;
 			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-			if (snapshot != INVALID_HANDLE_VALUE) {
-				PROCESSENTRY32W pe32;
-				pe32.dwSize = sizeof(PROCESSENTRY32W);
-
-				if (Process32FirstW(snapshot, &pe32)) {
-					do {
-						std::wstring entry_name = pe32.szExeFile;
-						if (entry_name.length() > 4 && entry_name.substr(entry_name.length() - 4) == L".exe") {
-							entry_name = entry_name.substr(0, entry_name.length() - 4);
-						}
-						if (_wcsicmp(entry_name.c_str(), target_name.c_str()) == 0) {
-							pid = pe32.th32ProcessID;
-							break;
-						}
-					} while (Process32NextW(snapshot, &pe32));
-				}
-				CloseHandle(snapshot);
+			if (snapshot == INVALID_HANDLE_VALUE) {
+				return 0;
 			}
+
+			PROCESSENTRY32W pe32;
+			pe32.dwSize = sizeof(PROCESSENTRY32W);
+
+			if (Process32FirstW(snapshot, &pe32)) {
+				do {
+					std::wstring entry_name = pe32.szExeFile;
+					if (entry_name.length() > 4 && entry_name.substr(entry_name.length() - 4) == L".exe") {
+						entry_name = entry_name.substr(0, entry_name.length() - 4);
+					}
+					if (_wcsicmp(entry_name.c_str(), target_name.c_str()) == 0) {
+						pid = pe32.th32ProcessID;
+						break;
+					}
+				} while (Process32NextW(snapshot, &pe32));
+			}
+
+			CloseHandle(snapshot);
 			return pid;
 		}
 
@@ -96,20 +101,23 @@ namespace superv::process {
 			DWORD base_address = 0;
 			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
 
-			if (snapshot != INVALID_HANDLE_VALUE) {
-				MODULEENTRY32 me32;
-				me32.dwSize = sizeof(MODULEENTRY32);
-
-				if (Module32First(snapshot, &me32)) {
-					do {
-						if (_tcscmp(me32.szModule, target_name) == 0) {
-							base_address = (DWORD)me32.modBaseAddr;
-							break;
-						}
-					} while (Module32Next(snapshot, &me32));
-				}
-				CloseHandle(snapshot);
+			if (snapshot == INVALID_HANDLE_VALUE) {
+				return 0;
 			}
+
+			MODULEENTRY32 me32;
+			me32.dwSize = sizeof(MODULEENTRY32);
+
+			if (Module32First(snapshot, &me32)) {
+				do {
+					if (_tcscmp(me32.szModule, target_name) == 0) {
+						base_address = (DWORD)me32.modBaseAddr;
+						break;
+					}
+				} while (Module32Next(snapshot, &me32));
+			}
+
+			CloseHandle(snapshot);
 			return base_address;
 		}
 	}
@@ -196,35 +204,38 @@ defer:
 	}
 
 	bool install_entry_patch(process_t *proc) {
-		uint8_t hook_stub[] = {
-			0xc6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01,   // mov byte ptr [shared_flag], 1
-			0xeb, 0xfe,                                 // jmp $
-		};
 		uint8_t entry_sig[] = {
-			0x90, 0x90, 0x48, 0x89, 0xe5, 0x90, 0x90, 0x90,
-			0x90, 0x89, 0xe5, 0x55, 0x48, 0x8b, 0xec, 0x90,
+ 			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 		// mov     cs:vmcs, rax
+ 			0xe8, 0x3d, 0xfe, 0xff, 0xff,             		// call    rvm64::entry::vm_entry(void)
+ 			0x48, 0x8b, 0x05, 0xf5, 0x3e, 0x01, 0x00  		// mov     rax, cs:vmcs
 		};
-		uint8_t entry_patch[] = {
-			0x00, 0x00, 0x00, 0x00 
+		uint8_t hook_stub[32] = {
+			0x8B, 0x05, 0x00, 0x00, 0x00, 0x00,             // mov eax, [rip+disp32] (offset 2)
+			0x85, 0xC0,                                     // test eax, eax
+			0x75, 0xF8,                                     // jne spin (-8)
+			0xC7, 0x05, 0x00, 0x00, 0x00, 0x00,             // mov dword ptr [rip+disp32], imm32 (offset 11)
+			0x00, 0x00, 0x00, 0x00,                         // imm32 (offset 15)
+			0xE9, 0x00, 0x00, 0x00, 0x00                    // jmp rel32 (offset 19)
 		};
-
-		const char *entry_mask = "xxxxx????xxxxxxx";
-		uintptr_t offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
-		if (!offset) {
-			return false;
-		}
 
 		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(hook_stub), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!hook_addr) {
 			return false;
 		}
-
-		*(uint32_t*)entry_patch = (uint32_t)hook_addr;
-		if (!superv::process::memory::patch_proc_memory(proc->handle, offset + 5, entry_patch, 4)) {
+		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
 			return false;
 		}
 
-		if (!superv::process::memory::patch_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
+		const char *entry_mask = "xxxxxxxx????xxxxxxx";
+		uintptr_t offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
+		if (!offset) {
+			return false;
+		}
+
+		uint32_t old_bytes = *(uint32_t*)entry_sig + 8;
+		uint32_t rel_offset = (int32_t)(hook_addr - (offset + 8 + 5));
+
+		if (!superv::process::memory::write_proc_memory(proc->handle, offset + 8 + 1, (const uint8_t*)&rel_offset, sizeof(rel_offset))) {
 			return false;
 		}
 
