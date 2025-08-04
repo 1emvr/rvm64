@@ -30,7 +30,7 @@ namespace rvm64::mock {
 				(*shbuf)->size = 0;
 			}
 
-			if ((*shbuf)->map) UnmapViewOfFile((*shbuf)->map);
+			if ((*shbuf)->view) UnmapViewOfFile((*shbuf)->view);
 			if ((*shbuf)->map) CloseHandle((*shbuf)->map);
 
 			HeapFree(GetProcessHeap(), 0, *shbuf);
