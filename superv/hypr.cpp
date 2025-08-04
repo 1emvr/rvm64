@@ -147,7 +147,7 @@ namespace superv::process {
 				goto defer;
 			}
 
-			proc->handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, proc->pid);
+			proc->handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proc->pid);
 			if (!proc->handle) {
 				goto defer;
 			}
