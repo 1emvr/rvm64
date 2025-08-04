@@ -22,7 +22,7 @@ namespace superv::patch {
 		0xe9, 0x00, 0x00, 0x00, 0x00,   			// 0x14: jmp rel32 to original vm_entry
 	};
 
-	bool install_entry_patch(process_t *proc, uintptr_t ready_addr) {
+	bool install_entry_patch(process_t *proc, uintptr_t signal_addr) {
 		size_t stub_size = sizeof(hook_stub);
 
 		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, stub_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
@@ -44,11 +44,11 @@ namespace superv::patch {
 
 		uintptr_t original_entry = entry_call + 5 + original_rel;
 		{
-			// modifying the stub: getting rip-displaced address to shmem->ready and vm_entry 
-			int32_t rel1 = (int32_t)(ready_addr - (hook_addr + 0x06)); 
+			// modifying the stub: getting rip-displaced address to shmem->signal and vm_entry 
+			int32_t rel1 = (int32_t)(signal_addr - (hook_addr + 0x06)); 
 			memcpy(&hook_stub[0x02], &rel1, sizeof(rel1));
 
-			int32_t rel2 = (int32_t)(ready_addr - (hook_addr + 0x10));
+			int32_t rel2 = (int32_t)(signal_addr - (hook_addr + 0x10));
 			memcpy(&hook_stub[0x0c], &rel2, sizeof(rel2));
 
 			int32_t entry_rel = (int32_t)(original_entry - (hook_addr + 0x19));
@@ -81,7 +81,7 @@ namespace superv::patch {
 		0xE9, 0x00, 0x00, 0x00, 0x00              // jmp rel32 -> vm_decode
 	};
 
-	bool install_step_patch() {
+	bool install_step_patch(process_t* proc, uintptr_t ready_addr) {
 	}
 }
 #endif // HYPRPATCH_HPP

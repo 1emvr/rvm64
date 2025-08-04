@@ -1,12 +1,11 @@
 #ifndef HYPRLOAD_HPP
 #define HYPRLOAD_HPP
 #include <windows.h>
+
+#include "hypr_ipc.hpp"
 #include "../vmmain.hpp"
 
-// TODO: separate scopes and create shmem/ipc namespace
 namespace superv::loader {
-
-	// TODO: refactor this and separeate mapped view RW from file loading
 	bool write_elf_file(mapped_view* shbuf, const char* filepath) {
 		FILE* f = fopen(filepath, "rb");
 		if (!f) {
@@ -16,7 +15,7 @@ namespace superv::loader {
 		}
 
 		fseek(f, 0, SEEK_END);
-		size_t shbuf->size = ftell(f);
+		size_t fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);
 
 		if (fsize > 0x100000) {
@@ -34,9 +33,6 @@ namespace superv::loader {
 		shbuf->ready = 1;
 
 		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
-		printf("[*] Press ENTER to exit and release shared memory...\n");
-
-		getchar();
 		return true;
 	}
 }

@@ -52,16 +52,18 @@ typedef struct {
 } vmcs_t;
 
 typedef struct {
-	HANDLE 			map;
-	void* 			view; 
-	size_t 			size;
-	volatile int 	ready;
+	HANDLE 	map;
 
 	struct {
-		void* 			vmcs_ptr;
-		volatile int 	signal;
-	} ipc;
+		uintptr_t 	address; 
+		size_t		size;
+	} buffer;
 
+	struct {
+		uintptr_t 	vmcs;
+		uint8_t 	signal;
+		uint8_t 	signal_type;
+	} ipc;
 } mapped_view;
 
 
