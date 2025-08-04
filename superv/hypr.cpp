@@ -178,13 +178,13 @@ defer:
 
 		uintptr_t signature_scan(HANDLE hprocess, uintptr_t base, size_t size, const uint8_t* pattern, const char* mask) {
 			std::vector<uint8_t> buffer(size);
-			size_t bytes_read  = 0;
+
+			size_t bytes_read = 0;
+			size_t pat_length = strlen(mask);
 
 			if (!ReadProcessMemory(hprocess, (LPVOID)base, buffer.data(), size, &bytes_read)) {
 				return 0;
 			}
-
-			size_t pat_length = strlen(mask);
 			for (size_t i = 0; i <= size - pat_length; ++i) {
 				if (data_compare(buffer.data() + i, pattern, mask))
 					return base + i;
@@ -196,7 +196,14 @@ defer:
 
 
 namespace superv {
-	uintptr_t install_entry_patch(process_t *proc) {
+	typedef struct {
+		uintptr_t offset;
+		uintptr_t original;
+		uintptr_t trampoline;
+	} patch_t;
+
+
+	patch_t* install_entry_patch(process_t *proc) {
 		uint8_t entry_sig[] = {
  			0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 		// mov     cs:vmcs, rax
  			0xe8, 0x3d, 0xfe, 0xff, 0xff,             		// call    rvm64::entry::vm_entry(void)
@@ -213,31 +220,36 @@ namespace superv {
 
 		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(hook_stub), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!hook_addr) {
-			return 0;
+			return nullptr;
 		}
 
 		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
-			return 0;
+			return nullptr;
 		}
 
 		uintptr_t entry_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, "xxxxxxxx????xxxxxxx");
 		if (!entry_offset) {
-			return 0;
+			return nullptr;
 		}
 
 		int32_t original_rel = 0;
 		if (!superv::process::memory::read_proc_memory(proc->handle, entry_offset + 8 + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
-			return 0;
+			return nullptr;
 		}
 
 		uintptr_t original_entry = entry_offset + 8 + 5 + original_rel;
-		uint32_t hook_offset = (int32_t)(hook_addr - (entry_offset + 8 + 5));
+		int32_t hook_offset = (int32_t)(hook_addr - (entry_offset + 8 + 5));
 
 		if (!superv::process::memory::write_proc_memory(proc->handle, entry_offset + 8 + 1, (const uint8_t*)&hook_offset, sizeof(hook_offset))) {
-			return 0;
+			return nullptr;
 		}
 
-		return original_entry;
+		patch_t *patch = (patch_t*)HeapAlloc(GetProcessHeap(), 0, sizeof(patch_t));
+		patch->offset = entry_offset + 8 + 1;
+		patch->original = original_entry;
+		patch->trampoline = hook_addr;
+
+		return patch;
 	}
 
 	int main(int argc, char** argv) {
