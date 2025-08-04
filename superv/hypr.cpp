@@ -14,7 +14,7 @@
 // TODO: create an internal shmem structure for vm communications
 // NOTE: the vm does not need knowledge of this structure as the supervisor will take full control.
 // Mapped view RW is a single entity operation. Injected code forces the vm to write it's data and allow
-// the supervisor to read and access vm internal memory.
+// the supervisor to read and write vm internal memory.
 
 namespace superv {
 	int main(int argc, char** argv) {
