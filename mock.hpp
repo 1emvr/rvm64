@@ -18,21 +18,24 @@ namespace rvm64::mock {
 		volatile int ready;
 	} shared_buffer;
 
-	_native void cache_file(shared_buffer *data) {
-		// only for mock-up
+	_native void cache_shared_buffer(shared_buffer *data) {
+		// only for mock-up. not currently saving anything.
 	};
 
-	_native void destroy_file(shared_buffer *buffer) {
-		if (!buffer) {
-			return;
-		}
-		if (buffer->address) {
-			HeapFree(GetProcessHeap(), 0, buffer->address);
-			buffer->address = nullptr;
-			buffer->size = 0;
-		}
+	_native void destroy_shared_buffer(shared_buffer **shbuf) {
+		if (shbuf) {
+			if ((*shbuf)->buffer) {
+				HeapFree(GetProcessHeap(), 0, (*shbuf)->buffer);
+				(*shbuf)->buffer = nullptr;
+				(*shbuf)->size = 0;
+			}
 
-		HeapFree(GetProcessHeap(), 0, buffer);
+			if ((*shbuf)->map) UnmapViewOfFile((*shbuf)->map);
+			if ((*shbuf)->map) CloseHandle((*shbuf)->map);
+
+			HeapFree(GetProcessHeap(), 0, *shbuf);
+			*shbuf = nullptr;
+		}
 	}
 
 	_native shared_buffer* read_shared_memory() {
@@ -53,24 +56,25 @@ namespace rvm64::mock {
 			Sleep(10);
 		}
 
+		// NOTE: we could free the remote buffer, possibly
 		auto packet = (shared_buffer*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(shared_buffer));
 		if (!packet) {
-			UnmapViewOfFile(view);
 			CloseHandle(h_map);
+			UnmapViewOfFile(view);
 			return nullptr;
 		}
 
 		packet->size = remote->size;
-		packet->address = (uint8_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, packet->size);
+		packet->buffer = (uint8_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, packet->size);
 
-		if (!packet->address) {
-			HeapFree(GetProcessHeap(), 0, packet);
-			UnmapViewOfFile(view);
+		if (!packet->buffer) {
 			CloseHandle(h_map);
+			UnmapViewOfFile(view);
+			destroy_shared_buffer(&packet);
 			return nullptr;
 		}
 
-		memcpy(packet->address, remote->address, packet->size);
+		memcpy(packet->buffer, remote->buffer, packet->size);
 
 		UnmapViewOfFile(view);
 		CloseHandle(h_map);

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HYPRLOAD_HPP
+#define HYPRLOAD_HPP
 #include <windows.h>
 
 namespace superv::loader {
@@ -79,3 +80,4 @@ namespace superv::loader {
 		return true;
 	}
 }
+#endif // HYPRLOAD_HPP
