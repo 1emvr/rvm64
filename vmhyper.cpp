@@ -200,6 +200,7 @@ namespace superv {
 			return 1;
 		}
 
+		// TODO: get process size
 		UINT_PTR base = superv::process::proc_enum::get_module_base(pid, target_name);
 		if (!base) {
 			return 1;
