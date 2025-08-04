@@ -34,7 +34,8 @@ extern "C" int main() {
 	}
 
 	memset(buffer, 0, size);
-	memcpy(buffer, &code, size);
+	__debugbreak();
+	memcpy(buffer, (void*)code, size);
 
 	void (*fn)() = (void(*)())buffer;
 	fn();

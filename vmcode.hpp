@@ -1,11 +1,78 @@
 #ifndef VMCODE_H
 #define VMCODE_H
+#include <stdarg.h>
+
 #include "vmmain.hpp"
 #include "vmcrypt.hpp"
 #include "vmmem.hpp"
 #include "vmrwx.hpp"
 #include "vmmu.hpp"
 #include "vmutils.hpp"
+
+#ifdef DEBUG
+#define dbgprint(fmt, ...) printf(fmt, ##__VA_ARGS__);
+#else
+#define dbgprint(fmt, ...) ((void)0)
+#endif
+
+#include <windows.h>
+
+void clear_screen() {
+	HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hStdOut == INVALID_HANDLE_VALUE) return;
+
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	DWORD count;
+	DWORD cellCount;
+	COORD homeCoords = { 0, 0 };
+
+	if (!GetConsoleScreenBufferInfo(hStdOut, &csbi)) return;
+	cellCount = csbi.dwSize.X * csbi.dwSize.Y;
+
+	if (!FillConsoleOutputCharacter(hStdOut, ' ', cellCount, homeCoords, &count)) return;
+	if (!FillConsoleOutputAttribute(hStdOut, csbi.wAttributes, cellCount, homeCoords, &count)) return;
+
+	SetConsoleCursorPosition(hStdOut, homeCoords);
+}
+
+void vm_debug_dump(const char *fmt, ...) {
+#ifndef DEBUG
+	return; // dogshit
+#endif
+	char inst_buf[256] = { };
+	clear_screen();
+
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(inst_buf, sizeof(inst_buf), fmt, args);
+	va_end(args);
+
+	dbgprint("=== VM DEBUG DUMP ===\n");
+	dbgprint("INST: %s", inst_buf);
+	dbgprint("PC:  0x%016llx\n", (unsigned long long)vmcs->pc);
+	dbgprint("TRAP: %d | HALT: %d | CACHE: %d\n", vmcs->trap, vmcs->halt, vmcs->cache);
+	dbgprint("Load Reservation: addr=0x%016llx valid=%llu\n", 
+	         (unsigned long long)vmcs->load_rsv_addr,
+	         (unsigned long long)vmcs->load_rsv_valid);
+
+	dbgprint("\n-- Registers (x0-x31) --\n");
+	for (int i = 0; i < 32; ++i) {
+		dbgprint("x%-2d: 0x%016llx  ", i, (unsigned long long)vmcs->vregs[i]);
+		if ((i + 1) % 4 == 0) dbgprint("\n");
+	}
+
+	dbgprint("\n-- Scratch Registers (vscratch[0-7]) --\n");
+	for (int i = 0; i < 8; ++i) {
+		dbgprint("vscratch[%d]: 0x%016llx\n", i, (unsigned long long)vmcs->vscratch[i]);
+	}
+
+	dbgprint("\n-- Virtual Stack (Top 10 entries) --\n");
+	for (int i = 0; i < 10 && i < VSTACK_MAX_CAPACITY; ++i) {
+		dbgprint("vstack[%02d]: 0x%016llx\n", i, (unsigned long long)vmcs->vstack[i]);
+	}
+
+	dbgprint("======================\n");
+}
 
 namespace rvm64::decoder {
 	enum handler_index : uint8_t {
@@ -544,6 +611,7 @@ namespace rvm64::operations {
 			mem_read(int32_t, value, address);
 			reg_write(int32_t, _rd, value);
 
+			vm_debug_dump("lr.w x%d, x%d \n", _rd, _rs1);
 			ReleaseMutex(vmcs_mutex);
 		}
 
@@ -559,6 +627,7 @@ namespace rvm64::operations {
 			mem_read(int64_t, value, address);
 			reg_write(int64_t, _rd, value);
 
+			vm_debug_dump("lr.d x%d, x%d \n", _rd, _rs1);
 			ReleaseMutex(vmcs_mutex);
 		}
 
@@ -570,6 +639,8 @@ namespace rvm64::operations {
 
 			reg_read(int64_t, v1, _rs1);
 			reg_write(int64_t, _rd, v1);
+
+			vm_debug_dump("fmv.d.x x%d, x%d \n", _rd, _rs1);
 		}
 
 		_vmcall void rv_fcvt_s_d() {
@@ -580,6 +651,8 @@ namespace rvm64::operations {
 
 			reg_read(double, v1, _rs1);
 			reg_write(float, _rd, v1);
+
+			vm_debug_dump("fcvt.s.d x%d, x%d \n", _rd, _rs1);
 		}
 
 		_vmcall void rv_fcvt_d_s() {
@@ -590,6 +663,8 @@ namespace rvm64::operations {
 
 			reg_read(float, v1, _rs1);
 			reg_write(double, _rd, v1);
+
+			vm_debug_dump("fcvt.d.s x%d, x%d \n", _rd, _rs1);
 		}
 
 		_vmcall void rv_fcvt_w_d() {
@@ -600,6 +675,8 @@ namespace rvm64::operations {
 
 			reg_read(double, v1, _rs1);
 			reg_write(int32_t, _rd, v1);
+
+			vm_debug_dump("fcvt.w.d x%d, x%d \n", _rd, _rs1);
 		}
 
 		_vmcall void rv_fcvt_wu_d() {
@@ -610,6 +687,8 @@ namespace rvm64::operations {
 
 			reg_read(double, v1, _rs1);
 			reg_write(uint32_t, _rd, v1);
+
+			vm_debug_dump("fcvt.wu.d x%d, x%d \n", _rd, _rs1);
 		}
 
 		_vmcall void rv_fcvt_d_w() {
@@ -620,6 +699,8 @@ namespace rvm64::operations {
 
 			reg_read(int32_t, v1, _rs1);
 			reg_write(double, _rd, v1);
+
+			vm_debug_dump("fcvt.d.w x%d, x%d \n", _rd, _rs1);
 		}
 
 		_vmcall void rv_fcvt_d_wu() {
@@ -630,6 +711,8 @@ namespace rvm64::operations {
 
 			reg_read(uint32_t, v1, _rs1);
 			reg_write(double, _rd, v1);
+
+			vm_debug_dump("fcvt.d.wu x%d, x%d \n", _rd, _rs1);
 		}
 
 		// NOTE: maybe not even real...
@@ -681,6 +764,8 @@ namespace rvm64::operations {
 					reg_write(int, _rd, 0x1); // -normal
 				}
 			}
+
+			vm_debug_dump("fclass.d x%d, x%d \n", _rd, _rs1);
 		}
 
 		// NOTE: immediates are always signed unless there's a bitwise operation
@@ -693,6 +778,8 @@ namespace rvm64::operations {
 
 			reg_read(int64_t, v1, _rs1);
 			reg_write(int64_t, _rd, (v1 + _imm));
+
+			vm_debug_dump("addi x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_slti() {
@@ -704,6 +791,8 @@ namespace rvm64::operations {
 
 			reg_read(int64_t, v1, _rs1);
 			reg_write(int64_t, _rd, ((v1 < _imm) ? 1 : 0));
+
+			vm_debug_dump("slti x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_sltiu() {
@@ -715,6 +804,8 @@ namespace rvm64::operations {
 
 			reg_read(uint64_t, v1, _rs1);
 			reg_write(uint64_t, _rd, ((v1 < (uint32_t)_imm) ? 1 : 0));
+
+			vm_debug_dump("sltiu x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_xori() {
@@ -726,6 +817,8 @@ namespace rvm64::operations {
 
 			reg_read(int64_t, v1, _rs1);
 			reg_write(int64_t, _rd, (v1 ^ _imm));
+
+			vm_debug_dump("xori x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_ori() {
@@ -737,6 +830,8 @@ namespace rvm64::operations {
 
 			reg_read(int64_t, v1, _rs1);
 			reg_write(int64_t, _rd, (v1 | _imm));
+
+			vm_debug_dump("ori x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_andi() {
@@ -748,6 +843,8 @@ namespace rvm64::operations {
 
 			reg_read(int64_t, v1, _rs1);
 			reg_write(int64_t, _rd, (v1 & _imm));
+
+			vm_debug_dump("andi x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_slli() {
@@ -759,6 +856,8 @@ namespace rvm64::operations {
 
 			reg_read(uint64_t, v1, _rs1);
 			reg_write(uint64_t, _rd, (v1 << (_shamt & 0x1F)));
+
+			vm_debug_dump("slli x%d, x%d, 0x%lx \n", _rd, _rs1, _shamt);
 		}
 
 		_vmcall void rv_srli() {
@@ -770,6 +869,8 @@ namespace rvm64::operations {
 
 			reg_read(uint64_t, v1, _rs1);
 			reg_write(uint64_t, _rd, v1 >> (_shamt & 0x1F));
+
+			vm_debug_dump("slli x%d, x%d, 0x%lx \n", _rd, _rs1, _shamt);
 		}
 
 		_vmcall void rv_srai() {
@@ -781,6 +882,8 @@ namespace rvm64::operations {
 
 			reg_read(uint64_t, v1, _rs1);
 			reg_write(uint64_t, _rd, v1 >> (_shamt & 0x1F));
+
+			vm_debug_dump("srai x%d, x%d, 0x%lx \n", _rd, _rs1, _shamt);
 		}
 
 		_vmcall void rv_addiw() {
@@ -792,6 +895,8 @@ namespace rvm64::operations {
 
 			reg_read(int32_t, v1, _rs1);
 			reg_write(int32_t, _rd, v1 + _imm);
+
+			vm_debug_dump("addiw x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_slliw() {
@@ -806,7 +911,9 @@ namespace rvm64::operations {
 			if ((_shamt >> 5) != 0) {
 				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, (uint64_t)vmcs->vscratch, 1);
 			}
+
 			reg_write(int32_t, _rd, v1 << (_shamt & 0x1F));
+			vm_debug_dump("slliw x%d, x%d, 0x%lx \n", _rd, _rs1, _shamt);
 		}
 
 		_vmcall void rv_srliw() {
@@ -821,7 +928,9 @@ namespace rvm64::operations {
 			if ((_shamt >> 5) != 0) {
 				CSR_SET_TRAP(vmcs->pc, illegal_instruction, 0, (uint64_t)vmcs->vscratch, 1);
 			}
+
 			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			vm_debug_dump("srliw x%d, x%d, 0x%lx \n", _rd, _rs1, _shamt);
 		}
 
 		_vmcall void rv_sraiw() {
@@ -838,6 +947,7 @@ namespace rvm64::operations {
 			}
 			// TODO: this may be wrong to mask
 			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			vm_debug_dump("sraiw x%d, x%d, 0x%lx \n", _rd, _rs1, _shamt);
 		}
 
 		_vmcall void rv_lb() {
@@ -852,6 +962,8 @@ namespace rvm64::operations {
 
 			mem_read(int8_t, v1, address);
 			reg_write(int8_t, _rd, v1);
+
+			vm_debug_dump("lb x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_lh() {
@@ -866,6 +978,8 @@ namespace rvm64::operations {
 
 			mem_read(int16_t, v1, address);
 			reg_write(int16_t, _rd, v1);
+
+			vm_debug_dump("lh x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_lw() {
@@ -880,6 +994,8 @@ namespace rvm64::operations {
 
 			mem_read(int32_t, v1, address);
 			reg_write(int32_t, _rd, v1);
+
+			vm_debug_dump("lw x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_lbu() {
@@ -894,6 +1010,8 @@ namespace rvm64::operations {
 
 			mem_read(uint8_t, v1, address);
 			reg_write(uint8_t, _rd, v1);
+
+			vm_debug_dump("lbu x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_lhu() {
@@ -908,6 +1026,8 @@ namespace rvm64::operations {
 
 			mem_read(uint16_t, v1, address);
 			reg_write(uint16_t, _rd, v1);
+
+			vm_debug_dump("lhu x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_lwu() {
@@ -922,6 +1042,8 @@ namespace rvm64::operations {
 
 			mem_read(uint32_t, v1, address);
 			reg_write(uint32_t, _rd, v1);
+
+			vm_debug_dump("lwu x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_ld() {
@@ -936,6 +1058,8 @@ namespace rvm64::operations {
 
 			mem_read(int64_t, v1, address);
 			reg_write(int64_t, _rd, v1);
+
+			vm_debug_dump("ld x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 		}
 
 		_vmcall void rv_jalr() {
@@ -951,6 +1075,8 @@ namespace rvm64::operations {
 
 			reg_write(uintptr_t, _rd, vmcs->pc);
 			vmcs->pc = address;
+
+			vm_debug_dump("jalr x%d, x%d, 0x%lx \n", _rd, _rs1, _imm);
 
 			if (auto host_mem = rvm64::mmu::memory_check(vmcs->pc)) {
 				vmcs->pc = (uintptr_t)host_mem;
@@ -997,6 +1123,7 @@ namespace rvm64::operations {
 			   RaiseException(Breakpoint)
 			   */
 
+			vm_debug_dump("ebreak");
 			__debugbreak();
 		}
 
@@ -1098,6 +1225,8 @@ namespace rvm64::operations {
 			} else {
 				reg_write(int32_t, _rd, 1);
 			}
+
+			vm_debug_dump("scw x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_scd() {
@@ -1121,6 +1250,8 @@ namespace rvm64::operations {
 			} else {
 				reg_write(int64_t, _rd, 1);
 			}
+
+			vm_debug_dump("scd x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fadd_d() {
@@ -1134,6 +1265,7 @@ namespace rvm64::operations {
 			reg_read(float, v2, _rs2);
 
 			reg_write(float, _rd, (v1 + v2));
+			vm_debug_dump("fadd.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fsub_d() {
@@ -1147,6 +1279,7 @@ namespace rvm64::operations {
 			reg_read(float, v2, _rs2);
 
 			reg_write(float, _rd, (v1 - v2));
+			vm_debug_dump("fsub.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fmul_d() {
@@ -1160,6 +1293,7 @@ namespace rvm64::operations {
 			reg_read(float, v2, _rs2);
 
 			reg_write(float, _rd, (v1 * v2));
+			vm_debug_dump("fmul.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fdiv_d() {
@@ -1173,6 +1307,7 @@ namespace rvm64::operations {
 			reg_read(float, v2, _rs2);
 
 			reg_write(float, _rd, (v1 / v2));
+			vm_debug_dump("fdiv.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 
@@ -1192,6 +1327,7 @@ namespace rvm64::operations {
 			v1 |= (s2 << 63);
 
 			reg_write(int64_t, _rd, v1);
+			vm_debug_dump("fsgnj.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fsgnjn_d() {
@@ -1210,6 +1346,7 @@ namespace rvm64::operations {
 			v1 |= (s2 << 63);
 
 			reg_write(int64_t, _rd, v1);
+			vm_debug_dump("fsgnjn.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fsgnjx_d() {
@@ -1229,6 +1366,7 @@ namespace rvm64::operations {
 			v1 |= ((s1 ^ s2) << 63);
 
 			reg_write(int64_t, _rd, v1);
+			vm_debug_dump("fsgnjx.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fmin_d() {
@@ -1248,6 +1386,7 @@ namespace rvm64::operations {
 			} else {
 				reg_write(double, _rd, (v1 > v2) ? v2 : v1);
 			}
+			vm_debug_dump("fmin.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fmax_d() {
@@ -1267,6 +1406,7 @@ namespace rvm64::operations {
 			} else {
 				reg_write(double, _rd, (v1 > v2) ? v1 : v2);
 			}
+			vm_debug_dump("fmax.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_feq_d() {
@@ -1283,7 +1423,9 @@ namespace rvm64::operations {
 				reg_write(bool, _rd, false);
 				return;
 			}
+
 			reg_write(bool, _rd, (v1 == v2));
+			vm_debug_dump("feq.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_flt_d() {
@@ -1300,7 +1442,9 @@ namespace rvm64::operations {
 				reg_write(bool, _rd, false);
 				return;
 			}
+
 			reg_write(bool, _rd, (v1 < v2));
+			vm_debug_dump("flt.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_fle_d() {
@@ -1317,7 +1461,9 @@ namespace rvm64::operations {
 				reg_write(bool, _rd, false);
 				return;
 			}
+
 			reg_write(bool, _rd, (v1 <= v2));
+			vm_debug_dump("fle.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_addw() {
@@ -1331,6 +1477,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int64_t, _rd, (int64_t)(v1 + v2));
+			vm_debug_dump("add.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_subw() {
@@ -1344,6 +1491,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int64_t, _rd, (int64_t)(v1 - v2));
+			vm_debug_dump("sub.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_mulw() {
@@ -1357,6 +1505,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int64_t, _rd, (int64_t)(v1 * v2));
+			vm_debug_dump("mul.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_srlw() {
@@ -1370,6 +1519,7 @@ namespace rvm64::operations {
 			reg_read(uint32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
+			vm_debug_dump("srl.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_sraw() {
@@ -1383,6 +1533,7 @@ namespace rvm64::operations {
 			reg_read(uint32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
+			vm_debug_dump("sra.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_divuw() {
@@ -1396,6 +1547,7 @@ namespace rvm64::operations {
 			reg_read(uint32_t, v2, _rs2);
 
 			reg_write(uint32_t, _rd, (v1 / v2));
+			vm_debug_dump("divu.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_sllw() {
@@ -1409,6 +1561,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
+			vm_debug_dump("sll.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_divw() {
@@ -1422,6 +1575,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 / v2));
+			vm_debug_dump("div.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_remw() {
@@ -1435,6 +1589,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 % v2));
+			vm_debug_dump("rem.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_remuw() {
@@ -1448,6 +1603,7 @@ namespace rvm64::operations {
 			reg_read(uint32_t, v2, _rs2);
 
 			reg_write(uint32_t, _rd, (v1 % v2));
+			vm_debug_dump("remu.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_add() {
@@ -1461,6 +1617,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 + v2));
+			vm_debug_dump("add x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_sub() {
@@ -1474,6 +1631,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 - v2));
+			vm_debug_dump("sub x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_mul() {
@@ -1487,6 +1645,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, v2, _rs2);
 
 			reg_write(int32_t, _rd, (v1 * v2));
+			vm_debug_dump("mul x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_sll() {
@@ -1500,6 +1659,7 @@ namespace rvm64::operations {
 			reg_read(int32_t, _rs2, v2);
 
 			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
+			vm_debug_dump("sll x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_mulh() {
@@ -1521,6 +1681,7 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, (result >> 64));
 
 #endif
+			vm_debug_dump("mulh x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_slt() {
@@ -1534,6 +1695,7 @@ namespace rvm64::operations {
 			reg_read(intptr_t, v2, _rs2);
 
 			reg_write(intptr_t, _rd, ((v1 < v2) ? 1 : 0));
+			vm_debug_dump("slt x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_mulhsu() {
@@ -1554,6 +1716,7 @@ namespace rvm64::operations {
 			__int128 result = (__int128) (int64_t) v1 * (__uint128_t) (uint64_t) v2;
 			reg_write(int64_t, _rd, (result >> 64));
 #endif
+			vm_debug_dump("mulhsu x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_sltu() {
@@ -1567,6 +1730,7 @@ namespace rvm64::operations {
 			reg_read(uintptr_t, v2, _rs2);
 
 			reg_write(uintptr_t, _rd, ((v1 < v2) ? 1 : 0));
+			vm_debug_dump("sltu x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_mulhu() {
@@ -1586,6 +1750,7 @@ namespace rvm64::operations {
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
 			reg_write(uintptr_t, _rd, (result >> 32));
 #endif
+			vm_debug_dump("mulhu x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_xor() {
@@ -1599,6 +1764,7 @@ namespace rvm64::operations {
 			reg_read(uintptr_t, v2, _rs2);
 
 			reg_write(uintptr_t, _rd, (v1 ^ v2));
+			vm_debug_dump("xor x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_div() {
@@ -1612,6 +1778,7 @@ namespace rvm64::operations {
 			reg_read(uintptr_t, v2, _rs2);
 
 			reg_write(uintptr_t, _rd, (v1 / v2));
+			vm_debug_dump("div x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_srl() {
@@ -1625,6 +1792,7 @@ namespace rvm64::operations {
 			reg_read(uint32_t, v2, _rs2);
 
 			reg_write(uintptr_t, _rd, (v1 >> (v2 & 0x1F)));
+			vm_debug_dump("srl x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_sra() {
@@ -1638,6 +1806,7 @@ namespace rvm64::operations {
 			reg_read(uint32_t, v2, _rs2);
 
 			reg_write(intptr_t, _rd, (v1 >> (v2 & 0x1F)));
+			vm_debug_dump("sra x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_divu() {
@@ -1655,6 +1824,7 @@ namespace rvm64::operations {
 			} else {
 				reg_write(uintptr_t, _rd, (v1 / v2));
 			}
+			vm_debug_dump("divu x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_or() {
@@ -1668,6 +1838,7 @@ namespace rvm64::operations {
 			reg_read(intptr_t, _rs2, v2);
 
 			reg_write(intptr_t, _rd, (v1 | v2));
+			vm_debug_dump("or x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_rem() {
@@ -1685,6 +1856,7 @@ namespace rvm64::operations {
 			} else {
 				reg_write(intptr_t, _rd, (v1 % v2));
 			}
+			vm_debug_dump("rem x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_and() {
@@ -1698,6 +1870,7 @@ namespace rvm64::operations {
 			reg_read(uintptr_t, v2, _rs2);
 
 			reg_write(uintptr_t, _rd, (v1 & v2));
+			vm_debug_dump("and x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_remu() {
@@ -1715,6 +1888,7 @@ namespace rvm64::operations {
 			} else {
 				reg_write(uintptr_t, _rd, (v1 % v2));
 			}
+			vm_debug_dump("remu x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoswap_d() {
@@ -1734,6 +1908,7 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoswap.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoadd_d() {
@@ -1753,6 +1928,7 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoadd.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoxor_d() {
@@ -1772,6 +1948,7 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoxor.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoand_d() {
@@ -1791,6 +1968,7 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoand.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoor_d() {
@@ -1810,6 +1988,7 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoor.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amomin_d() {
@@ -1829,6 +2008,7 @@ namespace rvm64::operations {
 			reg_write(uint64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amomin.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amomax_d() {
@@ -1848,6 +2028,7 @@ namespace rvm64::operations {
 			reg_write(int64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amomax.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amominu_d() {
@@ -1867,6 +2048,7 @@ namespace rvm64::operations {
 			reg_write(uint64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amominu.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amomaxu_d() {
@@ -1886,6 +2068,7 @@ namespace rvm64::operations {
 			reg_write(uint64_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amomaxu.d x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoswap_w() {
@@ -1905,6 +2088,7 @@ namespace rvm64::operations {
 			reg_write(int32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoswap.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoadd_w() {
@@ -1924,6 +2108,7 @@ namespace rvm64::operations {
 			reg_write(int32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoadd.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoxor_w() {
@@ -1943,6 +2128,7 @@ namespace rvm64::operations {
 			reg_write(int32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoxor.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoand_w() {
@@ -1962,6 +2148,7 @@ namespace rvm64::operations {
 			reg_write(int32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoand.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amoor_w() {
@@ -1981,6 +2168,7 @@ namespace rvm64::operations {
 			reg_write(int32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amoor.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amomin_w() {
@@ -2000,6 +2188,7 @@ namespace rvm64::operations {
 			reg_write(int32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amomin.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amomax_w() {
@@ -2019,6 +2208,7 @@ namespace rvm64::operations {
 			reg_write(int32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amomax.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amominu_w() {
@@ -2038,6 +2228,7 @@ namespace rvm64::operations {
 			reg_write(uint32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amominu.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 
 		_vmcall void rv_amomaxu_w() {
@@ -2057,6 +2248,7 @@ namespace rvm64::operations {
 			reg_write(uint32_t, _rd, v1);
 
 			ReleaseMutex(vmcs_mutex);
+			vm_debug_dump("amomaxu.w x%d, x%d, x%d \n", _rd, _rs1, _rs2);
 		}
 	}
 
@@ -2067,6 +2259,8 @@ namespace rvm64::operations {
 			scr_read(uint32_t, _rd, rd);
 			scr_read(int32_t, _imm, imm);
 			reg_write(int32_t, _rd, _imm);
+
+			vm_debug_dump("lui x%d, 0x%lx \n", _rd, _imm);
 		}
 
 		_vmcall void rv_auipc() {
@@ -2075,6 +2269,8 @@ namespace rvm64::operations {
 			scr_read(uint8_t, _rd, rd);
 			scr_read(int32_t, _imm, imm);
 			reg_write(int64_t, _rd, (int64_t)vmcs->pc + _imm);
+
+			vm_debug_dump("auipc x%d, 0x%lx \n", _rd, _imm);
 		}
 	}
 
@@ -2087,6 +2283,8 @@ namespace rvm64::operations {
 			reg_write(uintptr_t, _rd, vmcs->pc + 4);
 
 			vmcs->pc += offset;
+			vm_debug_dump("jal x%d, 0x%lx \n", _rd, offset);
+
 			CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
 		}
 	}
@@ -2101,6 +2299,8 @@ namespace rvm64::operations {
 
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
+
+			vm_debug_dump("beq x%d, x%d, 0x%lx \n", _rs1, _rs2, offset);
 
 			if (v1 == v2) {
 				vmcs->pc += offset;
@@ -2118,6 +2318,8 @@ namespace rvm64::operations {
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
+			vm_debug_dump("bne x%d, x%d, 0x%lx \n", _rs1, _rs2, offset);
+
 			if (v1 != v2) {
 				vmcs->pc += offset;
 				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
@@ -2133,6 +2335,8 @@ namespace rvm64::operations {
 
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
+
+			vm_debug_dump("blt x%d, x%d, 0x%lx \n", _rs1, _rs2, offset);
 
 			if (v1 < v2) {
 				vmcs->pc += offset;
@@ -2150,6 +2354,8 @@ namespace rvm64::operations {
 			reg_read(int32_t, v1, _rs1);
 			reg_read(int32_t, v2, _rs2);
 
+			vm_debug_dump("bge x%d, x%d, 0x%lx \n", _rs1, _rs2, offset);
+
 			if (v1 >= v2) {
 				vmcs->pc += offset;
 				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
@@ -2166,6 +2372,8 @@ namespace rvm64::operations {
 			reg_read(uint32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
 
+			vm_debug_dump("bltu x%d, x%d, 0x%lx \n", _rs1, _rs2, offset);
+
 			if (v1 < v2) {
 				vmcs->pc += offset;
 				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
@@ -2181,6 +2389,8 @@ namespace rvm64::operations {
 
 			reg_read(uint32_t, v1, _rs1);
 			reg_read(uint32_t, v2, _rs2);
+
+			vm_debug_dump("bltu x%d, x%d, 0x%lx \n", _rs1, _rs2, offset);
 
 			if (v1 >= v2) {
 				vmcs->pc += offset;
@@ -2202,6 +2412,8 @@ namespace rvm64::operations {
 
 			address += (intptr_t)_imm;
 			mem_write(uint8_t, address, v1);
+
+			vm_debug_dump("sb x%d, x%d, 0x%lx \n", _rs1, _rs2, _imm);
 		}
 
 		_vmcall void rv_sh() {
@@ -2216,6 +2428,8 @@ namespace rvm64::operations {
 
 			address += (intptr_t)_imm;
 			mem_write(uint16_t, address, v1);
+
+			vm_debug_dump("sh x%d, x%d, 0x%lx \n", _rs1, _rs2, _imm);
 		}
 
 		_vmcall void rv_sw() {
@@ -2230,6 +2444,8 @@ namespace rvm64::operations {
 
 			address += (intptr_t)_imm;
 			mem_write(uint32_t, address, v1);
+
+			vm_debug_dump("sw x%d, x%d, 0x%lx \n", _rs1, _rs2, _imm);
 		}
 
 		_vmcall void rv_sd() {
@@ -2244,6 +2460,8 @@ namespace rvm64::operations {
 
 			address += (intptr_t)_imm;
 			mem_write(uint64_t, address, v1);
+
+			vm_debug_dump("sd x%d, x%d, 0x%lx \n", _rs1, _rs2, _imm);
 		}
 
 		_vmcall void rv_fsw() {
@@ -2258,6 +2476,8 @@ namespace rvm64::operations {
 
 			address += (intptr_t)_imm;
 			mem_write(float, address, v1);
+
+			vm_debug_dump("fsw x%d, x%d, 0x%lx \n", _rs1, _rs2, _imm);
 		}
 
 		_vmcall void rv_fsd() {
@@ -2272,6 +2492,8 @@ namespace rvm64::operations {
 
 			address += (intptr_t)_imm;
 			mem_write(double, address, v1);
+
+			vm_debug_dump("fsd x%d, x%d, 0x%lx \n", _rs1, _rs2, _imm);
 		}
 	}
 
