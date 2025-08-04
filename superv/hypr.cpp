@@ -23,19 +23,26 @@ typedef struct {
 
 namespace superv::process {
 	namespace memory {
-		BOOL patch_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
-			DWORD oldprot = 0;
+		bool patch_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
+			SYSTEM_INFO si = { };
+			GetSystemInfo(&si);
 
+			uintptr_t page_start = address & ~(si.dwPageSize - 1);
+			size_t patch_size = (address + length) - page_start;
+
+			DWORD oldprot = 0;
 			if (!VirtualProtectEx(hprocess, (LPVOID)address, length, PAGE_EXECUTE_READWRITE, &oldprot)) {
 				printf();
 				return false;
 			}
 
-			size_t bytes_written = 0;
-			bool result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &bytes_written);
+			size_t written = 0;
+			bool result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &written);
 
 			VirtualProtectEx(hprocess, (LPVOID)address, length, oldprot, &oldprot);
-			return result && bytes_written == length;
+			FlushInstructionCache(hprocess, (LPCVOID)address, length);
+
+			return result && written == length;
 		}
 	}
 
@@ -214,7 +221,6 @@ defer:
 			return 1;
 		}
 
-		// BOOL patch_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
 		if (!superv::process::memory::patch_proc_memory(proc->handle, offset, dummy_patch, sizeof(dummy_patch))) {
 			return 1;
 		}
