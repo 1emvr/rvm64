@@ -28,7 +28,7 @@ namespace superv::patch {
 
 		memcpy(buffer, entry_hook, stub_size);
 
-		uintptr_t hook_addr = (uintptr_t)rvm64::process::memory::allocate_remote_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
+		uintptr_t hook_addr = (uintptr_t)rvm64::process::memory::allocate_remote_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
 		if (!hook_addr) {
 			printf("[ERR]: allocate_remote_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
@@ -53,7 +53,7 @@ namespace superv::patch {
 		{
 
 			int32_t disp32_1 = (int32_t)(shb_signal - (hook_addr + 0x07));
-			memcpy(&buffer[0x03], &rel1, sizeof(rel1));
+			memcpy(&buffer[0x03], &disp32_1, sizeof(disp32_1));
 
 			int32_t disp32_2 = (int32_t)(shb_signal - (hook_addr + 0x12));
 			memcpy(&buffer[0x0D], &disp32_2, sizeof(disp32_2));
@@ -63,7 +63,7 @@ namespace superv::patch {
 		}
 
 		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, buffer, sizeof(entry_hook))) {
-			printf("[ERR]: write_proc_memory failed to write memory in the remote process.\n");
+			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
 			return false;
 		}
 
@@ -131,12 +131,33 @@ namespace superv::patch {
 		uintptr_t shb_vmcs 		= &shbuf->ipc.vmcs;
 		uintptr_t shb_opcode 	= &shbuf->ipc.opcode;
 		uintptr_t shb_signal 	= &shbuf->ipc.signal;
+
 		{
 			int32_t disp32_1 = (int32_t)(shb_opcode - (hook_addr + 0x09));
-			int32_t disp32_2 = (int32_t)
-			int32_t disp32_3
-			int32_t call_rel
+			memcpy(&buffer[0x05], &disp32_1, sizeof(disp32_1));
+
+			int32_t disp32_2 = (int32_t)(shb_vmcs - (hook_addr + 0x13));
+			memcpy(&buffer[0x0f], &disp32_2, sizeof(disp32_2));
+
+			int32_t disp32_3 = (int32_t)(shb_signal - (hook_addr + 0x1d));
+			memcpy(&buffer[0x19], &disp32_2, sizeof(disp32_2));
+
+			int32_t call_rel = (int32_t)(original_call - (hook_addr + 0x33));
+			memcpy(&buffer[0x28], &call_rel, sizeof(call_rel));
 		}
+
+		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, buffer, sizeof(decoder_hook))) {
+			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
+			return false;
+		}
+
+		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
+		if (!superv::process::memory::write_proc_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
+			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
+			return false;
+		}
+
+		return true;
 	}
 }
 #endif // HYPRPATCH_HPP
