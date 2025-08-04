@@ -8,6 +8,7 @@
 
 #define SHMEM_NAME L"Local\\VMSharedBuffer"
 
+// TODO: create an internal shmem structure for vm communications
 namespace superv {
 	int main(int argc, char** argv) {
 		if (argc < 2) {
