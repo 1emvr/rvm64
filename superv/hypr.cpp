@@ -282,13 +282,17 @@ namespace superv {
 			return 1;
 		}
 
-		patch_t *patch = install_entry_patch(proc); 
+		shared_buffer *shbuf = create_shared_buffer();
+		if (!shbuf) {
+			return 1;
+		}
+
+		patch_t *patch = install_entry_patch(proc, (uintptr_t)shbuf->view + offsetof(shared_buffer, ready)); 
 		if (!patch) {
 			return 1;
 		}
 
 		// patch_trampoline(patch);
-		shared_buffer *shbuf = create_shared_buffer();
 		write_shared_buffer(shbuf, argv[1]);
 		destroy_shared_buffer(&shbuf);
 
