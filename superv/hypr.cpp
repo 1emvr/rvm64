@@ -193,6 +193,43 @@ defer:
 		return proc;
 	}
 
+	bool install_entry_patch(process_t *proc) {
+		uint8_t hook_stub[] = {
+			0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00,
+			// assembly
+		};
+		uint8_t entry_sig[] = {
+			0x90, 0x90, 0x48, 0x89, 0xe5, 0x90, 0x90, 0x90,
+			0x90, 0x89, 0xe5, 0x55, 0x48, 0x8b, 0xec, 0x90,
+		};
+		uint8_t entry_patch[] = {
+			0x00, 0x00, 0x00, 0x00 
+		};
+
+		const char *entry_mask = "xxxxx????xxxxxxx";
+		uintptr_t offset = 0;
+
+		if (!(offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask))) {
+			return false;
+		}
+
+		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(hook_stub), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		if (!hook) {
+			return false;
+		}
+
+		*(uint32_t*)entry_patch = (uint32_t)hook_addr;
+		if (!superv::process::memory::patch_proc_memory(proc->handle, offset + 5, entry_patch, 4)) {
+			return false;
+		}
+		if (!superv::process::memory::patch_proc_memory(proc->handle, hook_addr, hook_stub, sizeof(hook_stub))) {
+			return false;
+		}
+		return true;
+	}
+
 	int main(int argc, char** argv) {
 		if (argc < 2) {
 			printf("Usage: %s <riscv_elf_file>\n", argv[0]);
@@ -205,23 +242,7 @@ defer:
 			return 1;
 		}
 
-		uint8_t dummy[] = {
-			0x90, 0x90, 0x48, 0x89, 0xe5, 0x90, 0x90, 0x90,
-			0x48, 0x89, 0xe5, 0x55, 0x48, 0x8b, 0xec, 0x90,
-		};
-		uint8_t dummy_patch[] = {
-			0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
-			0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
-		};
-
-		const char *mask = "xxxxx???xxxxxxxx";
-		uintptr_t offset = 0;
-
-		if (!(offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, dummy, mask))) {
-			return 1;
-		}
-
-		if (!superv::process::memory::patch_proc_memory(proc->handle, offset, dummy_patch, sizeof(dummy_patch))) {
+		if (!install_entry_patch(proc)) {
 			return 1;
 		}
 
