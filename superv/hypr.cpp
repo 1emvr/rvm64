@@ -90,8 +90,8 @@ namespace superv::process {
 			return pid;
 		}
 
-		DWORD get_module_base(DWORD pid, const TCHAR* target_name) {
-			DWORD base_address = 0;
+		uintptr_t get_module_base(DWORD pid, const TCHAR* target_name) {
+			uintptr_t base_address = 0;
 			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
 
 			if (snapshot == INVALID_HANDLE_VALUE) {
@@ -104,7 +104,7 @@ namespace superv::process {
 			if (Module32First(snapshot, &me32)) {
 				do {
 					if (_tcscmp(me32.szModule, target_name) == 0) {
-						base_address = (DWORD)me32.modBaseAddr;
+						base_address = (uintptr_t)me32.modBaseAddr;
 						break;
 					}
 				} while (Module32Next(snapshot, &me32));
