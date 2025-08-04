@@ -39,11 +39,10 @@ namespace rvm64::mock {
 			return nullptr;
 		}
 	
+		// TODO: poll here instead of restarting everything
 		shared_buffer *remote = (shared_buffer*)view;
-		if (!remote->ready) {
-			UnmapViewOfFile(view);
-			CloseHandle(h_map);
-			return nullptr;
+		while (!remote->ready) {
+			Sleep(10);
 		}
 
 		auto packet = (shared_buffer*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(shared_buffer));
