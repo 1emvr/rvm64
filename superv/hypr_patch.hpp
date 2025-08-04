@@ -68,27 +68,29 @@ namespace superv::patch {
 	}
 
 	_data uint8_t decoder_sig[] = { 
-		0x8B, 0x45, 0xFC,							// 0x00: mov     eax, [rbp+opcode]
-		0x89, 0xC1,                                 // 0x03: mov     ecx, eax        ; opcode
-		0xE8, 0x00, 0x00, 0x00, 0x00,               // 0x05: call    rvm64::decoder::vm_decode(uint)
-		0x48, 0x8B, 0x05, 0x75, 0x3F, 0x01, 0x00,   // 0x0a: mov     rax, cs:vmcs
+		0x8B, 0x45, 0xFC,										// 0x00: mov     eax, [rbp+opcode]
+		0x89, 0xC1,                                 			// 0x03: mov     ecx, eax        ; opcode
+		0xE8, 0x00, 0x00, 0x00, 0x00,               			// 0x05: call    rvm64::decoder::vm_decode(uint)
+		0x48, 0x8B, 0x05, 0x75, 0x3F, 0x01, 0x00,   			// 0x0a: mov     rax, cs:vmcs
 	};
 
+	// used with allocate_remote_2GB_range
 	uint8_t decoder_hook[] = {
-		0x41, 0x53,                               	// push r11
-		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    	// lea  r11, [rip+disp32]   ; -> &mapped_view->ipc.opcode
-		0x41, 0x89, 0x03,                         	// mov  dword ptr [r11], eax
-		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    	// lea  r11, [rip+disp32]   ; -> &mapped_view->ipc.vmcs
-		0x49, 0x89, 0x0B,                         	// mov  qword ptr [r11], rcx
-		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    	// lea  r11, [rip+disp32]   ; -> &mapped_view->ipc.signal
-		0x41, 0x80, 0x3B, 0x00,                   	// cmp  byte ptr [r11], 0
-		0x75, 0xFA,                               	// jne  -6                  ; spin while signal != 0
-		0x48, 0x83, 0xEC, 0x28,                   	// sub  rsp, 0x28           ; Win64 shadow + align
-		0xE8, 0x00,0x00,0x00,0x00,                	// call rel32               ; -> vm_decode
-		0x48, 0x83, 0xC4, 0x28,                   	// add  rsp, 0x28
-		0x41, 0x5B,                               	// pop  r11
-		0xC3                                      	// ret
+		0x41, 0x53,                               				// push r11
+		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// lea  r11, &mapped_view->ipc.opcode
+		0x41, 0x89, 0x03,                         				// mov  dword ptr [r11], eax
+		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// lea  r11, &mapped_view->ipc.vmcs
+		0x49, 0x89, 0x0B,                         				// mov  qword ptr [r11], rcx
+		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// lea  r11, &mapped_view->ipc.signal
+		0x41, 0x80, 0x3B, 0x00,                   				// cmp  byte ptr [r11], 0
+		0x75, 0xFA,                               				// jne  -6                  ; spin 
+		0x48, 0x83, 0xEC, 0x28,                   				// sub  rsp, 0x28           ; shadow + align
+		0xE8, 0x00,0x00,0x00,0x00,                				// call rel32               ; vm_decode
+		0x48, 0x83, 0xC4, 0x28,                   				// add  rsp, 0x28
+		0x41, 0x5B,                               				// pop  r11
+		0xC3                                      				// ret
 	};
+	
 
 	bool install_decoder_patch(process_t* proc, mapped_view* shbuf) {
 		size_t stub_size = sizeof(decoder_hook);
