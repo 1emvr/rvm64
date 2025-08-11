@@ -2,8 +2,8 @@
 #define HYPRLOAD_HPP
 #include <windows.h>
 
-#include "hypr_ipc.hpp"
-#include "../vmmain.hpp"
+#include "../include/vmmain.hpp"
+#include "../include/vmipc.hpp"
 
 // TODO: fix this nonsense
 namespace superv::loader {

@@ -1,8 +1,8 @@
 #include <windows.h>
 
-#include "../vmipc.hpp"
-#include "../vmmain.hpp"
-#include "../vmcommon.hpp"
+#include "../include/vmipc.hpp"
+#include "../include/vmmain.hpp"
+#include "../include/vmcommon.hpp"
 
 #include "vmentry.hpp"
 

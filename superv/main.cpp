@@ -7,7 +7,7 @@
 #include "supr_proc.hpp"
 #include "supr_patch.hpp"
 
-#include "../vmmain.hpp"
+#include "../include/vmmain.hpp"
 
 namespace superv {
 	int superv_main(const char* proc_name, const char* elf_name) {

@@ -2,8 +2,8 @@
 #define VMVEH_H
 #include <setjmp.h>
 
-#include "../vmmain.hpp"
-#include "../vmmem.hpp"
+#include "../include/vmmain.hpp"
+#include "../include/vmmem.hpp"
 
 #include "rvni.hpp"
 #define LONGJMP(addr, b) longjmp(addr, b); __builtin_unreachable()

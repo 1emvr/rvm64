@@ -1,6 +1,6 @@
 #ifndef VMCRYPT_HPP
 #define VMCRYPT_HPP
-#include "../vmmain.hpp"
+#include "../include/vmmain.hpp"
 
 // TODO: use elf64_ehdr->e_entry as initial decryption key.
 namespace rvm64::crypt {

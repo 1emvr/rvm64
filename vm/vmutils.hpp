@@ -2,7 +2,7 @@
 #define VMUTILS_H
 #include <windows.h>
 
-#include "../vmmain.hpp"
+#include "../include/vmmain.hpp"
 
 #ifdef DEBUG
 	#include <stdio.h>

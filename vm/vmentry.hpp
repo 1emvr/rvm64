@@ -3,8 +3,8 @@
 #include <errhandlingapi.h>
 #include <setjmp.h>
 
-#include "../vmmain.hpp"
-#include "../vmmem.hpp"
+#include "../include/vmmain.hpp"
+#include "../include/vmmem.hpp"
 
 #include "vmcode.hpp"
 #include "vmelf.hpp"

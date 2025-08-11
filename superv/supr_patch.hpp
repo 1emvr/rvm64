@@ -2,9 +2,9 @@
 #define HYPRPATCH_HPP
 #include <windows.h>
 
-#include "../vmmain.hpp"
-#include "../vmmem.hpp"
-#include "../vmproc.hpp"
+#include "../include/vmmain.hpp"
+#include "../include/vmmem.hpp"
+#include "../include/vmproc.hpp"
 
 
 namespace superv::patch {
