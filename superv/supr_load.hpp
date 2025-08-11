@@ -9,9 +9,10 @@
 
 namespace superv::loader {
 	vm_channel* get_channel(win_process* proc) {
- 		static constexpr int64_t vm_magic[2] = { (int64_t)VM_MAGIC1, (int64_t)VM_MAGIC2 }; 
+ 		static constexpr uint64_t vm_magic[2] = { (uint64_t)VM_MAGIC1, (uint64_t)VM_MAGIC2 }; 
 
-		printf("[INF] Searching for vm magic.\n");
+		printf("searching for vm magic: 0x%llx, 0x%llx\n", vm_magic[0], vm_magic[1]);
+
 		uintptr_t ch_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
 		if (!ch_offset) {
 			printf("[ERR] Could not find the remote vm-channel\n");

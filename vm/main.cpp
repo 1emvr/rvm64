@@ -7,9 +7,10 @@
 #include "vmentry.hpp"
 
 namespace rvm64 {
-	_native int32_t vm_main(int64_t magic1, int64_t magic2) {
+	_native int32_t vm_main(uint64_t magic1, uint64_t magic2) {
 		save_host_context();
 		rvm64::ipc::vm_create_channel(magic1, magic2);
+		printf("[INF] vm channel magic: 0x%llx, 0x%llx\n", vmcs->channel->magic1, vmcs->channel->magic2);
 
 		while (true) {
 			Sleep(10);

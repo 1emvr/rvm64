@@ -8,22 +8,27 @@
 
 namespace rvm64::process {
 	SIZE_T get_process_size(HANDLE hprocess, uintptr_t base) {
-		MEMORY_BASIC_INFORMATION mbi;
-
-		UINT_PTR address = base;
-		SIZE_T total_size = 0;
-
-		while (VirtualQueryEx(hprocess, (LPCVOID)address, &mbi, sizeof(mbi))) {
-			if ((uintptr_t)mbi.BaseAddress != base) {
-				break;
-			}
-
-			total_size += mbi.RegionSize;
-			address += mbi.RegionSize;
+		if (!base) {
+			return 0;
+		}
+		auto dos_head = (PIMAGE_DOS_HEADER)base;
+		if (dos_head->e_magic != IMAGE_DOS_SIGNATURE) {
+			return 0;
 		}
 
-		printf("[INF] Total size: 0x%0lx\n", total_size);
-		return total_size;
+		auto nt_head = (PIMAGE_NT_HEADERS)((UINT8*)(base) + dos_head->e_lfanew);
+		if (nt_head->Signature != IMAGE_NT_SIGNATURE) {
+			return 0;
+		}
+
+		auto section = IMAGE_FIRST_SECTION(nt_head);
+		for (WORD i = 0; i < nt_head->FileHeader.NumberOfSections; i++, section++) {
+			if (strncmp((const char*)section->Name, ".text", 5) == 0) {
+				uintptr_t txt_base = (uintptr_t)moduleBase + section->VirtualAddress;
+				return txt_base + section->Misc.VirtualSize;
+			}
+		}
+		return 0; 
 	}
 
 	DWORD get_process_id(const CHAR* target_name) {

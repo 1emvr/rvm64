@@ -19,7 +19,7 @@ namespace rvm64::ipc {
 		vmcs->channel = nullptr;
 	}
 
-	void vm_create_channel(int64_t magic1, int64_t magic2) {
+	void vm_create_channel(uint64_t magic1, uint64_t magic2) {
 		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
 		HMODULE hmodule = GetModuleHandle(0);
 
