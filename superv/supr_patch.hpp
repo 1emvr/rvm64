@@ -186,7 +186,7 @@ defer:
 		int32_t original_rel = 0;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(int32_t))) {
-			printf("[ERR] install_entry_hook::read_proc_memory failed to get entry reljmp: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_entry_hook failed to get entry reljmp: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
@@ -195,18 +195,18 @@ defer:
 		size_t n_prolg = 12; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
 		
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
-			printf("[ERR] install_entry_hook::install_trampoline failed: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_entry_hook failed to install trampoline: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		uintptr_t hook = 0;
 		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
-			printf("[ERR] install_entry_hook::install_spin_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_entry_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
-			printf("[ERR] install_entry_hook::patch_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_entry_hook failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
@@ -226,7 +226,7 @@ defer:
 
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
 		if (!sig_offset) { 
-			printf("[ERR] signature_scan failed for decoder.\n"); 
+			printf("[ERR] Signature_scan failed for decoder.\n"); 
 			return false; 
 		}
 
@@ -234,7 +234,7 @@ defer:
 		uintptr_t call_site = sig_offset + 0x07;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
-			printf("[ERR] install_decoder_hook::read_proc_memory failed: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_decoder_hook failed to read process memory: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
@@ -243,18 +243,18 @@ defer:
 		size_t n_prolg = 12;
 
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
-			printf("[ERR] install_decoder_hook::install_trampoline failed: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_decoder_hook failed to install trampoline: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		uintptr_t hook = 0;
 		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
-			printf("[ERR] install_decoder_hook::install_spin_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_decoder_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
-			printf("[ERR] install_decoder_hook::patch_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] install_decoder_hook failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
