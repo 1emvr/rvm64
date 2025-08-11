@@ -18,6 +18,13 @@ typedef struct {
 } vm_process;
 
 typedef struct {
+	HANDLE handle;
+	DWORD pid;
+	DWORD address;
+	SIZE_T size;
+} win_process;
+
+typedef struct {
 	uintptr_t m_epc;
 	uintptr_t m_cause;
 	uintptr_t m_status;
@@ -31,10 +38,7 @@ typedef struct _align64 {
 	uint64_t 	self; // superv can pull this address for use
 
 	struct {
-		HANDLE 		h_mapping;
-		LPVOID 		v_mapping;
-
-		char 		name[64];
+		uint64_t	buffer
 		uint64_t	size;
 		uint64_t	write_size;
 	} view;
@@ -42,8 +46,7 @@ typedef struct _align64 {
 	struct {
 		uint64_t 	vmcs;
 		uint32_t    opcode;
-		uint8_t 	signal;
-		uint8_t 	signal_type;
+		uint16_t 	signal;
 		uint16_t 	_pad0;
 	} ipc;
 

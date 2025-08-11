@@ -2,26 +2,35 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "hypr_ipc.hpp"
-#include "hypr_load.hpp"
-#include "hypr_proc.hpp"
-#include "hypr_patch.hpp"
+#include "supr_ipc.hpp"
+#include "supr_load.hpp"
+#include "supr_proc.hpp"
+#include "supr_patch.hpp"
 
-#include "../vm/vmmain.hpp"
+#include "../vmmain.hpp"
 
 namespace superv {
-	int superv_main(std::wstring proc_name, char* elf_name) {
-		process_t *proc = superv::process::information::get_process_info(proc_name);
+	int superv_main(char* proc_name, char* elf_name) {
+		std::wstring wproc = proc_name;
+		process_t *proc = superv::process::information::get_process_info(wproc);
 		if (!proc) {
 			return 1;
 		}
-		if (!superv::patch::install_entry_hook(proc, shbuf)) {
+		auto channel = rvm64::ipc::load_vm_channel(proc);
+		if (!channel) {
+			printf("[ERR] Could not map the vm channel\n");
 			return 1;
 		}
-		if (!superv::patch::install_decoder_hook(proc, shbuf)) {
+		if (!superv::patch::install_entry_hook(proc)) {
+			printf("[ERR] Could not install entrypoint hook in the vm\n");
 			return 1;
 		}
-		if (!superv::loader::write_elf_file(shbuf, elf_name)) {
+		if (!superv::patch::install_decoder_hook(proc)) {
+			printf("[ERR] Could not install decoder hook in the vm\n");
+			return 1;
+		}
+		if (!superv::loader::write_elf_file(elf_name)) {
+			printf("[ERR] Could not load the elf to the vm channel\n");
 			return 1;
 		}
 
@@ -36,8 +45,5 @@ int main(int argc, char** argv) {
 			return 1;
 		}
 
-		char *elf_name = argv[0];
-		std::wstring proc_name = "rvm64";
-
-		return superv::superv_main(proc_name, elf_name);
+		return superv::superv_main("rvm64", argv[0]);
 }

@@ -37,6 +37,9 @@ int main() {
 		Sleep(10);
 	}
 
-    return rvm64::vm_main();
+    int32_t result = rvm64::vm_main();
+	rvm64::ipc::destroy_channel();
+
+	return result;
 }
 
