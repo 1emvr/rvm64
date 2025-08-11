@@ -1,5 +1,5 @@
-#ifndef VMDBG_HPP
-#define VMDBG_HPP
+#ifndef HYPRDBG_HPP
+#define HYPRDBG_HPP
 #include <windows.h>
 
 #ifdef DEBUG
@@ -70,4 +70,4 @@ namespace superv::debug {
 		printf("======================\n");
 	}
 }
-#endif // VMDBG_HPP
+#endif // HYPRDBG_HPP

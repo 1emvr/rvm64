@@ -6,8 +6,8 @@
 
 #include "../include/vmmain.hpp"
 
-#include "vmlib.hpp"
 #include "rvni.hpp"
+#include "vmlib.hpp"
 
 // Dynamic section tags
 #define DT_NULL         0       // End of dynamic section

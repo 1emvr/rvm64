@@ -2,6 +2,7 @@
 #define RVNI_H
 #include <unordered_map>
 #include <windows.h>
+// TODO: replace unordered map with in-house to avoid overhead.
 
 #include "../include/vmmain.hpp"
 #include "../include/vmcommon.hpp"

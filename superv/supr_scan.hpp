@@ -2,6 +2,7 @@
 #define HYPRSCAN_HPP
 #include <windows.h>
 #include <vector>
+// TODO: replace vector with in-house class to avoid overhead.
 
 namespace scanner {
 	bool data_compare(const uint8_t* data, const uint8_t* pattern, const char* mask) {
@@ -12,7 +13,6 @@ namespace scanner {
 		return true;
 	}
 
-	// TODO: replace vector with in-house class to avoid overhead.
 	uintptr_t signature_scan(HANDLE hprocess, uintptr_t base, size_t size, const uint8_t* pattern, const char* mask) {
 		std::vector<uint8_t> buffer(size);
 

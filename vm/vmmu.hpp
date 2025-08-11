@@ -1,7 +1,11 @@
 #ifndef VMMU_H
 #define VMMU_H
-
 #include "../include/vmmain.hpp"
+
+#define PROT_READ	0x1		
+#define PROT_WRITE	0x2		
+#define PROT_EXEC	0x4		
+#define PROT_SEM	0x8	
 
 namespace rvm64::mmu {
 	struct exec_region {
@@ -61,15 +65,8 @@ namespace rvm64::mmu {
 		return nullptr;
 	}
 
-#define PROT_READ	0x1		
-#define PROT_WRITE	0x2		
-#define PROT_EXEC	0x4		
-#define PROT_SEM	0x8	
-
 	DWORD translate_linux_prot(uint32_t prot) {
-		if (prot == 0) {
-			return PAGE_NOACCESS;
-		}
+		if (prot == 0) return PAGE_NOACCESS;
 
 		bool can_read  = prot & PROT_READ;
 		bool can_write = prot & PROT_WRITE;

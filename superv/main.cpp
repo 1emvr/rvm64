@@ -2,18 +2,18 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "supr_ipc.hpp"
 #include "supr_load.hpp"
-#include "supr_proc.hpp"
 #include "supr_patch.hpp"
+#include "supr_scan.hpp"
 
 #include "../include/vmmain.hpp"
+#include "../include/vmproc.hpp"
 
 namespace superv {
 	int superv_main(const char* proc_name, const char* elf_name) {
 		std::wstring wproc = proc_name;
 
-		win_process *proc = superv::process::information::get_process_info(wproc);
+		win_process *proc = rvm64::process::get_process_info(wproc);
 		if (!proc) {
 			printf("[ERR] Could not find process information for target\n");
 			return 1;
