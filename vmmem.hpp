@@ -52,6 +52,29 @@ namespace rvm64::memory {
         return valid;
     }
 
+	bool write_process_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
+		DWORD oldprot = 0;
+		SIZE_T written = 0;
+
+		if (!VirtualProtectEx(hprocess, (LPVOID)address, length, PAGE_EXECUTE_READWRITE, &oldprot)) {
+			return false;
+		}
+
+		BOOL result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &written);
+
+		VirtualProtectEx(hprocess, (LPVOID)address, length, oldprot, &oldprot);
+		FlushInstructionCache(hprocess, (LPCVOID)address, length);
+
+		return result && written == length;
+	}
+
+	bool read_process_memory(HANDLE hprocess, uintptr_t address, uint8_t *read_bytes, size_t length) {
+		SIZE_T read = 0;
+		BOOL result = ReadProcessMemory(hprocess, (LPCVOID)address, (LPVOID)read_bytes, length, &read);
+
+		return result && read == length;
+	}
+
 	_native void* allocate_2GB_range(HANDLE handle, DWORD protect, uintptr_t base, size_t size) {
 		SYSTEM_INFO si; 
 		GetSystemInfo(&si);
@@ -108,29 +131,6 @@ namespace rvm64::memory {
 			pos = region_base;
 		}
 		return nullptr;
-	}
-
-	bool write_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
-		DWORD oldprot = 0;
-		SIZE_T written = 0;
-
-		if (!VirtualProtectEx(hprocess, (LPVOID)address, length, PAGE_EXECUTE_READWRITE, &oldprot)) {
-			return false;
-		}
-
-		BOOL result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &written);
-
-		VirtualProtectEx(hprocess, (LPVOID)address, length, oldprot, &oldprot);
-		FlushInstructionCache(hprocess, (LPCVOID)address, length);
-
-		return result && written == length;
-	}
-
-	bool read_proc_memory(HANDLE hprocess, uintptr_t address, uint8_t *read_bytes, size_t length) {
-		SIZE_T read = 0;
-		BOOL result = ReadProcessMemory(hprocess, (LPCVOID)address, (LPVOID)read_bytes, length, &read);
-
-		return result && read == length;
 	}
 };
 
