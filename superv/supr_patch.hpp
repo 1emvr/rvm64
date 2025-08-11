@@ -61,10 +61,17 @@ namespace superv::patch {
 			return false;
 		}
 
-		if (rvm64::memory::write_process_memory(hprocess, callee, jmp_back, sizeof(jmp_back)) && 
-				n_prolg > sizeof(jmp_back)) {
-				
+		if (rvm64::memory::write_process_memory(hprocess, callee, jmp_back, sizeof(jmp_back)) && n_prolg > sizeof(jmp_back)) {
+			memcpy(buffer, 0x90, n_prolg - sizeof(jmp_back));		
+
+			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_prolg - sizeof(jmp_back))) {
+				printf("[ERR] patch_callee could not fill nops in the callee: 0x%lx.", GetLastError());
+				return false;
+			}
 		}
+
+		VirtualProtectEx(hprocess, (LPVOID)callee, n_prolg, old_prot, &old_prot);
+		FlushInstructionCache(hprocess, callee, n_prolg);
 
 		VirtualFree(buffer, 0, MEM_RELEASE);
 		return true;
