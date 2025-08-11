@@ -46,6 +46,17 @@ namespace rvm64::memory {
 			VirtualFree(vmcs->process.address, 0, MEM_RELEASE);
 		}
 	}
+
+	_native MV* create_view() {
+		uintptr_t address = rvm64::superv::memory::allocate_local_2GB_range();
+		if (!address) {
+			return nullptr;
+		}
+	}
+
+	_native void destroy_view(void) {
+		return;
+	}
 };
 
 #endif // VMMEM_H

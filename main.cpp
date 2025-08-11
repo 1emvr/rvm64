@@ -2,11 +2,11 @@
 #include <setjmp.h>
 
 #include "vmmain.hpp"
+#include "vmmem.hpp"
 #include "vmcode.hpp"
 #include "vmcommon.hpp"
 #include "vmveh.hpp"
 #include "rvni.hpp"
-#include "mock.hpp"
 
 
 namespace rvm64::entry {
@@ -25,8 +25,8 @@ namespace rvm64::entry {
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 
 		vmcs->cache
-			? rvm64::mock::cache_file(data)
-			: rvm64::mock::destroy_file(data);
+			? rvm64::memory::cache_data(packet_data, packet_size)
+			: rvm64::memory::destroy_data(packet_data, packet_size);
 	}
 
 	_vmcall void vm_entry() {
@@ -47,7 +47,7 @@ namespace rvm64::entry {
 };
 
 namespace rvm64 {
-	_native int32_t vm_main(shared_buffer *packet) {
+	_native int32_t vm_main(MV *packet) {
 		save_host_context();
 
 		if (setjmp(vmcs->exit_handler)) {
@@ -66,13 +66,13 @@ defer:
 };
 
 int main() {
-	shared_buffer *packet = nullptr;
+	MV *packet = nullptr;
 
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
 	while (true) {
-		if ((packet = rvm64::mock::read_shared_memory())) {
+		if ((packet = rvm64::mock::read_packet())) {
 			break;
 		}
 		Sleep(10);

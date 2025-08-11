@@ -7,12 +7,6 @@
 #include "vmcommon.hpp"
 
 
-typedef struct {
-	uint8_t *address;
-	size_t size;
-	volatile int ready;
-} shared_buffer;
-
 struct intel_t {
     uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
     uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
@@ -31,7 +25,7 @@ typedef struct {
 	uintptr_t m_tval;
 } vm_csr;
 
-typedef struct {
+typedef struct _vmcs {
 	uintptr_t pc;
 	uintptr_t vscratch[8];
 	uintptr_t vregs[32];
@@ -47,7 +41,6 @@ typedef struct {
 	vm_csr csr;
 
 	int trap;
-	int cache;
 	int halt;
 } vmcs_t;
 
@@ -55,12 +48,12 @@ typedef struct {
 #define VM_MAGIC2 0x5f424541434f4e5fULL  // "_BEACON_"
 #define VM_BEACON_VER    1
 
-typedef struct _align64 {
+typedef struct _align64 _memory_view {
 	uint64_t 	magic1;
 	uint64_t 	magic2;
 	uint64_t 	version;
 	uint64_t 	header_size;
-	uint64_t 	self;
+	uint64_t 	self; // superv can pull this address for use
 
 	struct {
 		uint64_t 	address; 
@@ -79,7 +72,7 @@ typedef struct _align64 {
 	uint32_t 	ready;
 	uint32_t 	error;
 	uint8_t 	reserved[64];
-} vm_beacon;
+} MV;
 
 
 #ifdef __cplusplus
