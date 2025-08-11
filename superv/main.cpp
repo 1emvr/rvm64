@@ -10,9 +10,7 @@
 #include "../vmmain.hpp"
 
 namespace superv {
-	int superv_main(char* proc_name, char* elf_name) {
- 		static constexpr char vm_magic[16] = "RMV64_II_BEACON_";
-
+	int superv_main(const char* proc_name, const char* elf_name) {
 		std::wstring wproc = proc_name;
 		std::wstring sproc = "superv";
 
@@ -32,7 +30,9 @@ namespace superv {
 			return 1;
 		}
 
+ 		static constexpr char vm_magic[16] = "RMV64_II_BEACON_";
 		auto chan_offset = superv::scan::signature_scan(proc->handle, proc->base, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
+
 		if (!chan_offset) {
 			printf("[ERR] Could not find the vm channel\n");
 			return nullptr;
