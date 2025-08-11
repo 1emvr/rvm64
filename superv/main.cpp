@@ -21,7 +21,7 @@ namespace superv {
 			return 1;
 		}
 
-		vm_channel* channel = rvm64::ipc::get_vm_channel(proc);
+		vm_channel* channel = superv::loader::get_vm_channel(proc);
 		if (!channel) {
 			printf("[ERR] Could not load vm channel\n");
 			return 1;
@@ -38,7 +38,7 @@ namespace superv {
 		}
 
 		if (!superv::loader::write_elf_file(proc->handle, channel, elf_name)) {
-			printf("[ERR] Could not load the elf to the vm channel\n");
+			printf("[ERR] Could not load elf to the vm channel\n");
 			return 1;
 		}
 
