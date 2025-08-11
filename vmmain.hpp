@@ -25,7 +25,7 @@ typedef struct {
 	uintptr_t m_tval;
 } vm_csr;
 
-// NOTE: vm populates this then forgets about it. 
+// NOTE: vm populates vm_channel then forgets about it. 
 // only controlled by superv/implant/injected stubs.
 typedef struct _align64 {
 	uint64_t magic1;
