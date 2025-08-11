@@ -18,9 +18,15 @@ namespace superv::patch {
 	bool make_trampoline(HANDLE hprocess, uintptr_t callee, size_t n_prolg, uintptr_t* tramp_out) {
 		bool success = false;
 		void *trampoline = nullptr;
-		uint64_t back_addr = (uint64_t)(callee + n_prolg);
+		uint8_t *buffer = nullptr;
+		uint64_t back_addr = 0;
 
-		uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		if (n_prolg < 12) {
+			printf("[ERR] make_trampoline: function prologue must be at least 12 bytes\n"); 
+			goto defer;
+		}
+
+		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
 			printf("[ERR] make_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
 			return goto defer;
@@ -30,6 +36,8 @@ namespace superv::patch {
 			printf("[ERR] make_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
 			return goto defer;
 		}
+
+		back_addr = (uint64_t)(callee + n_prolg);
 
 		memcpy(buffer + n_prolg, jmp_back, sizeof(jmp_back));
 		memcpy(buffer + n_prolg + 2, &back_addr, sizeof(uint64_t));
@@ -45,14 +53,14 @@ namespace superv::patch {
 		}
 
 		FlushInstructionCache(hprocess, trampoline, n_pro);
-		success = true;
 
+		*tramp_out = trampoline;
+		success = true;
 defer:
 		if (buffer) {
 			VirtualFree(buffer, 0, MEM_RELEASE);
 		}
 
-		*tramp_out = trampoline;
 		return success;
 	}
 
