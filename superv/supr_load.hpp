@@ -91,7 +91,7 @@ namespace superv::loader {
 			sent += read;
 		}
 
- 		write = 0;
+ 		SIZE_T write = 0;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->view.write_size, (LPCVOID)&total, sizeof(SIZE_T), &write) || write != sizeof(SIZE_T)) {
 			printf("[ERR] channel write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
 			goto defer;
