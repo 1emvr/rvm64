@@ -23,7 +23,7 @@ namespace superv::patch {
 		0xe9, 0x00, 0x00, 0x00, 0x00,               // 0x12: jmp rel32
 	};
 
-	bool install_entry_hook(win_process *proc, _memory_view* shbuf) {
+	bool install_entry_hook(win_process *proc, vm_channel* channel) {
 		size_t stub_size = sizeof(entry_hook);
 		uint8_t buffer[stub_size];
 
@@ -50,13 +50,12 @@ namespace superv::patch {
 		}
 
 		uintptr_t original_call = call_site + 5 + original_rel;
-		uintptr_t shb_signal = &shbuf->ipc.signal;
+		uintptr_t chn_signal = &channel->ipc.signal;
 		{
-
-			int32_t disp32_1 = (int32_t)(shb_signal - (hook_addr + 0x07));
+			int32_t disp32_1 = (int32_t)(chn_signal - (hook_addr + 0x07));
 			memcpy(&buffer[0x03], &disp32_1, sizeof(disp32_1));
 
-			int32_t disp32_2 = (int32_t)(shb_signal - (hook_addr + 0x12));
+			int32_t disp32_2 = (int32_t)(chn_signal - (hook_addr + 0x12));
 			memcpy(&buffer[0x0D], &disp32_2, sizeof(disp32_2));
 
 			int32_t call_rel = (int32_t)(original_call - (hook_addr + 0x17));
@@ -101,7 +100,7 @@ namespace superv::patch {
 		0xC3                                      				// 0x32: ret
 	};
 
-	bool install_decoder_hook(win_process* proc, _memory_view* shbuf) {
+	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
 		size_t stub_size = sizeof(decoder_hook);
 		uint8_t buffer[stub_size];
 
@@ -115,7 +114,7 @@ namespace superv::patch {
 
 		uintptr_t call_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
 		if (!call_offset) {
-			printf("[ERR]: signature_scan failed to find target signature in the remote process.\n");
+			printf("[ERR]: signature_scan failed to find call signature in the remote process.\n");
 			return false;
 		}
 
@@ -128,19 +127,17 @@ namespace superv::patch {
 		}
 
 		uintptr_t original_call = call_site + 5 + original_rel;
-
-		uintptr_t shb_vmcs 		= &shbuf->ipc.vmcs;
-		uintptr_t shb_opcode 	= &shbuf->ipc.opcode;
-		uintptr_t shb_signal 	= &shbuf->ipc.signal;
-
+		uintptr_t chn_vmcs 		= &channel->ipc.vmcs;
+		uintptr_t chn_opcode 	= &channel->ipc.opcode;
+		uintptr_t chn_signal 	= &channel->ipc.signal;
 		{
-			int32_t disp32_1 = (int32_t)(shb_opcode - (hook_addr + 0x09));
+			int32_t disp32_1 = (int32_t)(chn_opcode - (hook_addr + 0x09));
 			memcpy(&buffer[0x05], &disp32_1, sizeof(disp32_1));
 
-			int32_t disp32_2 = (int32_t)(shb_vmcs - (hook_addr + 0x13));
+			int32_t disp32_2 = (int32_t)(chn_vmcs - (hook_addr + 0x13));
 			memcpy(&buffer[0x0f], &disp32_2, sizeof(disp32_2));
 
-			int32_t disp32_3 = (int32_t)(shb_signal - (hook_addr + 0x1d));
+			int32_t disp32_3 = (int32_t)(chn_signal - (hook_addr + 0x1d));
 			memcpy(&buffer[0x19], &disp32_2, sizeof(disp32_2));
 
 			int32_t call_rel = (int32_t)(original_call - (hook_addr + 0x33));

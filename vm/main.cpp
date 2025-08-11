@@ -29,7 +29,6 @@ int main() {
 	vmcs = &vm_instance;
 
 	rvm64::ipc::create_channel();
-
 	while (true) {
 		if (rvm64::ipc::read_channel_buffer()) {
 			break;
