@@ -10,32 +10,26 @@
 #include "../include/vmproc.hpp"
 
 namespace superv {
-	int superv_main(const char* proc_name, const char* elf_name) {
-		win_process *proc = rvm64::process::get_process_info(proc_name);
-		if (!proc) {
-			printf("[ERR] Could not find process information for target\n");
-			return 1;
-		}
-		vm_channel *channel = (vm_channel*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
-		if (!channel) {
-			printf("[ERR] Could not create a local vm-channel\n");
-			return 1;
-		}
-
+	vm_channel* get_channel(win_process* proc) {
  		static constexpr char vm_magic[16] = "RMV64_II_BEACON";
 		auto ch_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
 		if (!ch_offset) {
 			printf("[ERR] Could not find the remote vm-channel\n");
-			return 1;
+			return nullptr;
 		}
 
-		// process vm channel offsets
+		vm_channel *channel = (vm_channel*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
+		if (!channel) {
+			printf("[ERR] Could not create a local vm-channel\n");
+			return nullptr;
+		}
+
 		if (!rvm64::memory::read_process_memory(proc->handle, ch_offset, (uint8_t*)channel, sizeof(vm_channel))) {
 			printf("[ERR] Could not read the remote vm-channel\n");
-			return 1;
+			HeapFree(GetProcessHeap(), 0, channel);
+			return nullptr;
 		}
 
-		// NOTE: populate channel with vm addresses
 		channel->view.buffer 		= (uint64_t)ch_offset + offsetof(vm_channel, view.buffer); 									
 		channel->view.size 			= (uint64_t)ch_offset + offsetof(vm_channel, view.size); 							
 		channel->view.write_size 	= (uint64_t)ch_offset + offsetof(vm_channel, view.write_size); 						
@@ -46,16 +40,32 @@ namespace superv {
 		channel->ready = (uint64_t)ch_offset + offsetof(vm_channel, ready); 					
 		channel->error = (uint64_t)ch_offset + offsetof(vm_channel, error); 					
 
+		return channel;
+	}
+
+	int superv_main(const char* proc_name, const char* elf_name) {
+		win_process *proc = rvm64::process::get_process_info(proc_name);
+		if (!proc) {
+			printf("[ERR] Could not find process information for target\n");
+			return 1;
+		}
+
+		vm_channel* channel = get_channel(proc);
+		if (!channel) {
+			printf("[ERR] Could not load vm channel\n");
+			return 1;
+		}
+
 		if (!superv::patch::install_entry_hook(proc, channel)) {
 			printf("[ERR] Could not install entrypoint hook in the vm\n");
 			return 1;
 		}
+
 		if (!superv::patch::install_decoder_hook(proc, channel)) {
 			printf("[ERR] Could not install decoder hook in the vm\n");
 			return 1;
 		}
 
-		// NOTE: writing to the channel will trigger the vm to start
 		if (!superv::loader::write_elf_file(proc->handle, channel, elf_name)) {
 			printf("[ERR] Could not load the elf to the vm channel\n");
 			return 1;
