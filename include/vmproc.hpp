@@ -4,8 +4,10 @@
 #include <tlhelp32.h>
 #include <string>
 
+#include "../include/vmlib.hpp"
+
 namespace rvm64::process {
-	SIZE_T get_proccess_size(HANDLE hprocess, uintptr_t base) {
+	SIZE_T get_process_size(HANDLE hprocess, uintptr_t base) {
 		MEMORY_BASIC_INFORMATION mbi;
 
 		UINT_PTR address = base;
@@ -23,7 +25,7 @@ namespace rvm64::process {
 		return total_size;
 	}
 
-	DWORD get_process_id(const std::wstring& target_name) {
+	DWORD get_process_id(const CHAR* target_name) {
 		DWORD pid = 0;
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
@@ -31,27 +33,30 @@ namespace rvm64::process {
 			return 0;
 		}
 
-		PROCESSENTRY32W pe32;
-		pe32.dwSize = sizeof(PROCESSENTRY32W);
+		PROCESSENTRY32 pe32;
+		pe32.dwSize = sizeof(PROCESSENTRY32);
 
-		if (Process32FirstW(snapshot, &pe32)) {
+		if (Process32First(snapshot, &pe32)) {
 			do {
-				std::wstring entry_name = pe32.szExeFile;
-				if (entry_name.length() > 4 && entry_name.substr(entry_name.length() - 4) == L".exe") {
-					entry_name = entry_name.substr(0, entry_name.length() - 4);
+				char entry_name[MAX_PATH];
+				x_strcpy(entry_name, pe32.szExeFile, MAX_PATH -1);
+
+				size_t name_len = strlen(entry_name);
+				if (name_len > 4 && x_endwith(entry_name, ".exe")) {
+					entry_name[name_len - 4] = 0;
 				}
-				if (_wcsicmp(entry_name.c_str(), target_name.c_str()) == 0) {
+				if (x_strcmp(entry_name, target_name) == 0) {
 					pid = pe32.th32ProcessID;
 					break;
 				}
-			} while (Process32NextW(snapshot, &pe32));
+			} while (Process32Next(snapshot, &pe32));
 		}
 
 		CloseHandle(snapshot);
 		return pid;
 	}
 
-	UINT_PTR get_module_base(DWORD pid, const TCHAR* target_name) {
+	UINT_PTR get_module_base(DWORD pid, const CHAR* target_name) {
 		UINT_PTR base_address = 0;
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
 
@@ -64,7 +69,7 @@ namespace rvm64::process {
 
 		if (Module32First(snapshot, &me32)) {
 			do {
-				if (_tcscmp(me32.szModule, target_name) == 0) {
+				if (strcmp(me32.szModule, target_name) == 0) {
 					base_address = (uintptr_t)me32.modBaseAddr;
 					break;
 				}
@@ -85,14 +90,14 @@ namespace rvm64::process {
 		}
 	}
 
-	win_process* get_process_info(std::wstring target_name) {
+	win_process* get_process_info(const CHAR* target_name) {
 		bool success = false;
 		win_process *proc = (win_process*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(win_process));
 		if (!proc) {
 			goto defer;
 		}
 
-		proc->pid = get_procid(target_name);
+		proc->pid = get_process_id(target_name);
 		if (!proc->pid) {
 			goto defer;
 		}
@@ -107,7 +112,7 @@ namespace rvm64::process {
 			goto defer;
 		}
 
-		proc->size = get_proc_size(proc->handle, proc->address);
+		proc->size = get_process_size(proc->handle, proc->address);
 		if (!proc->size) {
 			goto defer;
 		}
