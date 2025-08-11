@@ -138,7 +138,7 @@ defer:
 		memcpy(buffer, jmp_back, sizeof(jmp_back));
 		memcpy(buffer + 2, &hook, sizeof(uintptr_t));
 
-		// NOTE: write_process_memory handles page protections on write/restores them.
+		// NOTE: write_process_memory handles page protections.
  		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back))) {
 			printf("[ERR] patch_callee could not write to process memory: 0x%lx.\n", GetLastError()); 
 			goto defer;
