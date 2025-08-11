@@ -15,7 +15,7 @@ namespace rvm64::process {
 		uint8_t* buffer = (uint8_t*)HeapAlloc(GetProcessHeap(), 0, head_size);
 		size_t read = 0;
 
-		if (!ReadProcessMemory(hprocess, base, (LPVOID)buffer, head_size, &read) || read != head_size) {
+		if (!ReadProcessMemory(hprocess, (LPVOID)base, (LPVOID)buffer, head_size, &read) || read != head_size) {
 			printf("[ERR] get_process_size: failed to read process memory: 0x%lx", GetLastError());
 			return 0;
 		}
