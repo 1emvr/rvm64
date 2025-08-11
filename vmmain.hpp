@@ -25,27 +25,29 @@ typedef struct {
 	uintptr_t m_tval;
 } vm_csr;
 
+// NOTE: vm populates this then forgets about it. 
+// only controlled by superv/implant/injected stubs.
 typedef struct _align64 {
-	uint64_t 	magic1;
-	uint64_t 	magic2;
-	uint64_t 	self; // superv can pull this address for use
+	uint64_t magic1;
+	uint64_t magic2;
+	uint64_t self; 
 
 	struct {
-		uint64_t	buffer;
-		uint64_t	size;
-		uint64_t	write_size;
+		uint64_t buffer;
+		uint64_t size;
+		uint64_t write_size;
 	} view;
 
 	struct {
-		uint64_t 	vmcs;
-		uint32_t    opcode;
-		uint16_t 	signal;
-		uint16_t 	_pad0;
+		uint64_t vmcs;
+		uint32_t opcode;
+		uint16_t signal;
+		uint16_t _pad0;
 	} ipc;
 
-	uint32_t 	ready;
-	uint32_t 	error;
-	uint8_t 	reserved[64];
+	uint32_t ready;
+	uint32_t error;
+	uint8_t  reserved[64];
 } vm_channel;
 
 typedef struct _vmcs {
