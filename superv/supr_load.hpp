@@ -4,7 +4,7 @@
 
 #include "../include/vmmain.hpp"
 
-namespace superv::loader {
+namespace SuperV::Loader {
 	VM_CHANNEL* GetChannel(win_process* proc) {
  		static constexpr char vm_magic[16] = "RMV64_II_BEACON";
 
@@ -107,8 +107,5 @@ namespace superv::loader {
 		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
 		return true; 
 	}
-
-
-
 }
 #endif // HYPRLOAD_HPP
