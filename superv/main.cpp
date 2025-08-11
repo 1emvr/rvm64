@@ -11,21 +11,35 @@
 
 namespace superv {
 	int superv_main(char* proc_name, char* elf_name) {
+ 		static constexpr char vm_magic[16] = "RMV64_II_BEACON_";
+
 		std::wstring wproc = proc_name;
 		std::wstring sproc = "superv";
 
 		win_process *superv = rvm64::process::information::get_process_info(sproc);
 		if (!superv) {
+			printf("[ERR] Could not find process information for supervisor\n");
 			return 1;
 		}
 		win_process *proc = superv::process::information::get_process_info(wproc);
 		if (!proc) {
+			printf("[ERR] Could not find process information for target\n");
 			return 1;
 		}
-		auto channel = rvm64::ipc::load_vm_channel(proc);
+		vm_channel *channel = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
 		if (!channel) {
-			printf("[ERR] Could not map the vm channel\n");
+			printf("[ERR] Could not create the vm channel\n");
 			return 1;
+		}
+
+		auto chan_offset = superv::scan::signature_scan(proc->handle, proc->base, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
+		if (!chan_offset) {
+			printf("[ERR] Could not find the vm channel\n");
+			return nullptr;
+		}
+		if (!rvm64::memory::read_process_memory(proc->handle, chan_offset, (uint8_t*)channel, sizeof(vm_channel))) {
+			printf("[ERR] Could not read the vm channel\n");
+			return nullptr;
 		}
 		if (!superv::patch::install_entry_hook(proc)) {
 			printf("[ERR] Could not install entrypoint hook in the vm\n");
