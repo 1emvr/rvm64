@@ -29,12 +29,12 @@ namespace superv::patch {
 		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
 			printf("[ERR] install_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
-			return goto defer;
+			goto defer;
 		}
 
 		if (!rvm64::memory::read_process_memory(hprocess, callee, buffer, n_prolg)) {
 			printf("[ERR] install_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
-			return goto defer;
+			goto defer;
 		}
 
 		back_addr = (uint64_t)(callee + n_prolg);
@@ -52,7 +52,7 @@ namespace superv::patch {
 			goto defer;
 		}
 
-		FlushInstructionCache(hprocess, trampoline, n_pro);
+		FlushInstructionCache(hprocess, trampoline, n_prolg);
 		*tramp_out = trampoline;
 		success = true;
 
@@ -85,7 +85,7 @@ defer:
 		}
 
 		if (rvm64::memory::write_process_memory(hprocess, callee, jmp_back, sizeof(jmp_back)) && n_prolg > sizeof(jmp_back)) {
-			memcpy(buffer, 0x90, n_prolg - sizeof(jmp_back));		
+			memset(buffer, 0x90, n_prolg - sizeof(jmp_back));		
 
 			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_prolg - sizeof(jmp_back))) {
 				printf("[ERR] patch_callee could not fill nops in the callee (prologue > 12): 0x%lx.", GetLastError());
@@ -176,8 +176,8 @@ defer:
 		}
 
 		FlushInstructionCache(proc->handle, hook, stub_size);
-		if (!detour_callee(proc->handle, callee, hook, n_prolg)) {
-			printf("[ERR] install_entry_hook::detour_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
+		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
+			printf("[ERR] install_entry_hook::patch_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
@@ -213,7 +213,6 @@ defer:
 	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
 		printf("[INF] Installing decoder hook.\n");
 
-
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
 		if (!sig_offset) { 
 			printf("[ERR] signature_scan failed for decoder.\n"); 
@@ -237,7 +236,7 @@ defer:
 			return false;
 		}
 
-		uintptr_t hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, stub_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		uintptr_t hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(decoder_hook), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!hook) { 
 			printf("[ERR] install_decoder_hook failed to allocate a hook: 0x%lx.\n", GetLastError()); 
 			return false; 
@@ -255,10 +254,10 @@ defer:
 			int32_t d32_vmcs = (int32_t)(ch_vmcs - (hook + 0x12));
 			int32_t d32_signal = (int32_t)(ch_signal - (hook + 0x1c));
 
-			memcpy(&buffer[DH_OFFSET_OPCODE_DISP], &d32_opcode, sizeof(int32_t));
+			memcpy(&buffer[DH_OFF_OPCODE_DISP], &d32_opcode, sizeof(int32_t));
 			memcpy(&buffer[DH_OFF_VMCS_DISP], &d32_vmcs, sizeof(int32_t));
-			memcpy(&buffer[DH_OFFSET_SIGNAL_DISP], &d32_signal, sizeof(int32_t));
-			memcpy(&buffer[DH_OFFSET_TRAMP_IMM64], &trampoline, sizeof(uintptr_t)); 
+			memcpy(&buffer[DH_OFF_SIGNAL_DISP], &d32_signal, sizeof(int32_t));
+			memcpy(&buffer[DH_OFF_TRAMP_IMM64], &trampoline, sizeof(uintptr_t)); 
 		}
 
 		if (!rvm64::memory::write_process_memory(proc->handle, hook, buffer, sizeof(decoder_hook))) {
@@ -267,8 +266,8 @@ defer:
 		}
 
 		FlushInstructionCache(proc->handle, hook, stub_size);
-		if (!detour_callee(proc->handle, callee, hook, n_prolg)) {
-			printf("[ERR] install_decoder_hook::detour_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
+		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
+			printf("[ERR] install_decoder_hook::patch_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
