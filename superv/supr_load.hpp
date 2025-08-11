@@ -3,7 +3,7 @@
 #include <windows.h>
 
 #include "../include/vmmain.hpp"
-#include "../include/vmipc.hpp"
+//#include "../include/vmipc.hpp"
 
 namespace superv::loader {
 	BOOL write_elf_file(vm_channel* channel, const char* filepath) {
@@ -22,14 +22,14 @@ namespace superv::loader {
 		}
 
 		DWORD read = 0;
-		if(!ReadFileEx(hfile, channel->view.buffer, fsize, &read, nullptr) || read != fsize) {
+		if(!ReadFile(hfile, (LPVOID)channel->view.buffer, fsize, &read, nullptr) || read != fsize) {
 			printf("[ERR] Unable to read from file.\n GetLastError=%08x\n", GetLastError());
 			goto defer;
 		}
 
 		channel->view.write_size = fsize;
 		channel->ipc.signal = 1; // 1 = image load
-		channel->ipc.ready = 1;
+		channel->ready = 1;
 
 		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
 		success = true;

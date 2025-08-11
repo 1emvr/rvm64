@@ -1,7 +1,6 @@
 #ifndef VMMEM_H
 #define VMMEM_H
 #include "vmmain.hpp"
-#include "vmelf.hpp"
 
 namespace rvm64::memory {
 	_native void memory_init(size_t process_size) {
