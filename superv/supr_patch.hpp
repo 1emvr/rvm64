@@ -36,14 +36,14 @@ namespace superv::patch {
 			return false;
 		}
 
-		uintptr_t call_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
-		if (!call_offset) {
+		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
+		if (!sig_offset) {
 			printf("[ERR]: signature_scan failed to find entry call signature in the remote process.\n");
 			return false;
 		}
 
 		int32_t original_rel = 0;
-		uintptr_t call_site = call_offset + 7;
+		uintptr_t call_site = sig_offset + 7;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
 			printf("[ERR]: read_proc_memory failed to read memory in the remote process.\n");
@@ -51,7 +51,7 @@ namespace superv::patch {
 		}
 
 		uintptr_t ch_signal = (uintptr_t)channel->self + offsetof(vm_channel, ipc.signal);
-		uintptr_t original_call = call_site + 5 + original_rel;
+		uintptr_t original_call = sig_offset + 5 + original_rel;
 		{
 			int32_t disp32_1 = (int32_t)(ch_signal - (hook_addr + 0x07));
 			memcpy(&buffer[0x03], &disp32_1, sizeof(disp32_1));
@@ -114,14 +114,14 @@ namespace superv::patch {
 			return false;
 		}
 
-		uintptr_t call_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
+		uintptr_t sig_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
 		if (!call_offset) {
 			printf("[ERR]: signature_scan failed to find decoder call signature in the remote process.\n");
 			return false;
 		}
 
 		int32_t original_rel = 0;
-		uintptr_t call_site = call_offset + 5;
+		uintptr_t call_site = sig_offset + 5;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
 			printf("[ERR]: read_proc_memory failed to read memory in the remote process.\n");
@@ -130,8 +130,8 @@ namespace superv::patch {
 
 		uintptr_t original_call = call_site + 5 + original_rel;
 		uintptr_t ch_vmcs 		= channel->self + offsetof(vm_channel, ipc.vmcs);
-		uintptr_t ch_opcode 	= channel->self + offsetof(vm_channel, channel->ipc.opcode);
-		uintptr_t ch_signal 	= channel->self + offsetof(vm_channel, channel->ipc.signal);
+		uintptr_t ch_opcode 	= channel->self + offsetof(vm_channel, ipc.opcode);
+		uintptr_t ch_signal 	= channel->self + offsetof(vm_channel, ipc.signal);
 		{
 			int32_t disp32_1 = (int32_t)(ch_opcode - (hook_addr + 0x09));
 			memcpy(&buffer[0x05], &disp32_1, sizeof(disp32_1));
@@ -140,7 +140,7 @@ namespace superv::patch {
 			memcpy(&buffer[0x0f], &disp32_2, sizeof(disp32_2));
 
 			int32_t disp32_3 = (int32_t)(ch_signal - (hook_addr + 0x1d));
-			memcpy(&buffer[0x19], &disp32_2, sizeof(disp32_2));
+			memcpy(&buffer[0x19], &disp32_3, sizeof(disp32_3));
 
 			int32_t call_rel = (int32_t)(original_call - (hook_addr + 0x33));
 			memcpy(&buffer[0x28], &call_rel, sizeof(call_rel));
