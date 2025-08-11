@@ -28,7 +28,6 @@ typedef struct {
 typedef struct _align64 {
 	uint64_t 	magic1;
 	uint64_t 	magic2;
-	uint64_t 	header_size;
 	uint64_t 	self; // superv can pull this address for use
 
 	struct {
