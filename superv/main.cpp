@@ -12,7 +12,13 @@
 namespace superv {
 	int superv_main(char* proc_name, char* elf_name) {
 		std::wstring wproc = proc_name;
-		process_t *proc = superv::process::information::get_process_info(wproc);
+		std::wstring sproc = "superv";
+
+		win_process *superv = rvm64::process::information::get_process_info(sproc);
+		if (!superv) {
+			return 1;
+		}
+		win_process *proc = superv::process::information::get_process_info(wproc);
 		if (!proc) {
 			return 1;
 		}
