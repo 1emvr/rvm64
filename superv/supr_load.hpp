@@ -5,7 +5,7 @@
 #include "../include/vmmain.hpp"
 
 namespace superv::loader {
-	VM_CHANNEL* get_channel(win_process* proc) {
+	vm_channel* get_channel(win_process* proc) {
  		static constexpr char vm_magic[16] = "RMV64_II_BEACON";
 
 		uintptr_t ch_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
@@ -39,7 +39,7 @@ namespace superv::loader {
 		return channel;
 	}
 
-	BOOL remote_write_file(HANDLE hprocess, vm_channel* channel, const char* filepath) {
+	bool remote_write_file(HANDLE hprocess, vm_channel* channel, const char* filepath) {
 		LARGE_INTEGER li = {};
 		INT32 signal = 1, ready = 1;
 
