@@ -186,13 +186,14 @@ typedef struct {
 // NOTE: I do not understand the elf format.
 namespace rvm64::elf {
 	_native void patch_elf_plt() {
-		auto ehdr = (elf64_ehdr*)vmcs->process.process;
+		auto ehdr = (elf64_ehdr*)vmcs->process.address;
+		auto process = (uint8_t*)vmcs->process.address;
 
 		if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
 
-		auto phdrs = (elf64_phdr*) ((uint8_t*)(process) + ehdr->e_phoff);
+		auto phdrs = (elf64_phdr*)((uint8_t*)(process) + ehdr->e_phoff);
 		uint64_t dyn_vaddr = 0;
 		uint64_t dyn_size = 0;
 

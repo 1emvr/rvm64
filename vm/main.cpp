@@ -30,7 +30,7 @@ int main() {
 
 	rvm64::ipc::vm_create_channel();
 	while (true) {
-		if (rvm64::ipc::read_channel_buffer()) {
+		if (vmcs->channel->ready) {
 			break;
 		}
 		Sleep(10);

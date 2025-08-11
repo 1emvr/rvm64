@@ -44,7 +44,7 @@ namespace rvm64::ipc {
 		}
 	}
 
-	bool read_channel_buffer(uint8_t* data, uintptr_t offset, size_t size) {
+	bool read_channel_buffer(uintptr_t data, uintptr_t offset, size_t size) {
 		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
 			return false;
 		}
@@ -61,7 +61,7 @@ namespace rvm64::ipc {
 		return true;
 	}
 
-	bool write_channel_buffer(const uint8_t* data, uintptr_t offset, size_t size) {
+	bool write_channel_buffer(const uintptr_t data, uintptr_t offset, size_t size) {
 		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
 			return false;
 		}

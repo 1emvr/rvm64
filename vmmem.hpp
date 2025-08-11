@@ -128,11 +128,11 @@ namespace rvm64::memory {
 		return nullptr;
 	}
 
-	_native void cache_data(uint8_t* data, size_t size) {
+	_native void cache_data(uintptr_t data, size_t size) {
 
 	}
 
-	_native void destroy_data(uint8_t* data, size_t size) {
+	_native void destroy_data(uintptr_t data, size_t size) {
 
 	}
 };
