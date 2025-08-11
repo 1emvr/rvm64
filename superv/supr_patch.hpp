@@ -211,11 +211,10 @@ defer:
 										// +0x0c: ...
 	};
 
+	// TODO: refactor hook for decoder.
 	_rdata static const uint8_t decoder_hook[] = {
 		0xcc,                                   					// +0x00: bp for testing
-		0x4c, 0x8d, 0x1d, 0x00, 0x00, 0x00, 0x00,                	// +0x01: lea r11, [rip+disp32] (opcode) // NOTE: with the vmcs pointer, we don't need anything else.
-		0x41, 0x89, 0x03,                         					// +0x08: mov dword ptr [r11], eax 
-		0x4c, 0x8d, 0x1d, 0x00, 0x00, 0x00, 0x00,                 	// +0x0b: lea r11, [rip+disp32] (vmcs)
+		0x4c, 0x8d, 0x1d, 0x00, 0x00, 0x00, 0x00,                 	// +0x0b: lea r11, [rip+disp32] (vmcs) // NOTE: with the vmcs pointer, we don't need anything else.
 		0x49, 0x89, 0x0b,                         					// +0x12: mov qword ptr [r11], rcx 
 		0x4c, 0x8d, 0x1d, 0x00, 0x00, 0x00, 0x00,                	// +0x15: lea r11, [rip+disp32] (signal)
 		0x41, 0x80, 0x3b, 0x00,                    					// +0x1c: cmp byte ptr [r11], 0
@@ -266,14 +265,11 @@ defer:
 
 		memcpy(buffer, decoder_hook, stub_size);
 		uintptr_t ch_vmcs   = channel->self + offsetof(vm_channel, vmcs);
-		uintptr_t ch_opcode = channel->self + offsetof(vm_channel, ipc.opcode);
 		uintptr_t ch_signal = channel->self + offsetof(vm_channel, ipc.signal);
 		{
-			int32_t d32_opcode = (int32_t)(ch_opcode - (hook + 0x08));
 			int32_t d32_vmcs = (int32_t)(ch_vmcs - (hook + 0x12));
 			int32_t d32_signal = (int32_t)(ch_signal - (hook + 0x1c));
 
-			memcpy(&buffer[DH_OFF_OPCODE_DISP], &d32_opcode, sizeof(int32_t));
 			memcpy(&buffer[DH_OFF_VMCS_DISP], &d32_vmcs, sizeof(int32_t));
 			memcpy(&buffer[DH_OFF_SIGNAL_DISP], &d32_signal, sizeof(int32_t));
 			memcpy(&buffer[DH_OFF_TRAMP_IMM64], &trampoline, sizeof(uintptr_t)); 

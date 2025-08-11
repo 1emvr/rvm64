@@ -36,7 +36,7 @@ namespace rvm64::ipc {
 		vmcs->channel->magic2 = magic2;
 
 		vmcs->channel->view.size = CHANNEL_BUFFER_SIZE;
-		vmcs->channel->view.buffer = (uint64_t)rvm64::memory::allocate_2GB_range(hprocess, (uintptr_t)hmodule, PAGE_READWRITE, CHANNEL_BUFFER_SIZE); 
+		vmcs->channel->view.buffer = (uint64_t)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); 
 
 		if (!vmcs->channel->view.buffer) {
 			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
