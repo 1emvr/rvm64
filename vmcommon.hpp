@@ -28,23 +28,25 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define VSTACK_MAX_CAPACITY     (1024 * 2)
 #define RVM_TRAP_EXCEPTION		0xE0424242  // any 0xExxxxxxx value is safe
 
+#define VM_MAGIC1 				0x524d5636345f4949ULL  // "RMV64_II" 
+#define VM_MAGIC2 				0x5f424541434f4e5fULL  // "_BEACON_"
+#define VM_BEACON_VER    		1
+
 #define EXPONENT_MASK           0x7FF0000000000000ULL
 #define FRACTION_MASK           0x000FFFFFFFFFFFFFULL
 #define RV64_RET				0x00008067
 
 #define CSR_SET_TRAP(epc, cause, stat, val, hlt)		\
-	DEBUGBREAK; 										\
 	vmcs->csr.m_epc = (uintptr_t)epc;					\
 	vmcs->csr.m_cause = cause;							\
 	vmcs->csr.m_status = stat;							\
-	vmcs->csr.m_tval = val;							\
+	vmcs->csr.m_tval = val;								\
 	vmcs->halt = hlt;									\
 	RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	\
 	__builtin_unreachable()
 
 #define CSR_GET(ctx_ptr)							\
 	do {											\
-		DEBUGBREAK; 								\
 		uintptr_t csr1 = vmcs->csr.m_epc;			\
 		uintptr_t csr2 = vmcs->csr.m_cause; 		\
 		uintptr_t csr3 = vmcs->csr.m_status;		\

@@ -6,7 +6,6 @@
 
 #include "vmcommon.hpp"
 
-
 struct intel_t {
     uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
     uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
@@ -43,10 +42,6 @@ typedef struct _vmcs {
 	int trap;
 	int halt;
 } vmcs_t;
-
-#define VM_MAGIC1 0x524d5636345f4949ULL  // "RMV64_II" 
-#define VM_MAGIC2 0x5f424541434f4e5fULL  // "_BEACON_"
-#define VM_BEACON_VER    1
 
 typedef struct _align64 _memory_view {
 	uint64_t 	magic1;
