@@ -63,13 +63,13 @@ namespace superv::patch {
 		}
 
 		if (!rvm64::memory::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(entry_hook))) {
-			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
+			printf("[ERR]: write_proc_memory failed to write entry hook in the remote process.\n");
 			return false;
 		}
 
 		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
 		if (!rvm64::memory::write_process_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
-			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
+			printf("[ERR]: write_proc_memory failed to write entry hook in the remote process.\n");
 			return false;
 		}
 
@@ -145,13 +145,13 @@ namespace superv::patch {
 		}
 
 		if (!rvm64::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(decoder_hook))) {
-			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
+			printf("[ERR]: write_proc_memory failed to write decoder hook in the remote process.\n");
 			return false;
 		}
 
 		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
 		if (!rvm64::memory::write_process_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
-			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
+			printf("[ERR]: write_proc_memory failed to write decoder hook in the remote process.\n");
 			return false;
 		}
 
