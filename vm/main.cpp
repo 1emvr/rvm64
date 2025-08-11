@@ -27,12 +27,14 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
+	// TODO: create the memory view before starting anything
 	while (true) {
 		if ((packet = rvm64::mock::read_packet())) {
 			break;
 		}
 		Sleep(10);
 	}
-    return rvm64::vm_main(packet);
+
+    rvm64::vm_main(packet);
 }
 

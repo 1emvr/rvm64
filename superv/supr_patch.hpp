@@ -7,7 +7,7 @@
 
 
 namespace superv::patch {
-	_rdata const char *entry_mask = "xxxxxxxx????xxxxxxx";
+	_rdata unsigned char *entry_mask = "xxxxxxxx????xxxxxxx";
 	_rdata uint8_t entry_sig[] = {
 		0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 	// 0x00: mov     cs:vmcs, rax
 		0xe8, 0x00, 0x00, 0x00, 0x00,             	// 0x07: call    rvm64::entry::vm_entry(void)
@@ -22,7 +22,7 @@ namespace superv::patch {
 		0xe9, 0x00, 0x00, 0x00, 0x00,               // 0x12: jmp rel32
 	};
 
-	bool install_entry_hook(process_t *proc, mapped_view* shbuf) {
+	bool install_entry_hook(process_t *proc, _memory_view* shbuf) {
 		size_t stub_size = sizeof(entry_hook);
 		uint8_t buffer[stub_size];
 
@@ -76,7 +76,7 @@ namespace superv::patch {
 		return true;
 	}
 
-	_rdata char *decoder_mask = "xxxxxx????xxxxxxx";
+	_rdata unsigned char *decoder_mask = "xxxxxx????xxxxxxx";
 	_rdata uint8_t decoder_sig[] = { 
 		0x8B, 0x45, 0xFC,										// 0x00: mov     eax, [rbp+opcode]
 		0x89, 0xC1,                                 			// 0x03: mov     ecx, eax        ; opcode
@@ -86,11 +86,11 @@ namespace superv::patch {
 
 	_rdata uint8_t decoder_hook[] = {
 		0x41, 0x53,                               				// 0x00: push r11
-		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// 0x02: lea  r11, &mapped_view->ipc.opcode (rip+disp32)
+		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// 0x02: lea  r11, &memory_view->ipc.opcode (rip+disp32)
 		0x41, 0x89, 0x03,                         				// 0x09: mov  dword ptr [r11], eax
-		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// 0x0c: lea  r11, &mapped_view->ipc.vmcs (rip+disp32)
+		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// 0x0c: lea  r11, &memory_view->ipc.vmcs (rip+disp32)
 		0x49, 0x89, 0x0B,                         				// 0x13: mov  qword ptr [r11], rcx
-		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// 0x16: lea  r11, &mapped_view->ipc.signal (rip+disp32)
+		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// 0x16: lea  r11, &memory_view->ipc.signal (rip+disp32)
 		0x41, 0x80, 0x3B, 0x00,                   				// 0x1d: cmp  byte ptr [r11], 0
 		0x75, 0xFA,                               				// 0x21: jne  -6                  ; spin 
 		0x48, 0x83, 0xEC, 0x28,                   				// 0x23: sub  rsp, 0x28           ; shadow + align
@@ -100,7 +100,7 @@ namespace superv::patch {
 		0xC3                                      				// 0x32: ret
 	};
 
-	bool install_decoder_hook(process_t* proc, mapped_view* shbuf) {
+	bool install_decoder_hook(process_t* proc, _memory_view* shbuf) {
 		size_t stub_size = sizeof(decoder_hook);
 		uint8_t buffer[stub_size];
 
