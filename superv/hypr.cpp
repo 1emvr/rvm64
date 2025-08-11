@@ -7,23 +7,12 @@
 #include "hypr_proc.hpp"
 #include "hypr_patch.hpp"
 
-#include "../vmmain.hpp"
+#include "../vm/vmmain.hpp"
 
 namespace superv {
-	int main(int argc, char** argv) {
-		if (argc < 2) {
-			printf("Usage: %s <riscv_elf_file>\n", argv[0]);
-			return 1;
-		}
-
-		std::wstring target_name = "rvm64";
-		process_t *proc = superv::process::information::get_process_info(target_name);
+	int superv_main(std::wstring proc_name, char* elf_name) {
+		process_t *proc = superv::process::information::get_process_info(proc_name);
 		if (!proc) {
-			return 1;
-		}
-
-		mapped_view *shbuf = superv::ipc::create_mapped_view();
-		if (!shbuf) {
 			return 1;
 		}
 		if (!superv::patch::install_entry_hook(proc, shbuf)) {
@@ -32,25 +21,23 @@ namespace superv {
 		if (!superv::patch::install_decoder_hook(proc, shbuf)) {
 			return 1;
 		}
-		if (!superv::loader::write_elf_file(shbuf, argv[1])) {
+		if (!superv::loader::write_elf_file(shbuf, elf_name)) {
 			return 1;
 		}
 
-		printf("VM Should be starting now..\n");
-		// TODO(lemur): IPC/Decoder loop
-		// NOTE(lemur): Unsure if an access violation will occur in the remote vm when hooks try to arbitrarily R/W from the shared view
-		// NOTE(fox): Honestly it shouldn't. It's a mapped view, so both processes will be R/W to their own addresses and will be mirrored by the OS
-
-		/*
-		 while (true) { 
-		 	// - both injected hooks are trying to read shbuf->ipc.signal
-			// - decoder hook should be writing the vm's vmcs address and opcode to shbuf->ipc.vmcs and shbuf->ipc.opcode
-		 	break;
-		}
-		*/
-		
-		superv::ipc::destroy_mapped_view(&shbuf);
-
+		printf("vm should be starting now..\n");
 		return 0;
 	}
+}
+
+int main(int argc, char** argv) {
+		if (argc < 2) {
+			printf("usage: %s <riscv_elf_file>\n", argv[0]);
+			return 1;
+		}
+
+		char *elf_name = argv[0];
+		std::wstring proc_name = "rvm64";
+
+		return superv::superv_main(proc_name, elf_name);
 }

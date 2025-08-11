@@ -9,8 +9,6 @@
 #include "vmveh.hpp"
 #include "rvni.hpp"
 
-
-
 namespace rvm64 {
 	_native int32_t vm_main(MV *packet) {
 		save_host_context();
