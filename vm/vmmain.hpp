@@ -44,7 +44,7 @@ typedef struct _vmcs {
 	int halt;
 } vmcs_t;
 
-#define VM_MAGIC1 0x524d5636345f4949ULL  // "RMV64_II" or anything unique
+#define VM_MAGIC1 0x524d5636345f4949ULL  // "RMV64_II" 
 #define VM_MAGIC2 0x5f424541434f4e5fULL  // "_BEACON_"
 #define VM_BEACON_VER    1
 
