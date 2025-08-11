@@ -11,21 +11,21 @@ namespace rvm64::process {
 		if (!base) {
 			return 0;
 		}
+
 		constexpr size_t head_size = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS);
 		uint8_t* buffer = (uint8_t*)HeapAlloc(GetProcessHeap(), 0, head_size);
+
+		size_t size = 0;
 		size_t read = 0;
 
 		if (!ReadProcessMemory(hprocess, (LPVOID)base, (LPVOID)buffer, head_size, &read) || read != head_size) {
-			printf("[ERR] get_process_size: failed to read process memory: 0x%lx", GetLastError());
+			printf("[ERR] get_process_size: failed to read process memory: 0x%lx\n", GetLastError());
 			return 0;
 		}
 
 		auto dos_head = (PIMAGE_DOS_HEADER)buffer;
-		if (dos_head->e_magic != IMAGE_DOS_SIGNATURE) {
-			return 0;
-		}
-
 		auto nt_head = (PIMAGE_NT_HEADERS)((UINT8*)(buffer) + dos_head->e_lfanew);
+
 		if (nt_head->Signature != IMAGE_NT_SIGNATURE) {
 			return 0;
 		}
@@ -35,18 +35,19 @@ namespace rvm64::process {
 			if (strncmp((const char*)section->Name, ".text", 5) == 0) {
 
 				uintptr_t txt_base = (uintptr_t)base + section->VirtualAddress;
-				return txt_base + section->Misc.VirtualSize;
+				size = txt_base + section->Misc.VirtualSize;
 			}
 		}
-		return 0; 
+
+		HeapFree(GetProcessHeap(), 0, buffer);
+		return size; 
 	}
 
-	DWORD get_process_id(const CHAR* target_name) {
-		DWORD pid = 0;
+	bool get_process_id(uintptr_t* ppid, const CHAR* target_name) {
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
 		if (snapshot == INVALID_HANDLE_VALUE) {
-			return 0;
+			return false;
 		}
 
 		PROCESSENTRY32 pe32;
@@ -58,38 +59,14 @@ namespace rvm64::process {
 				x_strcpy(entry_name, pe32.szExeFile, MAX_PATH -1);
 
 				if (x_strcmp(entry_name, target_name) == 0) {
-					pid = pe32.th32ProcessID;
+					*ppid = pe32.th32ProcessID;
 					break;
 				}
 			} while (Process32Next(snapshot, &pe32));
 		}
 
 		CloseHandle(snapshot);
-		return pid;
-	}
-
-	UINT_PTR get_module_base(DWORD pid, const CHAR* target_name) {
-		UINT_PTR base_address = 0;
-		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
-
-		if (snapshot == INVALID_HANDLE_VALUE) {
-			return 0;
-		}
-
-		MODULEENTRY32 me32;
-		me32.dwSize = sizeof(MODULEENTRY32);
-
-		if (Module32First(snapshot, &me32)) {
-			do {
-				if (strcmp(me32.szModule, target_name) == 0) {
-					base_address = (uintptr_t)me32.modBaseAddr;
-					break;
-				}
-			} while (Module32Next(snapshot, &me32));
-		}
-
-		CloseHandle(snapshot);
-		return base_address;
+		return true;
 	}
 
 	void destroy_process_info(win_process** proc) {
@@ -109,43 +86,43 @@ namespace rvm64::process {
 			goto defer;
 		}
 
-		printf("[INF] Getting target process ID.\n");
-		proc->pid = get_process_id(target_name);
-		if (!proc->pid) {
+		printf("	process name: %s\n", target_name);
+
+		if (!get_process_id(&proc->id, target_name)) {
+			printf("[ERR] Failed to get process id.\n");
 			goto defer;
 		}
 
-		printf("[INF] Getting target process base adddress.\n");
-		proc->address = get_module_base(proc->pid, target_name);
-		if (!proc->address) {
-			goto defer;
-		}
+		printf("	process id: %d\n", proc->pid);
 
-		printf("[INF] Getting target process handle.\n");
 		proc->handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proc->pid);
 		if (!proc->handle) {
+			printf("[ERR] Failed to get process handle.\n");
+			return goto defer;
+		}
+
+		printf("	process handle: 0x%lx\n", proc->handle);
+
+		proc->address = GetProcAddress((HMODULE)proc->handle, target_name);
+		if (!proc->address) {
+			printf("[ERR] Failed to get process address.\n");
 			goto defer;
 		}
 
-		printf("[INF] Getting target process size.\n");
-		proc->size = get_process_size(proc->handle, proc->address);
-		if (!proc->size) {
+		printf("	process address: 0x%llx\n", proc->address);
+
+		if (!get_process_size(proc->handle, proc->address, proc->pid, &proc->size)) {
+			printf("[ERR] Failed to get process size.\n");
 			goto defer;
 		}
 
-		printf("[INF] Process info success.\n");
+		printf("	process size: %d\n", proc->size);
+
 		success = true;
 defer:
 		if (!success) {
 			destroy_process_info(&proc);
 		}
-
-		printf(R"(
-	process name: %s
-	process id: %d
-	process base: 0x%llx
-	process handle: 0x%llx
-	process size: 0x%lx)", target_name, proc->pid, proc->address, proc->handle, proc->size);
 
 		return proc;
 	}
