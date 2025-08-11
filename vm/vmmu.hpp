@@ -1,6 +1,7 @@
 #ifndef VMMU_H
 #define VMMU_H
-#include "vmmain.hpp"
+
+#include "../vmmain.hpp"
 
 namespace rvm64::mmu {
 	struct exec_region {

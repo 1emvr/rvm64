@@ -2287,7 +2287,7 @@ namespace rvm64::operations {
 };
 
 _rdata const uintptr_t dispatch_table[256] = {
-#define ENCRYPT(op) rvm64::crypt::encrypt_ptr((uintptr_t)(op))
+#define ENCRYPT(op) rvm64::crypt::encrypt_ptr((uintptr_t)(op), (uintptr_t)0)
 
     // ITYPE
     ENCRYPT(rvm64::operations::itype::rv_addi), ENCRYPT(rvm64::operations::itype::rv_slti),

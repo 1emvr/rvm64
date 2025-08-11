@@ -3,8 +3,9 @@
 #include <unordered_map>
 #include <windows.h>
 
-#include "vmmain.hpp"
-#include "vmcommon.hpp"
+#include "../vmmain.hpp"
+#include "../vmcommon.hpp"
+
 #include "vmrwx.hpp"
 #include "vmmu.hpp"
 

@@ -15,7 +15,7 @@ namespace rvm64::memory {
 
 	_native void memory_end() {
 		if (vmcs->process.address) {
-			VirtualFree(vmcs->process.address, 0, MEM_RELEASE);
+			VirtualFree((LPVOID)vmcs->process.address, 0, MEM_RELEASE);
 		}
 	}
 
@@ -126,6 +126,14 @@ namespace rvm64::memory {
 			pos = region_base;
 		}
 		return nullptr;
+	}
+
+	_native void cache_data(uint8_t* data, size_t size) {
+
+	}
+
+	_native void destroy_data(uint8_t* data, size_t size) {
+
 	}
 };
 

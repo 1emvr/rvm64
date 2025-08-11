@@ -2,11 +2,10 @@
 #define VMVEH_H
 #include <setjmp.h>
 
-#include "vmmain.hpp"
-#include "vmmem.hpp"
+#include "../vmmain.hpp"
+#include "../vmmem.hpp"
+
 #include "rvni.hpp"
-
-
 #define LONGJMP(addr, b) longjmp(addr, b); __builtin_unreachable()
 
 LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {

@@ -1,7 +1,8 @@
 #ifndef VMUTILS_H
 #define VMUTILS_H
 #include <windows.h>
-#include "vmmain.hpp"
+
+#include "../vmmain.hpp"
 
 #ifdef DEBUG
 	#include <stdio.h>

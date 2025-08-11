@@ -58,10 +58,10 @@
 #define scr_write(T, scr_idx, src) 	if (scr_idx <= imm) vmcs->vscratch[(scr_idx)] = (T)(src);
 #define mem_write(T, addr, value)  	mem_write_check(T, addr); *(T *)(addr) = value;
 
-#define unwrap_opcall(hdl_idx) 								\
-	uintptr_t a = ((uintptr_t*)dispatch_table)[hdl_idx];	\
-	uintptr_t b = rvm64::crypt::decrypt_ptr((uintptr_t)a);	\
-	void (*fn)() = (void (*)())(b);							\
+#define unwrap_opcall(hdl_idx) 												\
+	uintptr_t a = ((uintptr_t*)dispatch_table)[hdl_idx];					\
+	uintptr_t b = rvm64::crypt::decrypt_ptr((uintptr_t)a, (uintptr_t)0);	\
+	void (*fn)() = (void (*)())(b);											\
 	fn();													
 
 #endif // VMRWX_HPP

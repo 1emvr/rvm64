@@ -1,10 +1,10 @@
 #include <windows.h>
 
-#include "../vmmain.hpp"
 #include "../vmipc.hpp"
+#include "../vmmain.hpp"
+#include "../vmcommon.hpp"
 
 #include "vmentry.hpp"
-#include "vmcommon.hpp"
 
 namespace rvm64 {
 	_native int32_t vm_main() {
@@ -28,7 +28,7 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-	rvm64::ipc::create_channel();
+	rvm64::ipc::vm_create_channel();
 	while (true) {
 		if (rvm64::ipc::read_channel_buffer()) {
 			break;
@@ -37,7 +37,7 @@ int main() {
 	}
 
     int32_t result = rvm64::vm_main();
-	rvm64::ipc::destroy_channel();
+	rvm64::ipc::vm_destroy_channel();
 
 	return result;
 }

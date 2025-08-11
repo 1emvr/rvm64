@@ -32,7 +32,7 @@ typedef struct _align64 {
 	uint64_t 	self; // superv can pull this address for use
 
 	struct {
-		uint64_t	buffer
+		uint64_t	buffer;
 		uint64_t	size;
 		uint64_t	write_size;
 	} view;
@@ -65,6 +65,7 @@ typedef struct _vmcs {
 	vm_process process;
 	vm_csr csr;
 
+	int cache;
 	int trap;
 	int halt;
 } vmcs_t;

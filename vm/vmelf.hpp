@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "../vmmain.hpp"
+
 #include "vmlib.hpp"
-#include "vmmain.hpp"
 #include "rvni.hpp"
 
 // Dynamic section tags

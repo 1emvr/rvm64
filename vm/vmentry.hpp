@@ -3,18 +3,19 @@
 #include <errhandlingapi.h>
 #include <setjmp.h>
 
-#include "vmmain.hpp"
-#include "vmmem.hpp"
+#include "../vmmain.hpp"
+#include "../vmmem.hpp"
+
 #include "vmcode.hpp"
 #include "vmelf.hpp"
 #include "vmveh.hpp"
 
 namespace rvm64::entry {
-	_vmcall void vm_init(uint8_t *packet_data, size_t packet_size) {
+	_vmcall void vm_init() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 
-		rvm64::memory::memory_init(packet_size + VM_PROCESS_PADDING); // init vmcs->process.address 
-		rvm64::elf::load_elf_image(packet_data, packet_size);
+		rvm64::memory::memory_init(vmcs->channel->view.write_size); // using the channel->view for process
+		rvm64::elf::load_elf_image(vmcs->channel->view.buffer, vmcs->channel->view.write_size);
 		rvm64::elf::patch_elf_plt(vmcs->process.address);
 
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
