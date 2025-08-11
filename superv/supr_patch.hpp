@@ -7,14 +7,14 @@
 
 
 namespace superv::patch {
-	_rdata unsigned char *entry_mask = "xxxxxxxx????xxxxxxx";
-	_rdata uint8_t entry_sig[] = {
+	_rdata static const char entry_mask[] = "xxxxxxxx????xxxxxxx";
+	_rdata static const uint8_t entry_sig[] = {
 		0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00, 	// 0x00: mov     cs:vmcs, rax
 		0xe8, 0x00, 0x00, 0x00, 0x00,             	// 0x07: call    rvm64::entry::vm_entry(void)
 		0x48, 0x8b, 0x05, 0xf5, 0x3e, 0x01, 0x00,  	// 0x0c: mov     rax, cs:vmcs
 	};
 
-	_rdata uint8_t entry_hook[] = {
+	_rdata static const uint8_t entry_hook[] = {
 		0x0f, 0xb6, 0x05, 0x00, 0x00, 0x00, 0x00,   // 0x00: movzx eax, byte ptr [rip+disp32]
 		0x84, 0xc0,                                 // 0x07: test al, al
 		0x75, 0xf5,                                 // 0x09: jne -0xb
@@ -76,15 +76,15 @@ namespace superv::patch {
 		return true;
 	}
 
-	_rdata unsigned char *decoder_mask = "xxxxxx????xxxxxxx";
-	_rdata uint8_t decoder_sig[] = { 
+	_rdata static const char decoder_mask[] = "xxxxxx????xxxxxxx";
+	_rdata static const uint8_t decoder_sig[] = { 
 		0x8B, 0x45, 0xFC,										// 0x00: mov     eax, [rbp+opcode]
 		0x89, 0xC1,                                 			// 0x03: mov     ecx, eax        ; opcode
 		0xE8, 0x00, 0x00, 0x00, 0x00,               			// 0x05: call    rvm64::decoder::vm_decode(uint)
 		0x48, 0x8B, 0x05, 0x75, 0x3F, 0x01, 0x00,   			// 0x0a: mov     rax, cs:vmcs
 	};
 
-	_rdata uint8_t decoder_hook[] = {
+	_rdata static const uint8_t decoder_hook[] = {
 		0x41, 0x53,                               				// 0x00: push r11
 		0x4C, 0x8D, 0x1D, 0x00,0x00,0x00,0x00,    				// 0x02: lea  r11, &memory_view->ipc.opcode (rip+disp32)
 		0x41, 0x89, 0x03,                         				// 0x09: mov  dword ptr [r11], eax
