@@ -18,19 +18,21 @@ void clear_screen() {
 	DWORD cellCount;
 	COORD homeCoords = { 0, 0 };
 
-	if (!GetConsoleScreenBufferInfo(hStdOut, &csbi)) return;
+	if (!GetConsoleScreenBufferInfo(hStdOut, &csbi)) {
+		return;
+	}
+
 	cellCount = csbi.dwSize.X * csbi.dwSize.Y;
 
-	if (!FillConsoleOutputCharacter(hStdOut, ' ', cellCount, homeCoords, &count)) return;
-	if (!FillConsoleOutputAttribute(hStdOut, csbi.wAttributes, cellCount, homeCoords, &count)) return;
+	if (!FillConsoleOutputCharacter(hStdOut, ' ', cellCount, homeCoords, &count) ||
+		!FillConsoleOutputAttribute(hStdOut, csbi.wAttributes, cellCount, homeCoords, &count)) {
+		return;
+	}
 
 	SetConsoleCursorPosition(hStdOut, homeCoords);
 }
 
 void vm_debug_dump(const char *fmt, ...) {
-#ifndef DEBUG
-	return; // dogshit
-#endif
 	char inst_buf[256] = { };
 	clear_screen();
 
