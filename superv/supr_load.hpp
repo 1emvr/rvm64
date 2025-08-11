@@ -5,6 +5,7 @@
 #include "hypr_ipc.hpp"
 #include "../vmmain.hpp"
 
+// TODO: fix this nonsense
 namespace superv::loader {
 	bool write_elf_file(vm_channel* channel, const char* filepath) {
 		FILE* f = fopen(filepath, "rb");
