@@ -1,13 +1,6 @@
-#include <errhandlingapi.h>
-#include <setjmp.h>
-
 #include "vmmain.hpp"
 #include "vmentry.hpp"
-#include "vmmem.hpp"
-#include "vmcode.hpp"
 #include "vmcommon.hpp"
-#include "vmveh.hpp"
-#include "rvni.hpp"
 
 namespace rvm64 {
 	_native int32_t vm_main(MV *packet) {

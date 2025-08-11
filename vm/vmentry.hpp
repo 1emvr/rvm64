@@ -1,5 +1,13 @@
 #ifndef VMENTRY_HPP
 #define VMENTRY_HPP
+#include <errhandlingapi.h>
+#include <setjmp.h>
+
+#include "vmmain.hpp"
+#include "vmmem.hpp"
+#include "vmcode.hpp"
+#include "vmelf.hpp"
+#include "vmveh.hpp"
 
 namespace rvm64::entry {
 	_vmcall void vm_exit() {
