@@ -11,22 +11,24 @@ namespace rvm64 {
 		save_host_context();
 
 		rvm64::ipc::vm_create_channel();
-		if (setjmp(vmcs->exit_handler)) {
-			goto defer;	
-		}
 		while (true) {
 			Sleep(10);
 			if (vmcs->channel->ready) {
 				break;
 			}
 		}
+
+		if (setjmp(vmcs->exit_handler)) {
+			goto defer;	
+		}
 		rvm64::entry::vm_init(); 
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 								  
 defer:
+		rvm64::ipc::vm_destroy_channel();
 		rvm64::entry::vm_exit();
-		restore_host_context();
 
+		restore_host_context();
 		return vmcs->csr.m_cause;
 	}
 };
@@ -35,9 +37,6 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-    int32_t result = rvm64::vm_main();
-	rvm64::ipc::vm_destroy_channel();
-
-	return result;
+    return rvm64::vm_main();
 }
 
