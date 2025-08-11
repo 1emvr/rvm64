@@ -50,9 +50,7 @@ namespace superv::patch {
 			return false;
 		}
 
-		uintptr_t ch_self = (uintptr_t)channel->self;
-		uintptr_t ch_signal = ch_self + offsetof(vm_channel, ipc.signal);
-
+		uintptr_t ch_signal = (uintptr_t)channel->self + offsetof(vm_channel, ipc.signal);
 		uintptr_t original_call = call_site + 5 + original_rel;
 		{
 			int32_t disp32_1 = (int32_t)(ch_signal - (hook_addr + 0x07));
