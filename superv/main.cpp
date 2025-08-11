@@ -11,21 +11,19 @@
 
 namespace superv {
 	int superv_main(const char* proc_name, const char* elf_name) {
-		std::wstring wproc = proc_name;
-
-		win_process *proc = rvm64::process::get_process_info(wproc);
+		win_process *proc = rvm64::process::get_process_info(proc_name);
 		if (!proc) {
 			printf("[ERR] Could not find process information for target\n");
 			return 1;
 		}
-		vm_channel *channel = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
+		vm_channel *channel = (vm_channel*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
 		if (!channel) {
 			printf("[ERR] Could not create a local vm-channel\n");
 			return 1;
 		}
 
- 		static constexpr char vm_magic[16] = "RMV64_II_BEACON_";
-		auto chan_offset = superv::scan::signature_scan(proc->handle, proc->base, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
+ 		static constexpr char vm_magic[16] = "RMV64_II_BEACON";
+		auto chan_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
 
 		if (!chan_offset) {
 			printf("[ERR] Could not find the remote vm-channel\n");
@@ -38,17 +36,17 @@ namespace superv {
 
 		// NOTE: channel is now populated with vm data
 		vmcs_t *vmcs = (vmcs_t*)channel->ipc.vmcs;
-		if (!superv::patch::install_entry_hook(proc)) {
+		if (!superv::patch::install_entry_hook(proc, channel)) {
 			printf("[ERR] Could not install entrypoint hook in the vm\n");
 			return 1;
 		}
-		if (!superv::patch::install_decoder_hook(proc)) {
+		if (!superv::patch::install_decoder_hook(proc, channel)) {
 			printf("[ERR] Could not install decoder hook in the vm\n");
 			return 1;
 		}
 
 		// NOTE: writing to the channel will trigger the vm to start
-		if (!superv::loader::write_elf_file(elf_name)) {
+		if (!superv::loader::write_elf_file(channel, elf_name)) {
 			printf("[ERR] Could not load the elf to the vm channel\n");
 			return 1;
 		}

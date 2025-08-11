@@ -6,6 +6,8 @@
 #include "../include/vmmem.hpp"
 #include "../include/vmproc.hpp"
 
+#include "supr_scan.hpp"
+
 
 namespace superv::patch {
 	_rdata static const char entry_mask[] = "xxxxxxxx????xxxxxxx";
@@ -114,8 +116,8 @@ namespace superv::patch {
 			return false;
 		}
 
-		uintptr_t sig_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
-		if (!call_offset) {
+		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
+		if (!sig_offset) {
 			printf("[ERR]: signature_scan failed to find decoder call signature in the remote process.\n");
 			return false;
 		}

@@ -4,7 +4,7 @@
 #include <vector>
 // TODO: replace vector with in-house class to avoid overhead.
 
-namespace scanner {
+namespace superv::scanner {
 	bool data_compare(const uint8_t* data, const uint8_t* pattern, const char* mask) {
 		for (; *mask; ++mask, ++data, ++pattern) {
 			if (*mask == 'x' && *data != *pattern)

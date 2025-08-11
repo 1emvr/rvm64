@@ -8,6 +8,8 @@
 namespace superv::loader {
 	BOOL write_elf_file(vm_channel* channel, const char* filepath) {
 		BOOL success = false;
+		DWORD read = 0, fsize = 0;
+
 		HANDLE hfile = CreateFile(filepath, GENERIC_READ, FILE_SHARE_READ, 
 				NULL, OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);                 
 
@@ -15,13 +17,12 @@ namespace superv::loader {
 			return false;
 		}
 
-		DWORD fsize = GetFileSize(hfile, nullptr);
+		fsize = GetFileSize(hfile, nullptr);
 		if (fsize > 0x100000) {
 			printf("[ERR] ELF too large for the channel buffer.\n");
 			goto defer;
 		}
 
-		DWORD read = 0;
 		if(!ReadFile(hfile, (LPVOID)channel->view.buffer, fsize, &read, nullptr) || read != fsize) {
 			printf("[ERR] Unable to read from file.\n GetLastError=%08x\n", GetLastError());
 			goto defer;
