@@ -1,3 +1,5 @@
+#include <windows.h>
+
 #include "vmmain.hpp"
 #include "vmentry.hpp"
 #include "vmcommon.hpp"
@@ -22,19 +24,22 @@ defer:
 };
 
 int main() {
-	MV *packet = nullptr;
-
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-	// TODO: create the memory view before starting anything
+	MV *memory_view = (MV*)rvm64::superv::memory::allocate_local_2GB_range(GetCurrentProcess(), PAGE_EXECUTE_READWRITE, sizeof(MV));
+	if (!memory_view) {
+		return 1;
+	}
+
 	while (true) {
-		if ((packet = rvm64::mock::read_packet())) {
+		if (rvm64::mock::read_packet(&memory_view->buffer.address, &memory_view->buffer.size)) {
 			break;
 		}
 		Sleep(10);
 	}
 
     rvm64::vm_main(packet);
+	// TODO: destroy memory view
 }
 

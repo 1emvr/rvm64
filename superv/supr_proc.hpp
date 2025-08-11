@@ -6,11 +6,11 @@
 
 namespace superv::process {
 	typedef struct {
+		HANDLE handle;
 		DWORD pid;
 		DWORD address;
-		HANDLE handle;
 		SIZE_T size;
-	} process_t;
+	} win_process;
 
 	namespace memory {
 		bool write_proc_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
@@ -167,7 +167,7 @@ namespace superv::process {
 			return base_address;
 		}
 
-		void destroy_process_info(process_t** proc) {
+		void destroy_process_info(win_process** proc) {
 			if (*proc) {
 				if ((*proc)->address) {
 					HeapFree(GetProcessHeap(), 0, (*proc)->address);
@@ -183,9 +183,9 @@ namespace superv::process {
 			*proc = nullptr;
 		}
 
-		process_t* get_process_info(std::wstring target_name) {
+		win_process* get_process_info(std::wstring target_name) {
 			bool success = false;
-			process_t *proc = (process_t*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(process_t));
+			win_process *proc = (win_process*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(win_process));
 			if (!proc) {
 				goto defer;
 			}

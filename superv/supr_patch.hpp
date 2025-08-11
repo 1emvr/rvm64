@@ -22,7 +22,7 @@ namespace superv::patch {
 		0xe9, 0x00, 0x00, 0x00, 0x00,               // 0x12: jmp rel32
 	};
 
-	bool install_entry_hook(process_t *proc, _memory_view* shbuf) {
+	bool install_entry_hook(win_process *proc, _memory_view* shbuf) {
 		size_t stub_size = sizeof(entry_hook);
 		uint8_t buffer[stub_size];
 
@@ -100,7 +100,7 @@ namespace superv::patch {
 		0xC3                                      				// 0x32: ret
 	};
 
-	bool install_decoder_hook(process_t* proc, _memory_view* shbuf) {
+	bool install_decoder_hook(win_process* proc, _memory_view* shbuf) {
 		size_t stub_size = sizeof(decoder_hook);
 		uint8_t buffer[stub_size];
 
