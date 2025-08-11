@@ -42,6 +42,7 @@ namespace rvm64::entry {
 			}
 			rvm64::decoder::vm_decode(opcode); // decoder patch here -> hook for every new ins.
 			vmcs->pc += 4;
+			printf("next\n");
 		}
 	}
 };

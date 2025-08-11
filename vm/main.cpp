@@ -10,14 +10,16 @@ namespace rvm64 {
 	_native int32_t vm_main(uint64_t magic1, uint64_t magic2) {
 		save_host_context();
 		rvm64::ipc::vm_create_channel(magic1, magic2);
-		printf("[INF] vm channel magic: 0x%llx, 0x%llx\n", vmcs->channel->magic1, vmcs->channel->magic2);
 
+		printf("waiting...\n");
 		while (true) {
 			Sleep(10);
 			if (vmcs->channel->ready) {
 				break;
 			}
 		}
+		printf("ready.\n");
+
 		if (setjmp(vmcs->exit_handler)) {
 			goto defer;	
 		}

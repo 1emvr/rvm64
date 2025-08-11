@@ -23,7 +23,7 @@ namespace rvm64::ipc {
 		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
 		HMODULE hmodule = GetModuleHandle(0);
 
-		vmcs->channel = (vm_channel*)rvm64::memory::allocate_2GB_range(hprocess, (uintptr_t)hmodule, PAGE_READWRITE, sizeof(vm_channel));
+		vmcs->channel = (vm_channel*)VirtualAlloc(nullptr, sizeof(vm_channel), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!vmcs->channel) {
 		    CSR_SET_TRAP(nullptr, GetLastError(), 0, 0, 1);
 		}
