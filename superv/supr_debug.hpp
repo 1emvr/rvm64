@@ -27,7 +27,7 @@ namespace superv::debug {
 
 		cell_count = csbi.dwSize.X * csbi.dwSize.Y;
 		if (!FillConsoleOutputCharacter(h_stdout, ' ', cell_count, home_coords, &count) ||
-				!FillConsoleOutputAttribute(h_stdout, csbi.wAttributes, cell_count, home_coords, &count)) {
+			!FillConsoleOutputAttribute(h_stdout, csbi.wAttributes, cell_count, home_coords, &count)) {
 			return;
 		}
 
