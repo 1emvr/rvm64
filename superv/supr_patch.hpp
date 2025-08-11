@@ -50,13 +50,15 @@ namespace superv::patch {
 			return false;
 		}
 
+		uintptr_t ch_self = (uintptr_t)channel->ipc.self;
+		uintptr_t ch_signal = ch_self + offsetof(vm_channel, ipc.signal);
+
 		uintptr_t original_call = call_site + 5 + original_rel;
-		uintptr_t chn_signal = &channel->ipc.signal;
 		{
-			int32_t disp32_1 = (int32_t)(chn_signal - (hook_addr + 0x07));
+			int32_t disp32_1 = (int32_t)(ch_signal - (hook_addr + 0x07));
 			memcpy(&buffer[0x03], &disp32_1, sizeof(disp32_1));
 
-			int32_t disp32_2 = (int32_t)(chn_signal - (hook_addr + 0x12));
+			int32_t disp32_2 = (int32_t)(ch_signal - (hook_addr + 0x12));
 			memcpy(&buffer[0x0D], &disp32_2, sizeof(disp32_2));
 
 			int32_t call_rel = (int32_t)(original_call - (hook_addr + 0x17));
