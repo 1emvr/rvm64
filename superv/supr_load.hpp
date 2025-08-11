@@ -67,7 +67,7 @@ namespace superv::loader {
 		BYTE buffer[64 * 1024];
 
 		while (sent < total) {
-			DWORD to_read = (DWORD)min(sizeof(buffer), total - sent);	
+			DWORD to_read = (DWORD)MIN(sizeof(buffer), total - sent);	
 			DWORD read = 0;
 			SIZE_T write = 0;
 
