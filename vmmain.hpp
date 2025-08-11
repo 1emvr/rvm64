@@ -30,14 +30,14 @@ typedef struct _align64 {
 	uint64_t 	header_size;
 	uint64_t 	self; // superv can pull this address for use
 
-	HANDLE 		h_mapping;
-	LPVOID 		v_mapping;
-
 	struct {
+		HANDLE 		h_mapping;
+		LPVOID 		v_mapping;
+
 		char 		name[64];
 		uint64_t	size;
 		uint64_t	write_size;
-	} mapping;
+	} view;
 
 	struct {
 		uint64_t 	vmcs;

@@ -44,26 +44,6 @@ namespace rvm64::memory {
 		if (!vmcs->channel) {
 		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
 		}
-
-		vmcs->channel.self = vmcs->channel;
-		vmcs->channel.header_size = (sizeof(uint64_t) * 4) + (sizeof(HANDLE) + sizeof(LPVOID));
-
-		vmcs->channel.magic1 = VM_MAGIC1;
-		vmcs->channel.magic2 = VM_MAGIC2;
-
-		vmcs->channel->mapping.h_mapping = CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, VM_PROGRAM_MAX_CAPACITY, VM_MAPPED_FILE_NAME);
-		vmcs->channel->mapping.size = VM_PROGRAM_MAX_CAPACITY;
-
-		if (!vmcs->channel->mapping.h_mapping) {
-			vmcs->channel->mapping.error = GetLastError();
-		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
-		}
-
-		vmcs->channel->mapping.v_mapping = MapViewOfFile(vmcs->channel->mapping.h_mapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, VM_PROGRAM_MAX_CAPACITY);
-		if (!vmcs->channel->mapping.v_mapping) {
-			vmcs->channel->mapping.error = GetLastError();
-		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
-		}
 	}
 
 	_native void memory_end() {

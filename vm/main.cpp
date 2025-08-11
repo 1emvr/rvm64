@@ -1,6 +1,8 @@
 #include <windows.h>
 
-#include "vmmain.hpp"
+#include "../vmmain.hpp"
+#include "../vmipc.hpp"
+
 #include "vmentry.hpp"
 #include "vmcommon.hpp"
 
@@ -12,7 +14,7 @@ namespace rvm64 {
 			goto defer;	
 		}
 
-		rvm64::entry::vm_init(vmcs->channel->v_mapping, vmcs->channel->mapping.size); 
+		rvm64::entry::vm_init(); 
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 defer:
 		rvm64::entry::vm_exit();
@@ -25,6 +27,8 @@ defer:
 int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
+
+	rvm64::ipc::create_channel();
 
 	while (true) {
 		if (rvm64::ipc::read_channel_buffer()) {

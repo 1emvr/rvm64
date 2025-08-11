@@ -23,11 +23,11 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define NtCurrentProcess()      ((HANDLE) (LONG_PTR) -1)
 #define NtCurrentThread()       ((HANDLE) (LONG_PTR) -2)
 
-#define VM_PROGRAM_MAX_CAPACITY 0x10000
 #define VM_NATIVE_STACK_ALLOC   0x210
 #define VSTACK_MAX_CAPACITY     (1024 * 2)
 #define RVM_TRAP_EXCEPTION		0xE0424242  // any 0xExxxxxxx value is safe
 
+#define CHANNEL_BUFFER_SIZE 	0x10000
 #define VM_MAPPED_FILE_NAME		"VM_MAPPED_FILE"
 #define VM_MAGIC1 				0x524d5636345f4949ULL  // "RMV64_II" 
 #define VM_MAGIC2 				0x5f424541434f4e5fULL  // "_BEACON_"
@@ -76,7 +76,7 @@ enum causenum {
 	out_of_memory = 0xb029,
 	environment_branch = 0xb030,
 	environment_exit = 0xb031,
-	undefined = 0xffff,
+	invalid_channel = 0xffff,
 };
 
 enum screnum {
