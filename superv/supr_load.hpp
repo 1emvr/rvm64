@@ -24,11 +24,12 @@ namespace superv::loader {
 		}
 
 		fread((uint8_t*)channel->view.buffer, 1, fsize, f);
+		channel->view.write_size = fsize;
 		fclose(f);
 
 		// TODO:
-		channel->ipc.signal = 0;
-		shbuf->ready = 1;
+		channel->ipc.signal = 1; // 1 = image load
+		channel->ipc.ready = 1;
 
 		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
 		return true; 
