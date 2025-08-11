@@ -24,12 +24,41 @@ typedef struct {
 	uintptr_t m_tval;
 } vm_csr;
 
+typedef struct _align64 {
+	uint64_t 	magic1;
+	uint64_t 	magic2;
+	uint64_t 	header_size;
+	uint64_t 	self; // superv can pull this address for use
+
+	HANDLE 		h_mapping;
+	LPVOID 		v_mapping;
+
+	struct {
+		char 		name[64];
+		uint64_t	size;
+		uint64_t	write_size;
+	} mapping;
+
+	struct {
+		uint64_t 	vmcs;
+		uint32_t    opcode;
+		uint8_t 	signal;
+		uint8_t 	signal_type;
+		uint16_t 	_pad0;
+	} ipc;
+
+	uint32_t 	ready;
+	uint32_t 	error;
+	uint8_t 	reserved[64];
+} vm_channel;
+
 typedef struct _vmcs {
 	uintptr_t pc;
 	uintptr_t vscratch[8];
 	uintptr_t vregs[32];
 	uintptr_t vstack[VSTACK_MAX_CAPACITY];
 
+	vm_channel* channel;
 	uintptr_t load_rsv_addr;
 	uintptr_t load_rsv_valid;
 
@@ -43,32 +72,6 @@ typedef struct _vmcs {
 	int halt;
 } vmcs_t;
 
-typedef struct _align64 _memory_view {
-	uint64_t 	magic1;
-	uint64_t 	magic2;
-	uint64_t 	version;
-	uint64_t 	header_size;
-	uint64_t 	self; // superv can pull this address for use
-
-	struct {
-		uint64_t 	address; 
-		uint64_t	size;
-		uint64_t	write_size;
-	} buffer;
-
-	struct {
-		uint64_t 	vmcs;
-		uint32_t    opcode;
-		uint8_t 	signal;
-		uint8_t 	signal_type;
-		uint16_t 	_pad0;
-	} ipc;
-
-	uint32_t 	ready;
-	uint32_t 	error;
-	uint8_t 	reserved[64];
-} MV;
-
 
 #ifdef __cplusplus
 _externc {
@@ -79,7 +82,7 @@ _externc {
 	void save_vm_context();
 	void restore_vm_context();
 
-	_data vmcs_t *vmcs = { };
+	_data vmcs_t* vmcs = { };
 	_data HANDLE vmcs_mutex = 0;
 	_data HANDLE veh_handle = 0;
 

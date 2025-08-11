@@ -28,6 +28,7 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define VSTACK_MAX_CAPACITY     (1024 * 2)
 #define RVM_TRAP_EXCEPTION		0xE0424242  // any 0xExxxxxxx value is safe
 
+#define VM_MAPPED_FILE_NAME		"VM_MAPPED_FILE"
 #define VM_MAGIC1 				0x524d5636345f4949ULL  // "RMV64_II" 
 #define VM_MAGIC2 				0x5f424541434f4e5fULL  // "_BEACON_"
 #define VM_BEACON_VER    		1

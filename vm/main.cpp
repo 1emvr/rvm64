@@ -5,7 +5,7 @@
 #include "vmcommon.hpp"
 
 namespace rvm64 {
-	_native int32_t vm_main(MV *packet) {
+	_native int32_t vm_main(channel *packet) {
 		save_host_context();
 
 		if (setjmp(vmcs->exit_handler)) {
@@ -27,13 +27,9 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-	MV *memory_view = (MV*)rvm64::superv::memory::allocate_local_2GB_range(GetCurrentProcess(), PAGE_EXECUTE_READWRITE, sizeof(MV));
-	if (!memory_view) {
-		return 1;
-	}
 
 	while (true) {
-		if (rvm64::mock::read_packet(&memory_view->buffer.address, &memory_view->buffer.size)) {
+		if (rvm64::mock::read_packet()) {
 			break;
 		}
 		Sleep(10);
