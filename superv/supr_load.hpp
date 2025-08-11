@@ -5,35 +5,41 @@
 #include "../include/vmmain.hpp"
 #include "../include/vmipc.hpp"
 
-// TODO: fix this nonsense
 namespace superv::loader {
-	bool write_elf_file(vm_channel* channel, const char* filepath) {
-		FILE* f = fopen(filepath, "rb");
-		if (!f) {
-			printf("[-] Failed to open file: %s\n", filepath);
+	BOOL write_elf_file(vm_channel* channel, const char* filepath) {
+		BOOL success = false;
+		HANDLE hfile = CreateFile(filepath, GENERIC_READ, FILE_SHARE_READ, 
+				NULL, OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);                 
+
+		if (hfile == INVALID_HANDLE_VALUE) {
 			return false;
 		}
 
-		fseek(f, 0, SEEK_END);
-		size_t fsize = ftell(f);
-		fseek(f, 0, SEEK_SET);
-
+		DWORD fsize = GetFileSize(hfile, nullptr);
 		if (fsize > 0x100000) {
-			printf("[-] ELF too large\n");
-			fclose(f);
-			return false;
+			printf("[ERR] ELF too large for the channel buffer.\n");
+			goto defer;
 		}
 
-		fread((uint8_t*)channel->view.buffer, 1, fsize, f);
-		channel->view.write_size = fsize;
-		fclose(f);
+		DWORD read = 0;
+		if(!ReadFileEx(hfile, channel->view.buffer, fsize, &read, nullptr) || read != fsize) {
+			printf("[ERR] Unable to read from file.\n GetLastError=%08x\n", GetLastError());
+			goto defer;
+		}
 
-		// TODO:
+		channel->view.write_size = fsize;
 		channel->ipc.signal = 1; // 1 = image load
 		channel->ipc.ready = 1;
 
 		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
-		return true; 
+		success = true;
+
+defer:
+		if (hfile) {
+			CloseHandle(hfile);
+		}
+
+		return success; 
 	}
 }
 #endif // HYPRLOAD_HPP

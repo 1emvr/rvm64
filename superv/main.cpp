@@ -20,7 +20,7 @@ namespace superv {
 		}
 		vm_channel *channel = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
 		if (!channel) {
-			printf("[ERR] Could not create the vm channel\n");
+			printf("[ERR] Could not create a local vm-channel\n");
 			return 1;
 		}
 
@@ -28,11 +28,11 @@ namespace superv {
 		auto chan_offset = superv::scan::signature_scan(proc->handle, proc->base, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
 
 		if (!chan_offset) {
-			printf("[ERR] Could not find the vm channel\n");
+			printf("[ERR] Could not find the remote vm-channel\n");
 			return 1;
 		}
 		if (!rvm64::memory::read_process_memory(proc->handle, chan_offset, (uint8_t*)channel, sizeof(vm_channel))) {
-			printf("[ERR] Could not read the vm channel\n");
+			printf("[ERR] Could not read the remote vm-channel\n");
 			return 1;
 		}
 
@@ -66,5 +66,5 @@ int main(int argc, char** argv) {
 			return 1;
 		}
 
-		return superv::superv_main("rvm64", argv[0]);
+		return superv::superv_main("rvm64", argv[1]);
 }
