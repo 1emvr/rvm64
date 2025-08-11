@@ -33,7 +33,7 @@ extern "C" int main() {
 		return -1;
 	}
 
-	memset(buffer, 0, size);
+	memset(buffer, 0xcc, size);
 	__debugbreak();
 	memcpy(buffer, (void*)code, size);
 
