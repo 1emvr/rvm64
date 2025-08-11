@@ -76,6 +76,9 @@ namespace rvm64::process {
 	}
 
 	void destroy_process_info(win_process** proc) {
+		if (!proc) {
+			return;
+		}
 		if (*proc) {
 			HeapFree(GetProcessHeap(), 0, *proc);
 			*proc = nullptr;

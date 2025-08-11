@@ -23,7 +23,7 @@ namespace rvm64::ipc {
 		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
 		HMODULE hmodule = GetModuleHandle(0);
 
-		vmcs->channel = (vm_channel*)rvm64::memory::allocate_2GB_range(hprocess, PAGE_READWRITE, (uintptr_t)hmodule, sizeof(vm_channel));
+		vmcs->channel = (vm_channel*)rvm64::memory::allocate_2GB_range(hprocess, (uintptr_t)hmodule, PAGE_READWRITE, sizeof(vm_channel));
 		if (!vmcs->channel) {
 		    CSR_SET_TRAP(nullptr, GetLastError(), 0, 0, 1);
 		}
@@ -36,7 +36,7 @@ namespace rvm64::ipc {
 		vmcs->channel->magic2 = VM_MAGIC2;
 
 		vmcs->channel->view.size = CHANNEL_BUFFER_SIZE;
-		vmcs->channel->view.buffer = (uint64_t)rvm64::memory::allocate_2GB_range(hprocess, PAGE_READWRITE, (uintptr_t)hmodule, CHANNEL_BUFFER_SIZE); 
+		vmcs->channel->view.buffer = (uint64_t)rvm64::memory::allocate_2GB_range(hprocess, (uintptr_t)hmodule, PAGE_READWRITE, CHANNEL_BUFFER_SIZE); 
 
 		if (!vmcs->channel->view.buffer) {
 			rvm64::ipc::vm_destroy_channel();

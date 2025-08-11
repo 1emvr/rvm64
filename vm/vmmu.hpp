@@ -11,7 +11,7 @@ namespace rvm64::mmu {
 	};
 
 	_data exec_region page_table[128] = { };
-	_data size_t page_count = 0;
+	_data static size_t page_count = 0;
 
 	_native bool memory_register(uintptr_t* guest, void *host, size_t length) {
 		if (page_count >= 128 || (uintptr_t)host == 0 || guest == nullptr) {

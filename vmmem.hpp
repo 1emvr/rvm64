@@ -70,7 +70,7 @@ namespace rvm64::memory {
 		return result && read == length;
 	}
 
-	_native void* allocate_2GB_range(HANDLE handle, DWORD protect, uintptr_t base, size_t size) {
+	_native void* allocate_2GB_range(HANDLE handle, uintptr_t base, DWORD protect, SIZE_T size) {
 		SYSTEM_INFO si; 
 		GetSystemInfo(&si);
 
