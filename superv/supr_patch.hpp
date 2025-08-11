@@ -212,8 +212,8 @@ defer:
 	};
 
 	_rdata static const uint8_t decoder_hook[] = {
-		0xcc,                                   					// +0x00: int3
-		0x4c, 0x8d, 0x1d, 0x00, 0x00, 0x00, 0x00,                	// +0x01: lea r11, [rip+disp32] (opcode) // NOTE: now needs the vm channel to place addresses
+		0xcc,                                   					// +0x00: bp for testing
+		0x4c, 0x8d, 0x1d, 0x00, 0x00, 0x00, 0x00,                	// +0x01: lea r11, [rip+disp32] (opcode) // NOTE: with the vmcs pointer, we don't need anything else.
 		0x41, 0x89, 0x03,                         					// +0x08: mov dword ptr [r11], eax 
 		0x4c, 0x8d, 0x1d, 0x00, 0x00, 0x00, 0x00,                 	// +0x0b: lea r11, [rip+disp32] (vmcs)
 		0x49, 0x89, 0x0b,                         					// +0x12: mov qword ptr [r11], rcx 
