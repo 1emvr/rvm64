@@ -83,6 +83,7 @@ namespace rvm64::memory {
 
 		while (pos < hi) {
 			if (!VirtualQueryEx(handle, (LPCVOID)pos, &mbi, sizeof(mbi))) {
+				printf("[ERR] allocate_2GB_range: VirtualQueryEx failed: 0x%lx\n", GetLastError());
 				break; // Low OOB
 			}
 			uintptr_t region_base = (uintptr_t)mbi.BaseAddress;
@@ -93,9 +94,12 @@ namespace rvm64::memory {
 
 				if (check_addr < region_end && check_addr + size <= region_end && check_addr >= lo && check_addr + size <= hi) {
 					void *ptr = VirtualAllocEx(handle, (LPVOID)check_addr, size, MEM_COMMIT | MEM_RESERVE, protect);
-					if (ptr) {
-						return ptr;
+					if (!ptr) {
+						printf("[ERR] allocate_2GB_range: VirtualAllocEx failed: 0x%lx\n", GetLastError());
+						return nullptr;
 					}
+
+					return ptr;
 				}
 			}
 			pos = region_end;
@@ -105,6 +109,7 @@ namespace rvm64::memory {
 		while (pos > lo) {
 			uintptr_t probe = pos - gran;
 			if (!VirtualQueryEx(handle, (LPCVOID)(pos - gran), &mbi, sizeof(mbi))) {
+				printf("[ERR] allocate_2GB_range: VirtualQueryEx failed: 0x%lx\n", GetLastError());
 				break; // High OOB, we're cooked...
 			}
 			uintptr_t region_base = (uintptr_t)mbi.BaseAddress;
@@ -116,9 +121,12 @@ namespace rvm64::memory {
 
 					if (check_addr >= region_base && check_addr + size <= region_end && check_addr >= lo && check_addr <= hi) {
 						void *ptr = VirtualAllocEx(handle, (LPVOID)check_addr, size, MEM_COMMIT | MEM_RESERVE, protect);
-						if (ptr) {
-							return ptr;
+						if (!ptr) {
+							printf("[ERR] allocate_2GB_range: VirtualAllocEx failed: 0x%lx\n", GetLastError());
+							return nullptr;
 						}
+
+						return ptr;
 					}
 				}
 			}
