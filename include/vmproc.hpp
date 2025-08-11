@@ -24,7 +24,7 @@ namespace rvm64::process {
 		auto section = IMAGE_FIRST_SECTION(nt_head);
 		for (WORD i = 0; i < nt_head->FileHeader.NumberOfSections; i++, section++) {
 			if (strncmp((const char*)section->Name, ".text", 5) == 0) {
-				uintptr_t txt_base = (uintptr_t)moduleBase + section->VirtualAddress;
+				uintptr_t txt_base = (uintptr_t)base + section->VirtualAddress;
 				return txt_base + section->Misc.VirtualSize;
 			}
 		}
