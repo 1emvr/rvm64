@@ -35,11 +35,11 @@ namespace superv {
 
 		if (!chan_offset) {
 			printf("[ERR] Could not find the vm channel\n");
-			return nullptr;
+			return 1;
 		}
 		if (!rvm64::memory::read_process_memory(proc->handle, chan_offset, (uint8_t*)channel, sizeof(vm_channel))) {
 			printf("[ERR] Could not read the vm channel\n");
-			return nullptr;
+			return 1;
 		}
 		if (!superv::patch::install_entry_hook(proc)) {
 			printf("[ERR] Could not install entrypoint hook in the vm\n");
