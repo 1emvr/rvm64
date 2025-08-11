@@ -10,37 +10,8 @@
 #include "../include/vmproc.hpp"
 
 namespace superv {
-	vm_channel* get_channel(win_process* proc) {
- 		static constexpr char vm_magic[16] = "RMV64_II_BEACON";
-		auto ch_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
-		if (!ch_offset) {
-			printf("[ERR] Could not find the remote vm-channel\n");
-			return nullptr;
-		}
-
-		vm_channel *channel = (vm_channel*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
-		if (!channel) {
-			printf("[ERR] Could not create a local vm-channel\n");
-			return nullptr;
-		}
-
-		if (!rvm64::memory::read_process_memory(proc->handle, ch_offset, (uint8_t*)channel, sizeof(vm_channel))) {
-			printf("[ERR] Could not read the remote vm-channel\n");
-			HeapFree(GetProcessHeap(), 0, channel);
-			return nullptr;
-		}
-
-		channel->view.buffer 		= (uint64_t)ch_offset + offsetof(vm_channel, view.buffer); 									
-		channel->view.size 			= (uint64_t)ch_offset + offsetof(vm_channel, view.size); 							
-		channel->view.write_size 	= (uint64_t)ch_offset + offsetof(vm_channel, view.write_size); 						
-											 
-		channel->ipc.opcode = (uint64_t)ch_offset + offsetof(vm_channel, ipc.opcode);							
-		channel->ipc.signal = (uint64_t)ch_offset + offsetof(vm_channel, ipc.signal);						
-																			
-		channel->ready = (uint64_t)ch_offset + offsetof(vm_channel, ready); 					
-		channel->error = (uint64_t)ch_offset + offsetof(vm_channel, error); 					
-
-		return channel;
+	void print_usage() {
+		printf("usage: superv --process <vm> --elf <riscv_elf>\n");
 	}
 
 	int superv_main(const char* proc_name, const char* elf_name) {
@@ -50,7 +21,7 @@ namespace superv {
 			return 1;
 		}
 
-		vm_channel* channel = get_channel(proc);
+		vm_channel* channel = rvm64::ipc::get_vm_channel(proc);
 		if (!channel) {
 			printf("[ERR] Could not load vm channel\n");
 			return 1;
@@ -78,10 +49,6 @@ namespace superv {
 	}
 }
 
-void print_usage() {
-	printf("usage: superv --process <vm> --elf <riscv_elf>\n");
-}
-
 int main(int argc, char** argv) {
 		const char *proc_name = nullptr;
 		const char *elf_name = nullptr;
@@ -90,6 +57,7 @@ int main(int argc, char** argv) {
 			print_usage();
 			return 1;
 		}
+
 		for (int i = 0; i < argc; i++) {
 			if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--process") == 0) {
 				proc_name = argv[i + 1];
@@ -98,6 +66,7 @@ int main(int argc, char** argv) {
 				elf_name = argv[i + 1];
 			}
 		}
+
 		if (!proc_name || !elf_name) {
 			print_usage();
 			return 1;
