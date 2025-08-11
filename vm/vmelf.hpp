@@ -185,8 +185,8 @@ typedef struct {
 
 // NOTE: I do not understand the elf format.
 namespace rvm64::elf {
-	_native void patch_elf_plt(uint8_t *process) {
-		auto ehdr = (elf64_ehdr*)process;
+	_native void patch_elf_plt() {
+		auto ehdr = (elf64_ehdr*)vmcs->process.process;
 
 		if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
@@ -263,7 +263,7 @@ namespace rvm64::elf {
 		}
 	}
 
-	_native void load_elf_image(uint8_t *image_data, size_t image_size) {
+	_native void load_elf_image(uintptr_t image_data, size_t image_size) {
 		auto ehdr = (elf64_ehdr*)(image_data);
 
 		if (ehdr->e_ident[0] != 0x7F || ehdr->e_ident[1] != 'E' || ehdr->e_ident[2] != 'L' || ehdr->e_ident[3] != 'F') {
