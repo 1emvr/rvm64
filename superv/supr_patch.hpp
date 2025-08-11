@@ -32,8 +32,9 @@ namespace superv::patch {
 
 		memcpy(buffer, entry_hook, stub_size);
 
+		// TODO: use abs_jmp instead of rel_jmp
 		printf("[INF] Installing entrypoint hook.\n");
-		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
+		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
 		if (!hook_addr) {
 			printf("[ERR] allocate_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
@@ -112,7 +113,7 @@ namespace superv::patch {
 		memcpy(buffer, decoder_hook, stub_size);
 
 		printf("[INF] Installing decoder hook.\n");
-		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
+		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
 		if (!hook_addr) {
 			printf("[ERR] allocate_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
