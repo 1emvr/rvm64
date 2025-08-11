@@ -9,14 +9,16 @@
 
 namespace superv::loader {
 	vm_channel* get_channel(win_process* proc) {
- 		static constexpr char vm_magic[16] = "RMV64_II_BEACON";
+ 		static constexpr int64_t vm_magic[2] = { (int64_t)VM_MAGIC1, (int64_t)VM_MAGIC2 }; 
 
+		printf("[INF] Searching for vm magic.\n");
 		uintptr_t ch_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
 		if (!ch_offset) {
 			printf("[ERR] Could not find the remote vm-channel\n");
 			return nullptr;
 		}
 
+		printf("[INF] Creating new channel...\n");
 		vm_channel *channel = (vm_channel*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
 		if (!channel) {
 			printf("[ERR] Could not create a local vm-channel\n");
@@ -39,6 +41,7 @@ namespace superv::loader {
 		channel->ready = (uint64_t)ch_offset + offsetof(vm_channel, ready); 					
 		channel->error = (uint64_t)ch_offset + offsetof(vm_channel, error); 					
 
+		printf("[INF] Channel success!\n");
 		return channel;
 	}
 
@@ -46,6 +49,7 @@ namespace superv::loader {
 		LARGE_INTEGER li = {};
 		INT32 signal = 1, ready = 1;
 
+		printf("[INF] Reading target ELF file.\n");
 		HANDLE hfile = CreateFileA(filepath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);                 
 		if (hfile == INVALID_HANDLE_VALUE) {
 			return false;
@@ -66,6 +70,7 @@ namespace superv::loader {
 		SIZE_T total = li.QuadPart, sent = 0; // tracking how much is written
 		BYTE buffer[64 * 1024];
 
+		printf("[INF] Writing ELF file to channel.\n");
 		while (sent < total) {
 			DWORD to_read = (DWORD)MIN(sizeof(buffer), total - sent);	
 			DWORD read = 0;
