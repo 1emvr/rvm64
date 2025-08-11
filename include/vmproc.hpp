@@ -14,7 +14,7 @@ namespace rvm64::process {
 		SIZE_T total_size = 0;
 
 		while (VirtualQueryEx(hprocess, (LPCVOID)address, &mbi, sizeof(mbi))) {
-			if ((uintptr_t)mbi.AllocationBase != base) {
+			if ((uintptr_t)mbi.BaseAddress != base) {
 				break;
 			}
 
@@ -22,6 +22,7 @@ namespace rvm64::process {
 			address += mbi.RegionSize;
 		}
 
+		printf("[INF] Total size: 0x%0lx\n", total_size);
 		return total_size;
 	}
 
