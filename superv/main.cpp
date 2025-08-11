@@ -37,7 +37,7 @@ namespace superv {
 			return 1;
 		}
 
-		if (!superv::loader::write_elf_file(proc->handle, channel, elf_name)) {
+		if (!superv::loader::remote_write_file(proc->handle, channel, elf_name)) {
 			printf("[ERR] Could not load elf to the vm channel\n");
 			return 1;
 		}
