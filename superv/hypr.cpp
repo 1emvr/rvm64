@@ -37,9 +37,14 @@ namespace superv {
 		}
 
 		printf("VM Should be starting now..\n");
+		// TODO(lemur): IPC/Decoder loop
+		// NOTE(lemur): Unsure if an access violation will occur in the remote vm when hooks try to arbitrarily R/W from the shared view
+		// NOTE(fox): Honestly it shouldn't. It's a mapped view, so both processes will be R/W to their own addresses and will be mirrored by the OS
+
 		/*
-		TODO: IPC/Decoder loop
 		 while (true) { 
+		 	// - both injected hooks are trying to read shbuf->ipc.signal
+			// - decoder hook should be writing the vm's vmcs address and opcode to shbuf->ipc.vmcs and shbuf->ipc.opcode
 		 	break;
 		}
 		*/

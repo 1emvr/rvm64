@@ -38,7 +38,7 @@ namespace rvm64::mock {
 		}
 	}
 
-	_native shared_buffer* read_shared_memory() {
+	_native mapped_view* create_arena() {
 		HANDLE h_map = OpenFileMappingW(FILE_MAP_READ, FALSE, SHMEM_NAME);
 		if (!h_map) {
 			return nullptr;

@@ -51,19 +51,35 @@ typedef struct {
 	int halt;
 } vmcs_t;
 
-typedef struct {
-	HANDLE map;
+#define VM_MAGIC1 0x524d5636345f4949ULL  // "RMV64_II" or anything unique
+#define VM_MAGIC2 0x5f424541434f4e5fULL  // "_BEACON_"
+#define VM_BEACON_VER    1
+
+typedef struct _align64 {
+	uint64_t 	magic1;
+	uint64_t 	magic2;
+	uint64_t 	version;
+	uint64_t 	header_size;
+	uint64_t 	self;
+
 	struct {
-		uintptr_t 	vmcs;
+		uint64_t 	address; 
+		uint64_t	size;
+		uint64_t	write_size;
+	} buffer;
+
+	struct {
+		uint64_t 	vmcs;
 		uint32_t    opcode;
 		uint8_t 	signal;
 		uint8_t 	signal_type;
+		uint16_t 	_pad0;
 	} ipc;
-	struct {
-		uintptr_t 	address; 
-		size_t		size;
-	} buffer;
-} mapped_view;
+
+	uint32_t 	ready;
+	uint32_t 	error;
+	uint8_t 	reserved[64];
+} vm_beacon;
 
 
 #ifdef __cplusplus
