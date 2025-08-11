@@ -15,25 +15,25 @@ namespace superv::patch {
 		0xff,0xe0 
 	};	
 
-	bool make_trampoline(HANDLE hprocess, uintptr_t callee, size_t n_prolg, uintptr_t* tramp_out) {
+	bool setup_trampoline(HANDLE hprocess, uintptr_t callee, size_t n_prolg, uintptr_t* tramp_out) {
 		bool success = false;
 		void *trampoline = nullptr;
 		uint8_t *buffer = nullptr;
 		uint64_t back_addr = 0;
 
 		if (n_prolg < 12) {
-			printf("[ERR] make_trampoline: function prologue must be at least 12 bytes\n"); 
+			printf("[ERR] setup_trampoline: function prologue must be at least 12 bytes\n"); 
 			goto defer;
 		}
 
 		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
-			printf("[ERR] make_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] setup_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
 			return goto defer;
 		}
 
 		if (!rvm64::memory::read_process_memory(hprocess, callee, buffer, n_prolg)) {
-			printf("[ERR] make_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] setup_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
 			return goto defer;
 		}
 
@@ -43,32 +43,37 @@ namespace superv::patch {
 		memcpy(buffer + n_prolg + 2, &back_addr, sizeof(uint64_t));
 
 		if (!(trampoline = VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))) {
-			printf("[ERR] make_trampoline could not allocate in the remote process: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] setup_trampoline could not allocate in the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
 		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg)) {
-			printf("[ERR] make_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
+			printf("[ERR] setup_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
 		FlushInstructionCache(hprocess, trampoline, n_pro);
-
 		*tramp_out = trampoline;
 		success = true;
+
 defer:
 		if (buffer) {
 			VirtualFree(buffer, 0, MEM_RELEASE);
 		}
-
 		return success;
 	}
 
 	bool patch_callee(HANDLE hprocess, uintptr_t callee, uintptr_t hook, size_t n_prolg) {
 		bool success = false;
+		uint8_t *buffer = nullptr;
 		DWORD old_prot = 0;	
 
-		uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		if (n_prolg < 12) {
+			printf("[ERR] setup_trampoline: function prologue must be at least 12 bytes\n"); 
+			goto defer;
+		}
+
+		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
 			printf("[ERR] patch_callee could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
 			goto defer;
@@ -83,7 +88,7 @@ defer:
 			memcpy(buffer, 0x90, n_prolg - sizeof(jmp_back));		
 
 			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_prolg - sizeof(jmp_back))) {
-				printf("[ERR] patch_callee could not fill nops in the callee: 0x%lx.", GetLastError());
+				printf("[ERR] patch_callee could not fill nops in the callee (prologue > 12): 0x%lx.", GetLastError());
 				goto defer;
 			}
 		}
@@ -140,8 +145,8 @@ defer:
 		size_t n_prolg = 12; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
 		uintptr_t trampoline = 0;
 		
-		if (!make_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
-			printf("[ERR] install_entry_hook::make_trampoline failed: 0x%lx.\n", GetLastError()); 
+		if (!setup_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
+			printf("[ERR] install_entry_hook::setup_trampoline failed: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
