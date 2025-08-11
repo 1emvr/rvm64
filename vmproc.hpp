@@ -5,7 +5,7 @@
 #include <string>
 
 namespace rvm64::process {
-	SIZE_T get_proc_size(HANDLE hprocess, uintptr_t base) {
+	SIZE_T get_proccess_size(HANDLE hprocess, uintptr_t base) {
 		MEMORY_BASIC_INFORMATION mbi;
 
 		UINT_PTR address = base;
@@ -23,7 +23,7 @@ namespace rvm64::process {
 		return total_size;
 	}
 
-	DWORD get_procid(const std::wstring& target_name) {
+	DWORD get_process_id(const std::wstring& target_name) {
 		DWORD pid = 0;
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 

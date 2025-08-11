@@ -48,22 +48,6 @@ namespace rvm64::ipc {
 		}
 	}
 
-	shared_buffer* get_vm_channel(win_process* proc) {
- 		static constexpr char vm_magic[16] = "RMV64_II_BEACON_";
-
-		auto map_offset = superv::scan::signature_scan(proc->handle, proc->base, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
-		if (!map_offset) {
-			return nullptr;
-		}
-
-		vm_channel *channel = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(vm_channel));
-		if (!channel) {
-			return nullptr;
-		}
-
-		rvm64::memory::read_proc_memory();
-	}
-
 	bool read_channel_buffer(uint8_t* data, uintptr_t offset, size_t size) {
 		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
 			return false;

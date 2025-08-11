@@ -147,7 +147,7 @@ namespace superv::patch {
 			memcpy(&buffer[0x28], &call_rel, sizeof(call_rel));
 		}
 
-		if (!rvm64::memory::write_proc_memory(proc->handle, hook_addr, buffer, sizeof(decoder_hook))) {
+		if (!rvm64::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(decoder_hook))) {
 			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
 			return false;
 		}
