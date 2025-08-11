@@ -41,10 +41,6 @@ namespace rvm64::process {
 				char entry_name[MAX_PATH];
 				x_strcpy(entry_name, pe32.szExeFile, MAX_PATH -1);
 
-				size_t name_len = strlen(entry_name);
-				if (name_len > 4 && x_endwith(entry_name, ".exe")) {
-					entry_name[name_len - 4] = 0;
-				}
 				if (x_strcmp(entry_name, target_name) == 0) {
 					pid = pe32.th32ProcessID;
 					break;
