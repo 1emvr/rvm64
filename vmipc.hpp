@@ -6,7 +6,7 @@
 #include "vmmem.hpp"
 
 namespace rvm64::ipc {
-	void destroy_channel() {
+	void vm_destroy_channel() {
 		if (!vmcs->channel) {
 			return;
 		}
@@ -20,7 +20,7 @@ namespace rvm64::ipc {
 		vmcs->channel = nullptr;
 	}
 
-	void create_channel(win_process* proc) {
+	void vm_create_channel() {
 		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
 		HMODULE hmodule = GetModuleHandle(0);
 
@@ -30,10 +30,6 @@ namespace rvm64::ipc {
 		}
 
 		vmcs->channel.self = vmcs->channel;
-		if (!vmcs->channel) {
-			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
-		}
-
 		vmcs->channel->ipc.vmcs = vmcs;
 		vmcs->channel.header_size = (sizeof(uint64_t) * 4) + sizeof(LPVOID);
 
@@ -41,7 +37,8 @@ namespace rvm64::ipc {
 		vmcs->channel.magic2 = VM_MAGIC2;
 
 		vmcs->channel->view.size = CHANNEL_BUFFER_SIZE;
-		vmcs->channel->view.buffer = rvm64::memory::allocate_2GB_range(hprocess, PAGE_READWRITE, hmodule, VM_CHANNEL_BUFFER_SIZE); 
+		vmcs->channel->view.buffer = rvm64::memory::allocate_2GB_range(hprocess, PAGE_READWRITE, hmodule, CHANNEL_BUFFER_SIZE); 
+
 		if (!vmcs->channel->view.buffer) {
 			destroy_channel();
 			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
@@ -52,14 +49,14 @@ namespace rvm64::ipc {
 		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
 			return false;
 		}
-		if (!vmcs->channel || !vmcs->channel.v_mapping) {
+		if (!vmcs->channel || !vmcs->channel.buffer) {
 			CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, 0, 1);
 		}
 		if (!vmcs->channel.ready) {
 			return false;
 		}
 
-		memcpy(data, (uint8_t*)(vmcs->channel->view.v_mapping + offset), size);
+		memcpy(data, (uint8_t*)(vmcs->channel->view.buffer + offset), size);
 		vmcs->channel.ready = 0;
 
 		return true;
@@ -69,11 +66,11 @@ namespace rvm64::ipc {
 		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
 			return false;
 		}
-		if (!vmcs->channel || !vmcs->channel->view.v_mapping) {
+		if (!vmcs->channel || !vmcs->channel->view.buffer) {
 			CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, 0, 1);
 		}
 
-		memcpy((uint8_t*)(vmcs->channel->view.v_mapping + offset), data, size);
+		memcpy((uint8_t*)(vmcs->channel->view.buffer + offset), data, size);
 		vmcs->channel.ready = 1;
 
 		return true;
