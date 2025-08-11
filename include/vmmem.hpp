@@ -105,7 +105,7 @@ namespace rvm64::memory {
 		pos = hi;
 		while (pos > lo) {
 			uintptr_t probe = pos - gran;
-			if (!VirtualQueryEx(handle, (LPCVOID)pos - gran, &mbi, sizeof(mbi))) {
+			if (!VirtualQueryEx(handle, (LPCVOID)(pos - gran), &mbi, sizeof(mbi))) {
 				break; // High OOB, we're cooked...
 			}
 			uintptr_t region_base = (uintptr_t)mbi.BaseAddress;
