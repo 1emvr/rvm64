@@ -47,33 +47,38 @@ namespace superv::patch {
 			goto defer;
 		}
 
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg)) {
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg + sizeof(jmp_back))) {
 			printf("[ERR] install_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
-		FlushInstructionCache(hprocess, trampoline, n_prolg);
-		*tramp_out = trampoline;
+		FlushInstructionCache(hprocess, trampoline, n_prolg + sizeof(jmp_back));
+		*tramp_out = (uintptr_t)trampoline;
 		success = true;
 
 defer:
+		if (!success && trampoline) {
+			VirtualFree(trampoline, 0, MEM_RELEASE);
+		}
 		if (buffer) {
 			VirtualFree(buffer, 0, MEM_RELEASE);
 		}
+
 		return success;
 	}
 
+	// NOTE: prologues with relative addressing or short branches will need to be fixed up. (not supported)
 	bool patch_callee(HANDLE hprocess, uintptr_t callee, uintptr_t hook, size_t n_prolg) {
 		bool success = false;
 		uint8_t *buffer = nullptr;
 		DWORD old_prot = 0;	
 
 		if (n_prolg < 12) {
-			printf("[ERR] install_trampoline: function prologue must be at least 12 bytes\n"); 
+			printf("[ERR] patch_callee: function prologue must be at least 12 bytes\n"); 
 			goto defer;
 		}
 
-		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
 			printf("[ERR] patch_callee could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
 			goto defer;
@@ -84,17 +89,27 @@ defer:
 			goto defer;
 		}
 
-		if (rvm64::memory::write_process_memory(hprocess, callee, jmp_back, sizeof(jmp_back)) && n_prolg > sizeof(jmp_back)) {
-			memset(buffer, 0x90, n_prolg - sizeof(jmp_back));		
+		memcpy(buffer, jmp_back, sizeof(jmp_back));
+		memcpy(buffer + 2, (LPVOID)&hook, sizeof(uintptr_t));
 
-			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_prolg - sizeof(jmp_back))) {
+ 		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back))) {
+			printf("[ERR] patch_callee could not write to process memory: 0x%lx.\n", GetLastError()); 
+			goto defer;
+		}
+
+		if (n_prolg > sizeof(jmp_back)) {
+			uint32_t n_fill = n_prolg - sizeof(jmp_back);
+			memset(buffer, 0x90, n_fill);		
+
+			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_fill)) {
 				printf("[ERR] patch_callee could not fill nops in the callee (prologue > 12): 0x%lx.", GetLastError());
 				goto defer;
 			}
 		}
 
 		VirtualProtectEx(hprocess, (LPVOID)callee, n_prolg, old_prot, &old_prot);
-		FlushInstructionCache(hprocess, callee, n_prolg);
+		FlushInstructionCache(hprocess, (LPCVOID)callee, n_prolg);
+		success = true;
 
 defer:
 		if (buffer) {
