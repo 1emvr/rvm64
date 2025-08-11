@@ -55,7 +55,7 @@ namespace rvm64::ipc {
 			return false;
 		}
 
-		memcpy(data, (uint8_t*)(vmcs->channel->view.buffer + offset), size);
+		memcpy((uint8_t*)data, (uint8_t*)(vmcs->channel->view.buffer + offset), size);
 		vmcs->channel->ready = 0;
 
 		return true;
@@ -69,7 +69,7 @@ namespace rvm64::ipc {
 			CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, 0, 1);
 		}
 
-		memcpy((uint8_t*)(vmcs->channel->view.buffer + offset), data, size);
+		memcpy((uint8_t*)(vmcs->channel->view.buffer + offset), (uint8_t*)data, size);
 		vmcs->channel->ready = 1;
 
 		return true;
