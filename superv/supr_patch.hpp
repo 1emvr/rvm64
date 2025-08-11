@@ -15,6 +15,61 @@ namespace superv::patch {
 		0xff,0xe0 
 	};	
 
+	bool make_trampoline(HANDLE hprocess, uintptr_t callee, size_t n_prolg, uintptr_t* tramp_out) {
+		uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		if (!buffer) {
+			printf("[ERR] make_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
+			return false;
+		}
+
+		if (!rvm64::memory::read_process_memory(hprocess, callee, buffer, n_prolg)) {
+			printf("[ERR] make_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
+			return false;
+		}
+
+		uint64_t back_addr = (uint64_t)(callee + n_prolg);
+		memcpy(buffer + n_prolg, jmp_back, sizeof(jmp_back));
+		memcpy(buffer + n_prolg + 2, &back_addr, sizeof(uint64_t));
+
+		void *trampoline = VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		if (!trampoline) {
+			printf("[ERR] make_trampoline could not allocate in the remote process: 0x%lx.\n", GetLastError()); 
+			return false;
+		}
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_pro)) {
+			printf("[ERR] make_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
+			return false;
+		}
+
+		FlushInstructionCache(hprocess, trampoline, n_pro);
+		VirtualFree(buffer, 0, MEM_RELEASE);
+
+		*tramp_out = trampoline;
+		return true;
+	}
+
+	bool patch_callee(HANDLE hprocess, uintptr_t callee, uintptr_t hook, size_t n_prolg) {
+		uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		if (!buffer) {
+			printf("[ERR] patch_callee could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
+			return false;
+		}
+
+		DWORD old_prot = 0;	
+		if (!VirtualProtectEx(hprocess, (LPVOID)callee, n_prolg, PAGE_EXECUTE_READWRITE, &old_prot)) {
+			printf("[ERR] patch_callee could not change page protections: 0x%lx.\n", GetLastError()); 
+			return false;
+		}
+
+		if (rvm64::memory::write_process_memory(hprocess, callee, jmp_back, sizeof(jmp_back)) && 
+				n_prolg > sizeof(jmp_back)) {
+				
+		}
+
+		VirtualFree(buffer, 0, MEM_RELEASE);
+		return true;
+	}
+
 	_rdata static const char entry_mask[] = "xxxxxxxx????xxxxxxx";
 	_rdata static const uint8_t entry_sig[] = {
 		0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00,     // +0x00: mov     cs:vmcs, rax
@@ -36,37 +91,6 @@ namespace superv::patch {
 	static constexpr size_t EH_OFF_SIGNAL_CLR_DISP  = 0x0F; // next IP = hook+0x13
 	static constexpr size_t EH_OFF_RESUME_IMM64     = 0x15; // imm64 at +0x15
 														  
-	bool make_trampoline(HANDLE hprocess, uintptr_t callee, size_t n_prolg, uintptr_t* tramp_out) {
-		uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-		if (!rvm64::memory::read_process_memory(hprocess, callee, buffer, n_prolg)) {
-			printf("[ERR] make_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
-			return false;
-		}
-
-		uint64_t back_addr = (uint64_t)(callee + n_prolg);
-		memcpy(buffer + n_prolg, jmp_back, sizeof(jmp_back));
-		memcpy(buffer + n_prolg + 2, &back_addr, sizeof(uint64_t));
-
-		void *trampoline = VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-		if (!trampoline) {
-			printf("[ERR] make_trampoline could not allocate in the remote process: 0x%lx.\n", GetLastError()); 
-			return false;
-		}
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_pro)) {
-			printf("[ERR] make_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
-			return false;
-		}
-
-		FlushInstructionCache(hprocess, trampoline, n_pro);
-
-		*tramp_out = trampoline;
-		return true;
-	}
-
-	bool patch_callee(HANDLE hprocess, uintptr_t callee, uintptr_t hook, size_t n_prolg) {
-		
-	}
-
 	bool install_entry_hook(win_process *proc, vm_channel* channel) {
 		size_t stub_size = sizeof(entry_hook);
 		uint8_t buffer[stub_size];
