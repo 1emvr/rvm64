@@ -30,9 +30,8 @@ namespace rvm64::ipc {
 		}
 
 		vmcs->channel->self = (uint64_t)vmcs->channel;
-		vmcs->channel->header_size = (sizeof(uint64_t) * 4) + sizeof(LPVOID);
-
 		vmcs->channel->ipc.vmcs = (uint64_t)vmcs;
+
 		vmcs->channel->magic1 = magic1;
 		vmcs->channel->magic2 = magic2;
 
