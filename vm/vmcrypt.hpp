@@ -2,7 +2,7 @@
 #define VMCRYPT_HPP
 #include "../vmmain.hpp"
 
-// TODO: use elf headers to find initial decryption key.
+// TODO: use elf64_ehdr->e_entry as initial decryption key.
 namespace rvm64::crypt {
 	constexpr uintptr_t encrypt_ptr(uintptr_t ptr, uintptr_t key) {
 		return ptr ^ key;
