@@ -6,7 +6,7 @@
 namespace rvm64::memory {
 	_native void memory_init(size_t process_size) {
 		vmcs->process.size = process_size;
-	    vmcs->process.address = (uint8_t*)vmcs->channel->view.buffer
+	    vmcs->process.address = (uint8_t*)vmcs->channel->view.buffer;
 
 		if (!vmcs->process.address) {
 		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
