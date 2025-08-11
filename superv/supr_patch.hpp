@@ -129,17 +129,17 @@ namespace superv::patch {
 		}
 
 		uintptr_t original_call = call_site + 5 + original_rel;
-		uintptr_t chn_vmcs 		= &channel->ipc.vmcs;
-		uintptr_t chn_opcode 	= &channel->ipc.opcode;
-		uintptr_t chn_signal 	= &channel->ipc.signal;
+		uintptr_t ch_vmcs 		= channel->self + offsetof(vm_channel, ipc.vmcs);
+		uintptr_t ch_opcode 	= channel->self + offsetof(vm_channel, channel->ipc.opcode);
+		uintptr_t ch_signal 	= channel->self + offsetof(vm_channel, channel->ipc.signal);
 		{
-			int32_t disp32_1 = (int32_t)(chn_opcode - (hook_addr + 0x09));
+			int32_t disp32_1 = (int32_t)(ch_opcode - (hook_addr + 0x09));
 			memcpy(&buffer[0x05], &disp32_1, sizeof(disp32_1));
 
-			int32_t disp32_2 = (int32_t)(chn_vmcs - (hook_addr + 0x13));
+			int32_t disp32_2 = (int32_t)(ch_vmcs - (hook_addr + 0x13));
 			memcpy(&buffer[0x0f], &disp32_2, sizeof(disp32_2));
 
-			int32_t disp32_3 = (int32_t)(chn_signal - (hook_addr + 0x1d));
+			int32_t disp32_3 = (int32_t)(ch_signal - (hook_addr + 0x1d));
 			memcpy(&buffer[0x19], &disp32_2, sizeof(disp32_2));
 
 			int32_t call_rel = (int32_t)(original_call - (hook_addr + 0x33));
