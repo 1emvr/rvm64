@@ -1,5 +1,6 @@
 #ifndef VMMEM_H
 #define VMMEM_H
+#include <stdio.h>
 #include "vmmain.hpp"
 
 namespace rvm64::memory {

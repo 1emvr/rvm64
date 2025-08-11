@@ -33,15 +33,15 @@ namespace superv::patch {
 		memcpy(buffer, entry_hook, stub_size);
 
 		printf("[INF] Installing entrypoint hook.\n");
-		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
+		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
 		if (!hook_addr) {
-			printf("[ERR]: allocate_2GB_range failed to find suitable memory in the remote process.\n");
+			printf("[ERR] allocate_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
 		}
 
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
 		if (!sig_offset) {
-			printf("[ERR]: signature_scan failed to find entry call signature in the remote process.\n");
+			printf("[ERR] signature_scan failed to find entry call signature in the remote process.\n");
 			return false;
 		}
 
@@ -49,7 +49,7 @@ namespace superv::patch {
 		uintptr_t call_site = sig_offset + 7;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
-			printf("[ERR]: read_proc_memory failed to read memory in the remote process.\n");
+			printf("[ERR] read_proc_memory failed to read memory in the remote process.\n");
 			return false;
 		}
 
@@ -67,13 +67,13 @@ namespace superv::patch {
 		}
 
 		if (!rvm64::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(entry_hook))) {
-			printf("[ERR]: write_proc_memory failed to write entry hook in the remote process.\n");
+			printf("[ERR] write_proc_memory failed to write entry hook in the remote process.\n");
 			return false;
 		}
 
 		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
 		if (!rvm64::memory::write_process_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
-			printf("[ERR]: write_proc_memory failed to write entry hook in the remote process.\n");
+			printf("[ERR] write_proc_memory failed to write entry hook in the remote process.\n");
 			return false;
 		}
 
@@ -112,15 +112,15 @@ namespace superv::patch {
 		memcpy(buffer, decoder_hook, stub_size);
 
 		printf("[INF] Installing decoder hook.\n");
-		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
+		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
 		if (!hook_addr) {
-			printf("[ERR]: allocate_2GB_range failed to find suitable memory in the remote process.\n");
+			printf("[ERR] allocate_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
 		}
 
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
 		if (!sig_offset) {
-			printf("[ERR]: signature_scan failed to find decoder call signature in the remote process.\n");
+			printf("[ERR] signature_scan failed to find decoder call signature in the remote process.\n");
 			return false;
 		}
 
@@ -128,7 +128,7 @@ namespace superv::patch {
 		uintptr_t call_site = sig_offset + 5;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
-			printf("[ERR]: read_proc_memory failed to read memory in the remote process.\n");
+			printf("[ERR] read_proc_memory failed to read memory in the remote process.\n");
 			return false;
 		}
 
@@ -151,13 +151,13 @@ namespace superv::patch {
 		}
 
 		if (!rvm64::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(decoder_hook))) {
-			printf("[ERR]: write_proc_memory failed to write decoder hook in the remote process.\n");
+			printf("[ERR] write_proc_memory failed to write decoder hook in the remote process.\n");
 			return false;
 		}
 
 		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
 		if (!rvm64::memory::write_process_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
-			printf("[ERR]: write_proc_memory failed to write decoder hook in the remote process.\n");
+			printf("[ERR] write_proc_memory failed to write decoder hook in the remote process.\n");
 			return false;
 		}
 
