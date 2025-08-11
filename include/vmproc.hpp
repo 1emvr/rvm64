@@ -103,7 +103,7 @@ namespace rvm64::process {
 
 		printf("	process handle: 0x%lx\n", proc->handle);
 
-		proc->address = GetProcAddress((HMODULE)proc->handle, target_name);
+		proc->address = (uintptr_t)GetProcAddress((HMODULE)proc->handle, target_name);
 		if (!proc->address) {
 			printf("[ERR] Failed to get process address.\n");
 			goto defer;
