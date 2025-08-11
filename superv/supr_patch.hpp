@@ -16,49 +16,59 @@ namespace superv::patch {
 	};	
 
 	bool make_trampoline(HANDLE hprocess, uintptr_t callee, size_t n_prolg, uintptr_t* tramp_out) {
+		bool success = false;
+		void *trampoline = nullptr;
+		uint64_t back_addr = (uint64_t)(callee + n_prolg);
+
 		uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
 			printf("[ERR] make_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
-			return false;
+			return goto defer;
 		}
 
 		if (!rvm64::memory::read_process_memory(hprocess, callee, buffer, n_prolg)) {
 			printf("[ERR] make_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
-			return false;
+			return goto defer;
 		}
 
-		uint64_t back_addr = (uint64_t)(callee + n_prolg);
 		memcpy(buffer + n_prolg, jmp_back, sizeof(jmp_back));
 		memcpy(buffer + n_prolg + 2, &back_addr, sizeof(uint64_t));
 
-		void *trampoline = VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-		if (!trampoline) {
+		if (!(trampoline = VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))) {
 			printf("[ERR] make_trampoline could not allocate in the remote process: 0x%lx.\n", GetLastError()); 
-			return false;
+			goto defer;
 		}
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_pro)) {
+
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg)) {
 			printf("[ERR] make_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
-			return false;
+			goto defer;
 		}
 
 		FlushInstructionCache(hprocess, trampoline, n_pro);
-		VirtualFree(buffer, 0, MEM_RELEASE);
+		success = true;
+
+defer:
+		if (buffer) {
+			VirtualFree(buffer, 0, MEM_RELEASE);
+		}
 
 		*tramp_out = trampoline;
-		return true;
+		return success;
 	}
 
 	bool patch_callee(HANDLE hprocess, uintptr_t callee, uintptr_t hook, size_t n_prolg) {
+		bool success = false;
+		DWORD old_prot = 0;	
+
 		uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
 			printf("[ERR] patch_callee could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
-			return false;
+			goto defer;
 		}
 
-		DWORD old_prot = 0;	
 		if (!VirtualProtectEx(hprocess, (LPVOID)callee, n_prolg, PAGE_EXECUTE_READWRITE, &old_prot)) {
 			printf("[ERR] patch_callee could not change page protections: 0x%lx.\n", GetLastError()); 
-			return false;
+			goto defer;
 		}
 
 		if (rvm64::memory::write_process_memory(hprocess, callee, jmp_back, sizeof(jmp_back)) && n_prolg > sizeof(jmp_back)) {
@@ -66,15 +76,18 @@ namespace superv::patch {
 
 			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_prolg - sizeof(jmp_back))) {
 				printf("[ERR] patch_callee could not fill nops in the callee: 0x%lx.", GetLastError());
-				return false;
+				goto defer;
 			}
 		}
 
 		VirtualProtectEx(hprocess, (LPVOID)callee, n_prolg, old_prot, &old_prot);
 		FlushInstructionCache(hprocess, callee, n_prolg);
 
-		VirtualFree(buffer, 0, MEM_RELEASE);
-		return true;
+defer:
+		if (buffer) {
+			VirtualFree(buffer, 0, MEM_RELEASE);
+		}
+		return success;
 	}
 
 	_rdata static const char entry_mask[] = "xxxxxxxx????xxxxxxx";
@@ -99,11 +112,7 @@ namespace superv::patch {
 	static constexpr size_t EH_OFF_RESUME_IMM64     = 0x15; // imm64 at +0x15
 														  
 	bool install_entry_hook(win_process *proc, vm_channel* channel) {
-		size_t stub_size = sizeof(entry_hook);
-		uint8_t buffer[stub_size];
-
 		printf("[INF] Installing entrypoint hook.\n");
-		x_memcpy(buffer, entry_hook, sizeof(entry_hook));
 
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
 		if (!sig_offset) { 
@@ -114,44 +123,53 @@ namespace superv::patch {
 		uintptr_t call_site = sig_offset + 7;
 		int32_t original_rel = 0;
 
-		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
-			printf("[ERR] install_entry_hook::read_proc_memory failed: 0x%lx.\n", GetLastError()); 
+		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(int32_t))) {
+			printf("[ERR] install_entry_hook::read_proc_memory failed to get entry reljmp: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
-		uintptr_t original_call = sig_offset + 5 + original_rel;
-		uintptr_t hook_addr = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, stub_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-		if (!hook_addr) { 
-			printf("[ERR] install_entry_hook failed to allocate a hook: 0x%lx.\n", GetLastError()); 
-			return false; 
+		uintptr_t callee = sig_offset + 5 + original_rel;
+		size_t n_prolg = 12; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
+		uintptr_t trampoline = 0;
+		
+		if (!make_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
+			printf("[ERR] install_entry_hook::make_trampoline failed: 0x%lx.\n", GetLastError()); 
+			return false;
 		}
 
+		uintptr_t hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(entry_hook), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		if (!hook) {
+			printf("[ERR] install_entry_hook failed to allocate a hook in the remote process: 0x%lx.\n", GetLastError()); 
+			return false;
+		}
+
+		size_t stub_size = sizeof(entry_hook);
+		uint8_t buffer[stub_size];
+
+		x_memcpy(buffer, entry_hook, sizeof(entry_hook));
 		uintptr_t ch_signal = (uintptr_t)channel->self + offsetof(vm_channel, ipc.signal);
 		{
-			int32_t disp32_1 = (int32_t)(ch_signal - (hook_addr + 0x08)); 
-			int32_t disp32_2 = (int32_t)(ch_signal - (hook_addr + 0x13)); 
-			uint64_t abs_target = (uint64_t)original_call;
+			int32_t d32_sgn_load = (int32_t)(ch_signal - (hook_addr + 0x08)); 
+			int32_t d32_sgn_clear = (int32_t)(ch_signal - (hook_addr + 0x13)); 
 
-			x_memcpy(&buffer[EH_OFF_SIGNAL_LOAD_DISP], 	&disp32_1, 	sizeof(disp32_1));
-			x_memcpy(&buffer[EH_OFF_SIGNAL_CLR_DISP], 	&disp32_2, 	sizeof(disp32_2));
-			x_memcpy(&buffer[EH_OFF_RESUME_IMM64], 		&abs_target, sizeof(abs_target)); // imm64 starts at 0x14
+			x_memcpy(&buffer[EH_OFF_SIGNAL_LOAD_DISP], 	&d32_sgn_load, 	sizeof(int32_t));
+			x_memcpy(&buffer[EH_OFF_SIGNAL_CLR_DISP], 	&d32_sgn_clear, sizeof(int32_t));
+			x_memcpy(&buffer[EH_OFF_RESUME_IMM64], 		&trampoline, 	sizeof(uintptr_t)); // imm64 starts at 0x14
 		}
 
-		if (!rvm64::memory::write_process_memory(proc->handle, hook_addr, buffer, stub_size)) {
+		if (!rvm64::memory::write_process_memory(proc->handle, hook, buffer, stub_size)) {
 			printf("[ERR] install_entry_hook::write_proc_memory failed to write hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
-		int32_t hook_rel = (int32_t)(hook_addr - (call_site + 5));
-		if (!rvm64::memory::write_process_memory(proc->handle, call_site + 1, (uint8_t*)&hook_rel, sizeof(hook_rel))) {
-			printf("[ERR] install_entry_hook::write_proc_memory failed to patch vm_entry: 0x%lx.\n", GetLastError()); 
+		FlushInstructionCache(proc->handle, hook, stub_size);
+		if (!detour_callee(proc->handle, callee, hook, n_prolg)) {
+			printf("[ERR] install_entry_hook::detour_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		return true;
 	}
-
-	// ── decoder ────────────────────────────────────────────────────────────────────
 
 	_rdata static const char decoder_mask[] = "xxxxxx????xxxxxxx";
 	_rdata static const uint8_t decoder_sig[] = { 
@@ -180,10 +198,11 @@ namespace superv::patch {
 	static constexpr size_t DH_OFF_TRAMP_IMM64 = 0x2A;
 
 	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
+		printf("[INF] Installing decoder hook.\n");
+
 		size_t stub_size = sizeof(decoder_hook);
 		uint8_t buffer[stub_size];
 
-		printf("[INF] Installing decoder hook.\n");
 		memcpy(buffer, decoder_hook, sizeof(decoder_hook));
 
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
