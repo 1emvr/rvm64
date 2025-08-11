@@ -118,11 +118,14 @@ defer:
 		return success;
 	}
 
-	_rdata static const char entry_mask[] = "xxxxxxxx????xxxxxxx";
+	_rdata static const char entry_mask[] = "xxxxxxxx????x????";
 	_rdata static const uint8_t entry_sig[] = {
-		0x48, 0x89, 0x05, 0x01, 0x3f, 0x01, 0x00,     // +0x00: mov     cs:vmcs, rax
-		0xe8, 0x00, 0x00, 0x00, 0x00,                 // +0x07: call    rvm64::entry::vm_entry(void)
-		0x48, 0x8b, 0x05, 0xf5, 0x3e, 0x01, 0x00,     // +0x0c: mov     rax, cs:vmcs
+		0x0F, 0x95, 0xC0,   					// +0x00: setnz   al
+		0x84, 0xC0,                             // +0x03: test    al, al
+		0x75, 0x0C,                     		// +0x05: jnz     short loc_7FF7FBE03461
+		0xE8, 0x01, 0xFD, 0xFF, 0xFF,     		// +0x07: call    _ZN5rvm645entry7vm_initEv       ; rvm64::entry::vm_init(void)
+		0xE8, 0x26, 0xFE, 0xFF, 0xFF, 			// +0x0c: call    _ZN5rvm645entry8vm_entryEv      ; rvm64::entry::vm_entry(void)
+												// +0x11: ...
 	};
 
 	_rdata static const uint8_t entry_hook[] = {
@@ -148,7 +151,7 @@ defer:
 			return false; 
 		}
 
-		uintptr_t call_site = sig_offset + 7;
+		uintptr_t call_site = sig_offset + 0x0c;
 		int32_t original_rel = 0;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(int32_t))) {
@@ -199,12 +202,13 @@ defer:
 		return true;
 	}
 
-	_rdata static const char decoder_mask[] = "xxxxxx????xxxxxxx";
+	_rdata static const char decoder_mask[] = "xxxxxxxx????";
 	_rdata static const uint8_t decoder_sig[] = { 
-		0x8b, 0x45, 0xfc,                              // +0x00: mov     eax, [rbp+opcode]
-		0x89, 0xc1,                                    // +0x03: mov     ecx, eax        ; opcode
-		0xe8, 0x00, 0x00, 0x00, 0x00,                  // +0x05: call    rvm64::decoder::vm_decode(uint)
-		0x48, 0x8b, 0x05, 0x75, 0x3f, 0x01, 0x00,      // +0x0a: mov     rax, cs:vmcs
+		0xFF, 0xD0,						// +0x00: call    rax ; __imp_RaiseException
+		0x8B, 0x45, 0xFC,				// +0x02: mov     eax, dword ptr [rbp+var_4]
+		0x89, 0xC1,                    	// +0x05: mov     ecx, eax                        ; this
+		0xE8, 0xE9, 0xF1, 0xFE, 0xFF,  	// +0x07: call    _ZN5rvm647decoder9vm_decodeEj   ; rvm64::decoder::vm_decode(uint)
+										// +0x0c: ...
 	};
 
 	_rdata static const uint8_t decoder_hook[] = {
