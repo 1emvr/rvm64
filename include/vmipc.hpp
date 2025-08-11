@@ -4,8 +4,8 @@
 #include "vmmain.hpp"
 #include "vmmem.hpp"
 
-namespace rvm64::Ipc {
-	void VmDestroyChannel() {
+namespace rvm64::ipc {
+	void vm_destroy_channel() {
 		if (!vmcs->channel) {
 			return;
 		}
@@ -19,7 +19,7 @@ namespace rvm64::Ipc {
 		vmcs->channel = nullptr;
 	}
 
-	void VmCreateChannel(int64_t magic1, int64_t magic2) {
+	void vm_create_channel(int64_t magic1, int64_t magic2) {
 		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
 		HMODULE hmodule = GetModuleHandle(0);
 
@@ -30,7 +30,7 @@ namespace rvm64::Ipc {
 
 		// vm ipc channel starts by copying it's own pointers for the supervisor to use
 		vmcs->channel->self = (uint64_t)vmcs->channel;
-		vmcs->channel->ipc.vmcs = (uint64_t)vmcs;
+		vmcs->channel->vmcs = (uint64_t)vmcs;
 
 		vmcs->channel->magic1 = magic1;
 		vmcs->channel->magic2 = magic2;
@@ -43,7 +43,7 @@ namespace rvm64::Ipc {
 		}
 	}
 
-	bool ReadChannelBuffer(uintptr_t data, uintptr_t offset, size_t size) {
+	bool read_channel_buffer(uintptr_t data, uintptr_t offset, size_t size) {
 		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
 			return false;
 		}
@@ -60,7 +60,7 @@ namespace rvm64::Ipc {
 		return true;
 	}
 
-	bool WriteChannelBuffer(const uintptr_t data, uintptr_t offset, size_t size) {
+	bool write_channel_buffer(const uintptr_t data, uintptr_t offset, size_t size) {
 		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
 			return false;
 		}
