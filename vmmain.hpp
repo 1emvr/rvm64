@@ -6,12 +6,6 @@
 
 #include "vmcommon.hpp"
 
-struct intel_t {
-    uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
-    uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
-    uint64_t rflags;
-};
-
 typedef struct {
 	uint8_t *address;
 	size_t size;
@@ -75,6 +69,12 @@ typedef struct _vmcs {
 	int halt;
 } vmcs_t;
 
+
+struct intel_t {
+    uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
+    uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
+    uint64_t rflags;
+};
 
 #ifdef __cplusplus
 _externc {
