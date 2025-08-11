@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 		const char *elf_name = nullptr;
 
 		if (argc < 5) {
-			print_usage();
+			superv::print_usage();
 			return 1;
 		}
 		for (int i = 0; i < argc; i++) {
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 		}
 
 		if (!proc_name || !elf_name) {
-			print_usage();
+			superv::print_usage();
 			return 1;
 		}
 

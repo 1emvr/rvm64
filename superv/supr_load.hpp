@@ -99,7 +99,7 @@ namespace superv::loader {
 
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ipc.signal, (LPCVOID)&signal, sizeof(INT32), &write) || write != sizeof(INT32)) {
 			printf("[ERR] channel write error (ipc.signal).\n GetLastError=0x%08x\n", GetLastError());
-			return false
+			return false;
 		}
 
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ready, (LPCVOID)&ready, sizeof(INT32), &write) || write != sizeof(INT32)) {
