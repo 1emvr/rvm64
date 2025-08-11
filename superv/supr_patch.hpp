@@ -31,7 +31,7 @@ namespace superv::patch {
 
 		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
 		if (!hook_addr) {
-			printf("[ERR]: allocate_remote_2GB_range failed to find suitable memory in the remote process.\n");
+			printf("[ERR]: allocate_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
 		}
 
@@ -109,7 +109,7 @@ namespace superv::patch {
 
 		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
 		if (!hook_addr) {
-			printf("[ERR]: allocate_remote_2GB_range failed to find suitable memory in the remote process.\n");
+			printf("[ERR]: allocate_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
 		}
 
