@@ -46,12 +46,16 @@ namespace superv {
 			printf("[ERR] Could not install decoder hook in the vm\n");
 			return 1;
 		}
+
+		// NOTE: writing to the channel will trigger the vm to start
 		if (!superv::loader::write_elf_file(elf_name)) {
 			printf("[ERR] Could not load the elf to the vm channel\n");
 			return 1;
 		}
 
 		printf("vm should be starting now..\n");
+		// superv::start(vmcs);
+		
 		return 0;
 	}
 }
