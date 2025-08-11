@@ -25,6 +25,7 @@ namespace rvm64 {
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 								  
 defer:
+		// TODO: implant_callback();
 		rvm64::entry::vm_exit();
 		rvm64::ipc::vm_destroy_channel();
 
