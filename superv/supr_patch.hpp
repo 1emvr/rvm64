@@ -190,7 +190,7 @@ defer:
 			return false;
 		}
 
-		FlushInstructionCache(proc->handle, hook, stub_size);
+		FlushInstructionCache(proc->handle, (LPCVOID)hook, stub_size);
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
 			printf("[ERR] install_entry_hook::patch_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
@@ -280,7 +280,7 @@ defer:
 			return false;
 		}
 
-		FlushInstructionCache(proc->handle, hook, stub_size);
+		FlushInstructionCache(proc->handle, (LPCVOID)hook, stub_size);
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
 			printf("[ERR] install_decoder_hook::patch_callee failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
