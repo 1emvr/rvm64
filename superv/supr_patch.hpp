@@ -62,7 +62,6 @@ defer:
 		if (!success && *hook) {
 			VirtualFreeEx(proc->handle, (LPVOID)*hook, 0, MEM_RELEASE);
 		}
-
 		return success;
 	}
 
@@ -115,7 +114,6 @@ defer:
 		if (buffer) {
 			VirtualFree(buffer, 0, MEM_RELEASE);
 		}
-
 		return success;
 	}
 
@@ -137,14 +135,10 @@ defer:
 			goto defer;
 		}
 
-		if (!VirtualProtectEx(hprocess, (LPVOID)callee, n_prolg, PAGE_EXECUTE_READWRITE, &old_prot)) {
-			printf("[ERR] patch_callee could not change page protections: 0x%lx.\n", GetLastError()); 
-			goto defer;
-		}
-
 		memcpy(buffer, jmp_back, sizeof(jmp_back));
 		memcpy(buffer + 2, &hook, sizeof(uintptr_t));
 
+		// NOTE: write_process_memory handles page protections on write/restores them.
  		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back))) {
 			printf("[ERR] patch_callee could not write to process memory: 0x%lx.\n", GetLastError()); 
 			goto defer;
@@ -164,8 +158,6 @@ defer:
 		success = true;
 
 defer:
-		VirtualProtectEx(hprocess, (LPVOID)callee, n_prolg, old_prot, &old_prot);
-
 		if (buffer) {
 			VirtualFree(buffer, 0, MEM_RELEASE);
 		}
