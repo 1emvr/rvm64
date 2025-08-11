@@ -43,7 +43,7 @@ namespace rvm64::process {
 		return true;; 
 	}
 
-	bool get_process_id(uintptr_t* ppid, const CHAR* target_name) {
+	bool get_process_id(DWORD* ppid, const CHAR* target_name) {
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
 		if (snapshot == INVALID_HANDLE_VALUE) {
