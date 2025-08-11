@@ -12,4 +12,4 @@ all:
 	${CLG} ${EFLAGS} ./test/test.cpp -o ./build/test.elf
 
 clean:
-	rm ./build/vmctx.o ./build/rvm64.exe ./build/test.elf ./build/vmctx.o
+	rm ./build/vmctx.o ./build/rvm64.exe ./build/test.elf ./build/superv.exe
