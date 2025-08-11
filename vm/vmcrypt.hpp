@@ -1,14 +1,14 @@
 #ifndef VMCRYPT_HPP
 #define VMCRYPT_HPP
-#include "vmmain.hpp"
+#include "../vmmain.hpp"
 
-// TODO: use NtHeaders->OptionalHeaders.ImageBase as the initial decryption key.
+// TODO: use elf headers to find initial decryption key.
 namespace rvm64::crypt {
-	constexpr uintptr_t encrypt_ptr(uintptr_t ptr) {
-		return ptr ^ DKEY;
+	constexpr uintptr_t encrypt_ptr(uintptr_t ptr, uintptr_t key) {
+		return ptr ^ key;
 	}
 
-	_vmcall inline uintptr_t decrypt_ptr(uintptr_t ptr) {
+	_vmcall inline uintptr_t decrypt_ptr(uintptr_t ptr, uintptr_t key) {
 		return ptr ^ DKEY;
 	}
 };
