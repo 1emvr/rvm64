@@ -2,7 +2,10 @@
 #define HYPRLOAD_HPP
 #include <windows.h>
 
+#include "supr_scan.hpp"
+
 #include "../include/vmmain.hpp"
+#include "../include/vmmem.hpp"
 
 namespace superv::loader {
 	vm_channel* get_channel(win_process* proc) {
@@ -88,7 +91,7 @@ namespace superv::loader {
 			sent += read;
 		}
 
- 		DWORD write = 0;
+ 		write = 0;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->view.write_size, (LPCVOID)&total, sizeof(SIZE_T), &write) || write != sizeof(SIZE_T)) {
 			printf("[ERR] channel write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
 			goto defer;
@@ -104,7 +107,7 @@ namespace superv::loader {
 			goto defer;
 		}
 
-		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
+		printf("[+] ELF loaded into shared memory\n");
 		return true; 
 	}
 }
