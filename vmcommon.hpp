@@ -45,15 +45,6 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 	RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	\
 	__builtin_unreachable()
 
-#define CSR_GET(ctx_ptr)							\
-	do {											\
-		uintptr_t csr1 = vmcs->csr.m_epc;			\
-		uintptr_t csr2 = vmcs->csr.m_cause; 		\
-		uintptr_t csr3 = vmcs->csr.m_status;		\
-		uintptr_t csr4 = vmcs->csr.m_tval;			\
-		uintptr_t ip = ctx_ptr->ContextRecord->Rip; \
-	} while (0)
-
 enum causenum {
 	supervisor_software_interrupt = 0xb11,
 	machine_software_interrupt = 0xb13,

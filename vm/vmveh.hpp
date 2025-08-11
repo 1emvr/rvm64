@@ -17,7 +17,6 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 
-	CSR_GET(exception_info);
 	winctx->EFlags &= ~0x100;  // Clear TF before returning
 							   
 	if (vmcs->halt || code != RVM_TRAP_EXCEPTION) {
