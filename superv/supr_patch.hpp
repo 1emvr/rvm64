@@ -37,7 +37,7 @@ namespace superv::patch {
 
 		uintptr_t call_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
 		if (!call_offset) {
-			printf("[ERR]: signature_scan failed to find call signature in the remote process.\n");
+			printf("[ERR]: signature_scan failed to find entry call signature in the remote process.\n");
 			return false;
 		}
 
@@ -114,7 +114,7 @@ namespace superv::patch {
 
 		uintptr_t call_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
 		if (!call_offset) {
-			printf("[ERR]: signature_scan failed to find call signature in the remote process.\n");
+			printf("[ERR]: signature_scan failed to find decoder call signature in the remote process.\n");
 			return false;
 		}
 
