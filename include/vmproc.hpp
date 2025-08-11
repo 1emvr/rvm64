@@ -7,53 +7,69 @@
 #include "../include/vmlib.hpp"
 
 namespace rvm64::process {
-	bool get_process_size(HANDLE hprocess, uintptr_t base, uintptr_t *psize) {
+	bool get_process_size(HANDLE hprocess, uintptr_t base, size_t *psize) {
 		if (!base) {
 			return false;
 		}
 
-		constexpr size_t head_size = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS);
-		uint8_t* buffer = (uint8_t*)HeapAlloc(GetProcessHeap(), 0, head_size);
+		IMAGE_DOS_HEADER dos_head;
+		SIZE_T read = 0;
 
-		size_t size = 0;
-		size_t read = 0;
-
-		if (!ReadProcessMemory(hprocess, (LPVOID)base, (LPVOID)buffer, head_size, &read) || read != head_size) {
-			printf("[ERR] get_process_size: failed to read process memory: 0x%lx\n", GetLastError());
+		if (!ReadProcessMemory(hprocess, (LPCVOID)base, &dos_head, sizeof(dos_head), &read) || read != sizeof(dos_head)) {
+			printf("[ERR] Failed to read DOS header: 0x%lx\n", GetLastError());
 			return false;
 		}
 
-		auto dos_head = (PIMAGE_DOS_HEADER)buffer;
-		auto nt_head = (PIMAGE_NT_HEADERS)((UINT8*)(buffer) + dos_head->e_lfanew);
-
-		if (nt_head->Signature != IMAGE_NT_SIGNATURE) {
+		if (dos_head.e_magic != IMAGE_DOS_SIGNATURE) {
+			printf("[ERR] Invalid DOS signature\n");
 			return false;
 		}
 
-		auto section = IMAGE_FIRST_SECTION(nt_head);
-		for (WORD i = 0; i < nt_head->FileHeader.NumberOfSections; i++, section++) {
-			if (strncmp((const char*)section->Name, ".text", 5) == 0) {
-
-				uintptr_t txt_base = (uintptr_t)base + section->VirtualAddress;
-				*psize = txt_base + section->Misc.VirtualSize;
-			}
+		IMAGE_NT_HEADERS nt_head;
+		uintptr_t head_base = (base + dos_head.e_lfanew);
+		if (!ReadProcessMemory(hprocess, (LPCVOID)head_base, &nt_head, sizeof(nt_head), &read) || read != sizeof(nt_head)) {
+			printf("[ERR] Failed to read NT header: 0x%lx\n", GetLastError());
+			return false;
 		}
 
-		HeapFree(GetProcessHeap(), 0, buffer);
-		return true;; 
+		if (nt_head.Signature != IMAGE_NT_SIGNATURE) {
+			printf("[ERR] Invalid NT signature\n");
+			return false;
+		}
+
+		*psize = nt_head.OptionalHeader.SizeOfImage;  // loader’s actual committed size
+		return true;
+	}
+
+	bool get_process_base(DWORD pid, uintptr_t* pbase) {
+		MODULEENTRY32 me32;
+		me32.dwSize = sizeof(MODULEENTRY32);
+
+		HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
+		if (snap == INVALID_HANDLE_VALUE) {
+			return false;
+		}
+
+		uintptr_t base = 0;
+		if (Module32First(snap, &me32)) {
+			*pbase = (uintptr_t)me32.modBaseAddr;
+		}
+
+		CloseHandle(snap);
+		return true;
 	}
 
 	bool get_process_id(DWORD* ppid, const CHAR* target_name) {
-		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+		HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-		if (snapshot == INVALID_HANDLE_VALUE) {
+		if (snap == INVALID_HANDLE_VALUE) {
 			return false;
 		}
 
 		PROCESSENTRY32 pe32;
 		pe32.dwSize = sizeof(PROCESSENTRY32);
 
-		if (Process32First(snapshot, &pe32)) {
+		if (Process32First(snap, &pe32)) {
 			do {
 				char entry_name[MAX_PATH];
 				x_strcpy(entry_name, pe32.szExeFile, MAX_PATH -1);
@@ -62,10 +78,10 @@ namespace rvm64::process {
 					*ppid = pe32.th32ProcessID;
 					break;
 				}
-			} while (Process32Next(snapshot, &pe32));
+			} while (Process32Next(snap, &pe32));
 		}
 
-		CloseHandle(snapshot);
+		CloseHandle(snap);
 		return true;
 	}
 
@@ -103,8 +119,7 @@ namespace rvm64::process {
 
 		printf("	process handle: 0x%lx\n", proc->handle);
 
-		proc->address = (uintptr_t)GetProcAddress((HMODULE)proc->handle, target_name);
-		if (!proc->address) {
+		if (!get_process_base(proc->pid, &proc->address)) {
 			printf("[ERR] Failed to get process address.\n");
 			goto defer;
 		}
