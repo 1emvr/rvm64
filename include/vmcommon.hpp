@@ -39,15 +39,8 @@
 	RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	\
 	__builtin_unreachable()
 
- #define max(a, b) 				\
-   { __typeof__(a) _a = (a); 	\
-       __typeof__(b) _b = (b); 	\
-     _a > _b ? _a : _b; }
-
- #define min(a, b) 				\
-   { __typeof__(a) _a = (a); 	\
-       __typeof__(b) _b = (b);  \
-     _a < _b ? _a : _b; }
+ #define max(a, b) 	(_a > _b ? _a : _b;)
+ #define min(a, b) 	(_a < _b ? _a : _b;)
 
 enum causenum {
 	supervisor_software_interrupt = 0xb11,
