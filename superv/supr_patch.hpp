@@ -31,6 +31,7 @@ namespace superv::patch {
 
 	bool install_spin_hook(win_process* proc, vm_channel* channel, uintptr_t* hook, uintptr_t* trampoline) {
 		static uint8_t buffer[sizeof(spin_hook)];
+		uintptr_t ch_signal = 0;
 		bool success = false;
 
 		*hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(spin_hook), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
@@ -40,7 +41,7 @@ namespace superv::patch {
 		}
 
 		x_memcpy(buffer, spin_hook, sizeof(spin_hook));
-		uintptr_t ch_signal = (uintptr_t)channel->self + offsetof(vm_channel, ipc.signal);
+		ch_signal = (uintptr_t)channel->self + offsetof(vm_channel, ipc.signal);
 		{
 			int32_t d32_sgn_load = (int32_t)(ch_signal - (*hook + 0x08)); 
 			int32_t d32_sgn_clear = (int32_t)(ch_signal - (*hook + 0x13)); 
