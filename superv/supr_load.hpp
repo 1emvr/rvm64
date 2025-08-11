@@ -94,17 +94,17 @@ namespace superv::loader {
  		SIZE_T write = 0;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->view.write_size, (LPCVOID)&total, sizeof(SIZE_T), &write) || write != sizeof(SIZE_T)) {
 			printf("[ERR] channel write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
-			goto defer;
+			return false;
 		}
 
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ipc.signal, (LPCVOID)&signal, sizeof(INT32), &write) || write != sizeof(INT32)) {
 			printf("[ERR] channel write error (ipc.signal).\n GetLastError=0x%08x\n", GetLastError());
-			goto defer;
+			return false
 		}
 
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ready, (LPCVOID)&ready, sizeof(INT32), &write) || write != sizeof(INT32)) {
 			printf("[ERR] channel write error (ready).\n GetLastError=0x%08x\n", GetLastError());
-			goto defer;
+			return false;
 		}
 
 		printf("[+] ELF loaded into shared memory\n");

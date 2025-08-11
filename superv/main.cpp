@@ -21,7 +21,7 @@ namespace superv {
 			return 1;
 		}
 
-		vm_channel* channel = superv::loader::vm_get_channel(proc);
+		vm_channel* channel = superv::loader::get_channel(proc);
 		if (!channel) {
 			printf("[ERR] Could not load vm channel\n");
 			return 1;
