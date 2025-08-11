@@ -17,10 +17,10 @@ namespace rvm64 {
 				break;
 			}
 		}
-
 		if (setjmp(vmcs->exit_handler)) {
 			goto defer;	
 		}
+
 		rvm64::entry::vm_init(); 
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 								  
