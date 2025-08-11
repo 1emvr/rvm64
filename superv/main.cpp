@@ -57,7 +57,6 @@ int main(int argc, char** argv) {
 			print_usage();
 			return 1;
 		}
-
 		for (int i = 0; i < argc; i++) {
 			if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--process") == 0) {
 				proc_name = argv[i + 1];
