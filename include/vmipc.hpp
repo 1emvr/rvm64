@@ -24,7 +24,6 @@ namespace rvm64::ipc {
 		HMODULE hmodule = GetModuleHandle(0);
 
 		vmcs->channel = (vm_channel*)rvm64::memory::allocate_2GB_range(hprocess, (uintptr_t)hmodule, PAGE_READWRITE, sizeof(vm_channel));
-
 		if (!vmcs->channel) {
 		    CSR_SET_TRAP(nullptr, GetLastError(), 0, 0, 1);
 		}

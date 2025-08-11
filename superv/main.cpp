@@ -58,11 +58,30 @@ namespace superv {
 	}
 }
 
+void print_usage() {
+	printf("usage: superv --process <vm> --elf <riscv_elf>\n");
+}
+
 int main(int argc, char** argv) {
-		if (argc < 2) {
-			printf("usage: %s <riscv_elf_file>\n", argv[0]);
+		const char *proc_name = nullptr;
+		const char *elf_name = nullptr;
+
+		if (argc < 5) {
+			print_usage();
+			return 1;
+		}
+		for (int i = 0; i < argc; i++) {
+			if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--process") == 0) {
+				proc_name = argv[i + 1];
+			}
+			if (strcmp(argv[i], "-e") == 0 || strcmp(argv[i], "--elf") == 0) {
+				elf_name = argv[i + 1];
+			}
+		}
+		if (!proc_name || !elf_name) {
+			print_usage();
 			return 1;
 		}
 
-		return superv::superv_main("rvm64", argv[1]);
+		return superv::superv_main(proc_name, elf_name);
 }
