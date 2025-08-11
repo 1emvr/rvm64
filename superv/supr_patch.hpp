@@ -36,7 +36,7 @@ namespace superv::patch {
 			return false;
 		}
 
-		uintptr_t call_offset = superv::process::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
+		uintptr_t call_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
 		if (!call_offset) {
 			printf("[ERR]: signature_scan failed to find entry call signature in the remote process.\n");
 			return false;
@@ -50,7 +50,7 @@ namespace superv::patch {
 			return false;
 		}
 
-		uintptr_t ch_self = (uintptr_t)channel->ipc.self;
+		uintptr_t ch_self = (uintptr_t)channel->self;
 		uintptr_t ch_signal = ch_self + offsetof(vm_channel, ipc.signal);
 
 		uintptr_t original_call = call_site + 5 + original_rel;
@@ -65,7 +65,7 @@ namespace superv::patch {
 			memcpy(&buffer[0x13], &call_rel, sizeof(call_rel));
 		}
 
-		if (!rvm64::memory::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(entry_hook))) {
+		if (!rvm64::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(entry_hook))) {
 			printf("[ERR]: write_proc_memory failed to write entry hook in the remote process.\n");
 			return false;
 		}
