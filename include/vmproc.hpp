@@ -97,25 +97,31 @@ namespace rvm64::process {
 			goto defer;
 		}
 
+		printf("[INF] Getting target process ID.\n");
 		proc->pid = get_process_id(target_name);
 		if (!proc->pid) {
 			goto defer;
 		}
 
+		printf("[INF] Getting target process base adddress.\n");
 		proc->address = get_module_base(proc->pid, target_name);
 		if (!proc->address) {
 			goto defer;
 		}
 
+		printf("[INF] Getting target process handle.\n");
 		proc->handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proc->pid);
 		if (!proc->handle) {
 			goto defer;
 		}
 
+		printf("[INF] Getting target process size.\n");
 		proc->size = get_process_size(proc->handle, proc->address);
 		if (!proc->size) {
 			goto defer;
 		}
+
+		printf("[INF] Process info success.\n");
 		success = true;
 defer:
 		if (!success) {
