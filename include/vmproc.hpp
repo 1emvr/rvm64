@@ -7,9 +7,9 @@
 #include "../include/vmlib.hpp"
 
 namespace rvm64::process {
-	SIZE_T get_process_size(HANDLE hprocess, uintptr_t base) {
+	bool get_process_size(HANDLE hprocess, uintptr_t base, uintptr_t *psize) {
 		if (!base) {
-			return 0;
+			return false;
 		}
 
 		constexpr size_t head_size = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS);
@@ -20,14 +20,14 @@ namespace rvm64::process {
 
 		if (!ReadProcessMemory(hprocess, (LPVOID)base, (LPVOID)buffer, head_size, &read) || read != head_size) {
 			printf("[ERR] get_process_size: failed to read process memory: 0x%lx\n", GetLastError());
-			return 0;
+			return false;
 		}
 
 		auto dos_head = (PIMAGE_DOS_HEADER)buffer;
 		auto nt_head = (PIMAGE_NT_HEADERS)((UINT8*)(buffer) + dos_head->e_lfanew);
 
 		if (nt_head->Signature != IMAGE_NT_SIGNATURE) {
-			return 0;
+			return false;
 		}
 
 		auto section = IMAGE_FIRST_SECTION(nt_head);
@@ -35,12 +35,12 @@ namespace rvm64::process {
 			if (strncmp((const char*)section->Name, ".text", 5) == 0) {
 
 				uintptr_t txt_base = (uintptr_t)base + section->VirtualAddress;
-				size = txt_base + section->Misc.VirtualSize;
+				*psize = txt_base + section->Misc.VirtualSize;
 			}
 		}
 
 		HeapFree(GetProcessHeap(), 0, buffer);
-		return size; 
+		return true;; 
 	}
 
 	bool get_process_id(uintptr_t* ppid, const CHAR* target_name) {
@@ -111,13 +111,12 @@ namespace rvm64::process {
 
 		printf("	process address: 0x%llx\n", proc->address);
 
-		if (!get_process_size(proc->handle, proc->address, proc->pid, &proc->size)) {
+		if (!get_process_size(proc->handle, proc->address, &proc->size)) {
 			printf("[ERR] Failed to get process size.\n");
 			goto defer;
 		}
 
 		printf("	process size: %d\n", proc->size);
-
 		success = true;
 defer:
 		if (!success) {
