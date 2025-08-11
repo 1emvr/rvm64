@@ -37,7 +37,7 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-	// TODO: implant/supervisor will create random magics.
+	// TODO: incoming packets/supervisor will assign random magics
     return rvm64::vm_main(VM_MAGIC1, VM_MAGIC2);
 }
 
