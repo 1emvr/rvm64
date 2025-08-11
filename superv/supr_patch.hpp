@@ -29,12 +29,12 @@ namespace superv::patch {
 	static constexpr size_t SH_OFF_SIGNAL_CLR_DISP  = 0x0e; // next IP = hook+0x13
 	static constexpr size_t SH_OFF_RESUME_IMM64     = 0x15; // imm64 at +0x15
 
-	bool install_spin_hook(win_process* proc, vm_channel* channel, uintptr_t* trampoline) {
+	bool install_spin_hook(win_process* proc, vm_channel* channel, uintptr_t* hook, uintptr_t* trampoline) {
 		static uint8_t buffer[sizeof(spin_hook)];
 		bool success = false;
 
-		uintptr_t hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(spin_hook), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-		if (!hook) {
+		*hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(spin_hook), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		if (!*hook) {
 			printf("[ERR] install_spin_hook failed to allocate in the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
@@ -42,25 +42,25 @@ namespace superv::patch {
 		x_memcpy(buffer, spin_hook, sizeof(spin_hook));
 		uintptr_t ch_signal = (uintptr_t)channel->self + offsetof(vm_channel, ipc.signal);
 		{
-			int32_t d32_sgn_load = (int32_t)(ch_signal - (hook + 0x08)); 
-			int32_t d32_sgn_clear = (int32_t)(ch_signal - (hook + 0x13)); 
+			int32_t d32_sgn_load = (int32_t)(ch_signal - (*hook + 0x08)); 
+			int32_t d32_sgn_clear = (int32_t)(ch_signal - (*hook + 0x13)); 
 
 			x_memcpy(&buffer[SH_OFF_SIGNAL_LOAD_DISP], 	&d32_sgn_load, 	sizeof(int32_t));
 			x_memcpy(&buffer[SH_OFF_SIGNAL_CLR_DISP], 	&d32_sgn_clear, sizeof(int32_t));
-			x_memcpy(&buffer[SH_OFF_RESUME_IMM64], 		trampoline, 	sizeof(uintptr_t)); // imm64 starts at 0x14
+			x_memcpy(&buffer[SH_OFF_RESUME_IMM64], 		trampoline, 	sizeof(uintptr_t)); 
 		}
 
-		if (!rvm64::memory::write_process_memory(proc->handle, hook, buffer, sizeof(spin_hook))) {
+		if (!rvm64::memory::write_process_memory(proc->handle, *hook, buffer, sizeof(spin_hook))) {
 			printf("[ERR] install_spin_hook failed to write hook: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
-		FlushInstructionCache(proc->handle, (LPCVOID)hook, sizeof(spin_hook));
+		FlushInstructionCache(proc->handle, (LPCVOID)*hook, sizeof(spin_hook));
 		success = true;
 
 defer:
-		if (!success && hook) {
-			VirtualFreeEx(proc->handle, hook, 0, MEM_RELEASE);
+		if (!success && *hook) {
+			VirtualFreeEx(proc->handle, (LPVOID)*hook, 0, MEM_RELEASE);
 		}
 
 		return success;
@@ -70,7 +70,7 @@ defer:
 		bool success = false;
 		uint8_t *buffer = nullptr;
 		uint64_t back_addr = 0;
-		uintptr_t trampoline = nullptr;
+		uintptr_t trampoline = 0;
 
 		if (n_prolg < 12) {
 			printf("[ERR] install_trampoline: function prologue must be at least 12 bytes\n"); 
@@ -104,7 +104,7 @@ defer:
 			goto defer;
 		}
 
-		FlushInstructionCache(hprocess, trampoline, n_prolg + sizeof(jmp_back));
+		FlushInstructionCache(hprocess, (LPCVOID)trampoline, n_prolg + sizeof(jmp_back));
 		*tramp_out = trampoline;
 		success = true;
 
@@ -207,7 +207,8 @@ defer:
 			return false;
 		}
 
-		if (!install_spin_hook(proc, channel, &trampoline)) {
+		uintptr_t hook = 0;
+		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
 			printf("[ERR] install_entry_hook::install_spin_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
@@ -254,7 +255,8 @@ defer:
 			return false;
 		}
 
-		if (!install_spin_hook(proc, channel, &trampoline)) {
+		uintptr_t hook = 0;
+		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
 			printf("[ERR] install_decoder_hook::install_spin_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
