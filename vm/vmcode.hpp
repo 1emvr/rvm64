@@ -2,12 +2,14 @@
 #define VMCODE_H
 #include <stdarg.h>
 
-#include "vmmain.hpp"
+#include "../vmdbg.hpp"
+#include "../vmmain.hpp"
+#include "../vmmem.hpp"
+
+#include "vmutils.hpp"
 #include "vmcrypt.hpp"
-#include "vmmem.hpp"
 #include "vmrwx.hpp"
 #include "vmmu.hpp"
-#include "vmutils.hpp"
 
 
 namespace rvm64::decoder {
