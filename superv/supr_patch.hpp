@@ -131,7 +131,7 @@ namespace superv::patch {
 		}
 
 		uintptr_t original_call = call_site + 5 + original_rel;
-		uintptr_t ch_vmcs 		= channel->self + offsetof(vm_channel, ipc.vmcs);
+		uintptr_t ch_vmcs 		= channel->self + offsetof(vm_channel, vmcs);
 		uintptr_t ch_opcode 	= channel->self + offsetof(vm_channel, ipc.opcode);
 		uintptr_t ch_signal 	= channel->self + offsetof(vm_channel, ipc.signal);
 		{
