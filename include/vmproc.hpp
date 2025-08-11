@@ -88,7 +88,7 @@ namespace rvm64::process {
 
 		printf("	process name: %s\n", target_name);
 
-		if (!get_process_id(&proc->id, target_name)) {
+		if (!get_process_id(&proc->pid, target_name)) {
 			printf("[ERR] Failed to get process id.\n");
 			goto defer;
 		}
@@ -98,7 +98,7 @@ namespace rvm64::process {
 		proc->handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proc->pid);
 		if (!proc->handle) {
 			printf("[ERR] Failed to get process handle.\n");
-			return goto defer;
+			goto defer;
 		}
 
 		printf("	process handle: 0x%lx\n", proc->handle);
