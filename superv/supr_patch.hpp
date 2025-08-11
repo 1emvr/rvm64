@@ -109,7 +109,7 @@ defer:
 
 defer:
 		if (!success && trampoline) {
-			VirtualFreeEx(hprocess, trampoline, 0, MEM_RELEASE);
+			VirtualFreeEx(hprocess, (LPVOID)trampoline, 0, MEM_RELEASE);
 		}
 		if (buffer) {
 			VirtualFree(buffer, 0, MEM_RELEASE);
