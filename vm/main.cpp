@@ -5,16 +5,15 @@
 #include "vmcommon.hpp"
 
 namespace rvm64 {
-	_native int32_t vm_main(channel *packet) {
+	_native int32_t vm_main() {
 		save_host_context();
 
 		if (setjmp(vmcs->exit_handler)) {
 			goto defer;	
 		}
 
-		rvm64::entry::vm_init(packet->address, packet->size); 
+		rvm64::entry::vm_init(vmcs->channel->v_mapping, vmcs->channel->mapping.size); 
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
-
 defer:
 		rvm64::entry::vm_exit();
 
@@ -27,15 +26,13 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-
 	while (true) {
-		if (rvm64::mock::read_packet()) {
+		if (rvm64::ipc::read_channel_buffer()) {
 			break;
 		}
 		Sleep(10);
 	}
 
-    rvm64::vm_main(packet);
-	// TODO: destroy memory view
+    return rvm64::vm_main();
 }
 
