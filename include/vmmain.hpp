@@ -14,7 +14,7 @@ typedef struct {
 typedef struct {
 	HANDLE handle;
 	DWORD pid;
-	DWORD address;
+	UINT_PTR address;
 	SIZE_T size;
 } win_process;
 
