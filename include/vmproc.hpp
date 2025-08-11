@@ -12,10 +12,10 @@ namespace rvm64::process {
 			return 0;
 		}
 		constexpr size_t head_size = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS);
-		uint8_t* buffer = (uint8_t*)HeapAlloc(GetProcessHeap, 0, head_size);
+		uint8_t* buffer = (uint8_t*)HeapAlloc(GetProcessHeap(), 0, head_size);
 		size_t read = 0;
 
-		if (!ReadProcessMemory(hprocess, base, buffer, head_size, &read) || read != head_size) {
+		if (!ReadProcessMemory(hprocess, base, (LPCVOID)buffer, head_size, &read) || read != head_size) {
 			printf("[ERR] get_process_size: failed to read process memory: 0x%lx", GetLastError());
 			return 0;
 		}
