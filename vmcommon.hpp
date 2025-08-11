@@ -23,8 +23,8 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 #define NtCurrentProcess()      ((HANDLE) (LONG_PTR) -1)
 #define NtCurrentThread()       ((HANDLE) (LONG_PTR) -2)
 
+#define VM_PROGRAM_MAX_CAPACITY 0x10000
 #define VM_NATIVE_STACK_ALLOC   0x210
-#define VM_PROCESS_PADDING      (1024 * 256)
 #define VSTACK_MAX_CAPACITY     (1024 * 2)
 #define RVM_TRAP_EXCEPTION		0xE0424242  // any 0xExxxxxxx value is safe
 

@@ -54,15 +54,15 @@ namespace rvm64::memory {
 		vmcs->channel.magic1 = VM_MAGIC1;
 		vmcs->channel.magic2 = VM_MAGIC2;
 
-		vmcs->channel->mapping.h_mapping = CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, 0x100000, VM_MAPPED_FILE_NAME);
-		vmcs->channel->mapping.size = 0x100000;
+		vmcs->channel->mapping.h_mapping = CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, VM_PROGRAM_MAX_CAPACITY, VM_MAPPED_FILE_NAME);
+		vmcs->channel->mapping.size = VM_PROGRAM_MAX_CAPACITY;
 
 		if (!vmcs->channel->mapping.h_mapping) {
 			vmcs->channel->mapping.error = GetLastError();
 		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
 		}
 
-		vmcs->channel->mapping.v_mapping = MapViewOfFile(vmcs->channel->mapping.h_mapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0x100000);
+		vmcs->channel->mapping.v_mapping = MapViewOfFile(vmcs->channel->mapping.h_mapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, VM_PROGRAM_MAX_CAPACITY);
 		if (!vmcs->channel->mapping.v_mapping) {
 			vmcs->channel->mapping.error = GetLastError();
 		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
@@ -72,9 +72,6 @@ namespace rvm64::memory {
 	_native void memory_end() {
 		if (vmcs->process.address) {
 			VirtualFree(vmcs->process.address, 0, MEM_RELEASE);
-		}
-		if (!vmcs->mem_view->buffer.address) {
-			HeapFree(GetProcessHeap(), 0, (LPVOID)vmcs->mem_view->buffer.address);
 		}
 	}
 };
