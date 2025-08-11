@@ -7,9 +7,9 @@
 #include "vmentry.hpp"
 
 namespace rvm64 {
-	_native int32_t vm_main() {
+	_native int32_t vm_main(int64_t magic1, int64_t magic2) {
 		save_host_context();
-		rvm64::ipc::vm_create_channel();
+		rvm64::ipc::vm_create_channel(magic1, magic2);
 
 		while (true) {
 			Sleep(10);
@@ -37,6 +37,7 @@ int main() {
 	vmcs_t vm_instance = { };
 	vmcs = &vm_instance;
 
-    return rvm64::vm_main();
+	// TODO: implant/supervisor will create random magics.
+    return rvm64::vm_main(VM_MAGIC1, VM_MAGIC2);
 }
 

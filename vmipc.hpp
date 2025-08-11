@@ -19,11 +19,12 @@ namespace rvm64::ipc {
 		vmcs->channel = nullptr;
 	}
 
-	void vm_create_channel() {
+	void vm_create_channel(int64_t magic1, int64_t magic2) {
 		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
 		HMODULE hmodule = GetModuleHandle(0);
 
 		vmcs->channel = (vm_channel*)rvm64::memory::allocate_2GB_range(hprocess, (uintptr_t)hmodule, PAGE_READWRITE, sizeof(vm_channel));
+
 		if (!vmcs->channel) {
 		    CSR_SET_TRAP(nullptr, GetLastError(), 0, 0, 1);
 		}
@@ -32,14 +33,13 @@ namespace rvm64::ipc {
 		vmcs->channel->header_size = (sizeof(uint64_t) * 4) + sizeof(LPVOID);
 
 		vmcs->channel->ipc.vmcs = (uint64_t)vmcs;
-		vmcs->channel->magic1 = VM_MAGIC1;
-		vmcs->channel->magic2 = VM_MAGIC2;
+		vmcs->channel->magic1 = magic1;
+		vmcs->channel->magic2 = magic2;
 
 		vmcs->channel->view.size = CHANNEL_BUFFER_SIZE;
 		vmcs->channel->view.buffer = (uint64_t)rvm64::memory::allocate_2GB_range(hprocess, (uintptr_t)hmodule, PAGE_READWRITE, CHANNEL_BUFFER_SIZE); 
 
 		if (!vmcs->channel->view.buffer) {
-			rvm64::ipc::vm_destroy_channel();
 			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
 		}
 	}
