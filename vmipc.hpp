@@ -70,6 +70,7 @@ namespace rvm64::ipc {
 		}
 
 		memcpy((uint8_t*)(vmcs->channel->view.buffer + offset), (uint8_t*)data, size);
+		vmcs->channel->view.write_size = (uint64_t)size;
 		vmcs->channel->ready = 1;
 
 		return true;

@@ -187,13 +187,13 @@ typedef struct {
 namespace rvm64::elf {
 	_native void patch_elf_plt() {
 		auto ehdr = (elf64_ehdr*)vmcs->process.address;
-		auto process = (uint8_t*)vmcs->process.address;
+		auto proc_base = (uint8_t*)vmcs->process.address;
 
 		if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
 
-		auto phdrs = (elf64_phdr*)((uint8_t*)(process) + ehdr->e_phoff);
+		auto phdrs = (elf64_phdr*)((uint8_t*)(proc_base) + ehdr->e_phoff);
 		uint64_t dyn_vaddr = 0;
 		uint64_t dyn_size = 0;
 
@@ -208,16 +208,15 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		auto* dyn_entries = (elf64_dyn*) (process + dyn_vaddr);
+		auto* dyn_entries = (elf64_dyn*) (proc_base + dyn_vaddr);
 		uint64_t symtab_vaddr = 0, strtab_vaddr = 0, rela_plt_vaddr = 0, rela_plt_size = 0;
 
-		// TODO: add support for .rela.dyn entries as well (R_RISCV_RELATIVE and others)
 		for (elf64_dyn *dyn = dyn_entries; dyn->d_tag != DT_NULL; ++dyn) {
 			switch (dyn->d_tag) {
-				case DT_SYMTAB:   symtab_vaddr = dyn->d_un.d_ptr; break;
-				case DT_STRTAB:   strtab_vaddr = dyn->d_un.d_ptr; break;
-				case DT_JMPREL:   rela_plt_vaddr = dyn->d_un.d_ptr; break;
-				case DT_PLTRELSZ: rela_plt_size = dyn->d_un.d_val; break;
+				case DT_SYMTAB:   symtab_vaddr 		= dyn->d_un.d_ptr; break;
+				case DT_STRTAB:   strtab_vaddr 		= dyn->d_un.d_ptr; break;
+				case DT_JMPREL:   rela_plt_vaddr 	= dyn->d_un.d_ptr; break;
+				case DT_PLTRELSZ: rela_plt_size 	= dyn->d_un.d_val; break;
 				case DT_PLTREL: {
 					if (dyn->d_un.d_val != DT_RELA) {
 						CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
@@ -232,17 +231,16 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		auto rela_entries 	= (elf64_rela*) (process + rela_plt_vaddr);
-		auto symtab 		= (elf64_sym*) (process + symtab_vaddr);
-		auto strtab 		= (const char*) (process + strtab_vaddr);
+		auto rela_entries 	= (elf64_rela*) (proc_base + rela_plt_vaddr);
+		auto symtab 		= (elf64_sym*) (proc_base + symtab_vaddr);
+		auto strtab 		= (const char*) (proc_base + strtab_vaddr);
 		size_t rela_count 	= rela_plt_size / sizeof(elf64_rela);
 
-		// NOTE: perform plt patching with windows native, either from ucrtbase or kernel32(memory)
 		for (size_t i = 0; i < rela_count; ++i) {
 			uint32_t sym_idx = ELF64_R_SYM(rela_entries[i].r_info);
 			uint32_t rel_type = ELF64_REL_TYPE(rela_entries[i].r_info);
 
-			auto reloc_addr = (uint64_t*) (process + rela_entries[i].r_offset);
+			auto reloc_addr = (uint64_t*) (proc_base + rela_entries[i].r_offset);
 			const char *sym_name = strtab + symtab[sym_idx].st_name;
 
 			if (rel_type != R_RISCV_JUMP_SLOT && rel_type != R_RISCV_CALL_PLT) {
@@ -257,10 +255,10 @@ namespace rvm64::elf {
 			*reloc_addr = (uint64_t)(win_func);
 		}
 
-		auto shdrs = (elf64_shdr*) (process + ehdr->e_shoff);
+		auto shdrs = (elf64_shdr*) (proc_base + ehdr->e_shoff);
 		if (ehdr->e_shstrndx != SHN_UNDEF) {
 			auto& strtab_hdr = shdrs[ehdr->e_shstrndx];
-			strtab = (const char*)(process + strtab_hdr.sh_offset);
+			strtab = (const char*)(proc_base + strtab_hdr.sh_offset);
 		}
 	}
 
