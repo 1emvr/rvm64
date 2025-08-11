@@ -12,13 +12,7 @@
 namespace superv {
 	int superv_main(const char* proc_name, const char* elf_name) {
 		std::wstring wproc = proc_name;
-		std::wstring sproc = "superv";
 
-		win_process *superv = rvm64::process::information::get_process_info(sproc);
-		if (!superv) {
-			printf("[ERR] Could not find process information for supervisor\n");
-			return 1;
-		}
 		win_process *proc = superv::process::information::get_process_info(wproc);
 		if (!proc) {
 			printf("[ERR] Could not find process information for target\n");
@@ -41,6 +35,9 @@ namespace superv {
 			printf("[ERR] Could not read the vm channel\n");
 			return 1;
 		}
+
+		// NOTE: channel is now populated with vm data
+		vmcs_t *vmcs = (vmcs_t*)channel->ipc.vmcs;
 		if (!superv::patch::install_entry_hook(proc)) {
 			printf("[ERR] Could not install entrypoint hook in the vm\n");
 			return 1;
