@@ -9,8 +9,8 @@
 namespace rvm64 {
 	_native int32_t vm_main() {
 		save_host_context();
-
 		rvm64::ipc::vm_create_channel();
+
 		while (true) {
 			Sleep(10);
 			if (vmcs->channel->ready) {
@@ -25,8 +25,8 @@ namespace rvm64 {
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 								  
 defer:
-		rvm64::ipc::vm_destroy_channel();
 		rvm64::entry::vm_exit();
+		rvm64::ipc::vm_destroy_channel();
 
 		restore_host_context();
 		return vmcs->csr.m_cause;
