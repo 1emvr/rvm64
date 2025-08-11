@@ -31,6 +31,7 @@ typedef struct _align64 {
 	uint64_t magic1;
 	uint64_t magic2;
 	uint64_t self; 
+	uint64_t vmcs;
 
 	struct {
 		uint64_t buffer;
@@ -39,15 +40,14 @@ typedef struct _align64 {
 	} view;
 
 	struct {
-		uint64_t vmcs;
-		uint32_t opcode;
-		uint16_t signal;
-		uint16_t _pad0;
+		uint64_t opcode;
+		uint64_t signal;
+		uint64_t _pad0;
 	} ipc;
 
-	uint32_t ready;
-	uint32_t error;
-	uint8_t  reserved[64];
+	uint64_t ready;
+	uint64_t error;
+	uint8_t _pad1[64];
 } vm_channel;
 
 typedef struct _vmcs {

@@ -23,19 +23,39 @@ namespace superv {
 		}
 
  		static constexpr char vm_magic[16] = "RMV64_II_BEACON";
-		auto chan_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
-
-		if (!chan_offset) {
+		auto ch_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
+		if (!ch_offset) {
 			printf("[ERR] Could not find the remote vm-channel\n");
 			return 1;
 		}
-		if (!rvm64::memory::read_process_memory(proc->handle, chan_offset, (uint8_t*)channel, sizeof(vm_channel))) {
+
+		// process vm channel offsets
+		if (!rvm64::memory::read_process_memory(proc->handle, ch_offset, (uint8_t*)channel, sizeof(vm_channel))) {
 			printf("[ERR] Could not read the remote vm-channel\n");
 			return 1;
 		}
 
-		// NOTE: channel is now populated with vm data
-		vmcs_t *vmcs = (vmcs_t*)channel->ipc.vmcs;
+		// NOTE: populate channel with vm addresses
+		auto head_size = sizeof(uint64_t) * 4;
+		auto view_size = sizeof(uint64_t) * 3;
+		auto ipc_size = sizeof(uint64_t) * 3;
+
+		auto ch_ptr 	= *(uint64_t*)ch_offset + (sizeof(uint64_t) * 2); 					// channel->self (real written VA)
+		channel->vmcs 	= *(uint64_t*)ch_offset + (sizeof(uint64_t) * 3);					// channel->vmcs (real written VA)
+																							
+		auto view_ptr 	= (uint64_t)ch_ptr + head_size;  									// &channel->view
+		auto ipc_ptr 	= (uint64_t)ch_ptr + head_size + view_size;  						// &channel->ipc
+																							
+		channel->view.buffer 		= (uint64_t)view_ptr; 									
+		channel->view.size 			= (uint64_t)(view_ptr + sizeof(uint64_t)); 							
+		channel->view.write_size 	= (uint64_t)(view_ptr + sizeof(uint64_t) * 2); 						
+											 
+		channel->ipc.opcode 	= (uint64_t)(ipc_ptr + sizeof(uint64_t));							
+		channel->ipc.signal 	= (uint64_t)(ipc_ptr + sizeof(uint64_t) * 2);						
+																			
+		channel->ready = (uint64_t)ch_ptr + head_size + view_size + ipc_size; 					
+		channel->error = (uint64_t)ch_ptr + head_size + view_size + ipc_size + sizeof(uint64_t) 
+
 		if (!superv::patch::install_entry_hook(proc, channel)) {
 			printf("[ERR] Could not install entrypoint hook in the vm\n");
 			return 1;
@@ -46,7 +66,7 @@ namespace superv {
 		}
 
 		// NOTE: writing to the channel will trigger the vm to start
-		if (!superv::loader::write_elf_file(channel, elf_name)) {
+		if (!superv::loader::write_elf_file(proc->handle, channel, elf_name)) {
 			printf("[ERR] Could not load the elf to the vm channel\n");
 			return 1;
 		}

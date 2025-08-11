@@ -29,7 +29,7 @@ typedef PVOID(NTAPI* RtlAllocateHeap_t)(HANDLE HeapHandle, ULONG Flags, SIZE_T S
 
 #define CHANNEL_BUFFER_SIZE 	0x10000
 #define VM_MAGIC1 				0x524d5636345f4949ULL  // "RMV64_II" 
-#define VM_MAGIC2 				0x5f424541434f4e5fULL  // "_BEACON_"
+#define VM_MAGIC2 				0x5f424541434f4e00ULL  // "_BEACON"
 #define VM_BEACON_VER    		1
 
 #define EXPONENT_MASK           0x7FF0000000000000ULL

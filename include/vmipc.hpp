@@ -28,6 +28,7 @@ namespace rvm64::ipc {
 		    CSR_SET_TRAP(nullptr, GetLastError(), 0, 0, 1);
 		}
 
+		// vm ipc channel starts by copying it's own pointers for the supervisor to use
 		vmcs->channel->self = (uint64_t)vmcs->channel;
 		vmcs->channel->ipc.vmcs = (uint64_t)vmcs;
 
