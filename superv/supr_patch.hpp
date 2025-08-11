@@ -2,8 +2,9 @@
 #define HYPRPATCH_HPP
 #include <windows.h>
 
-#include "hypr_proc.hpp"
 #include "../vmmain.hpp"
+#include "../vmmem.hpp"
+#include "../vmproc.hpp"
 
 
 namespace superv::patch {
@@ -28,7 +29,7 @@ namespace superv::patch {
 
 		memcpy(buffer, entry_hook, stub_size);
 
-		uintptr_t hook_addr = (uintptr_t)rvm64::process::memory::allocate_remote_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
+		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(entry_hook));
 		if (!hook_addr) {
 			printf("[ERR]: allocate_remote_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
@@ -43,7 +44,7 @@ namespace superv::patch {
 		int32_t original_rel = 0;
 		uintptr_t call_site = call_offset + 7;
 
-		if (!superv::process::memory::read_proc_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
+		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
 			printf("[ERR]: read_proc_memory failed to read memory in the remote process.\n");
 			return false;
 		}
@@ -62,13 +63,13 @@ namespace superv::patch {
 			memcpy(&buffer[0x13], &call_rel, sizeof(call_rel));
 		}
 
-		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, buffer, sizeof(entry_hook))) {
+		if (!rvm64::memory::memory::write_process_memory(proc->handle, hook_addr, buffer, sizeof(entry_hook))) {
 			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
 			return false;
 		}
 
 		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
-		if (!superv::process::memory::write_proc_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
+		if (!rvm64::memory::write_process_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
 			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
 			return false;
 		}
@@ -106,7 +107,7 @@ namespace superv::patch {
 
 		memcpy(buffer, decoder_hook, stub_size);
 
-		uintptr_t hook_addr = (uintptr_t)rvm64::process::memory::allocate_remote_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
+		uintptr_t hook_addr = (uintptr_t)rvm64::memory::allocate_2GB_range(proc->handle, PAGE_EXECUTE_READWRITE, proc->address + proc->size, sizeof(decoder_hook));
 		if (!hook_addr) {
 			printf("[ERR]: allocate_remote_2GB_range failed to find suitable memory in the remote process.\n");
 			return false;
@@ -121,7 +122,7 @@ namespace superv::patch {
 		int32_t original_rel = 0;
 		uintptr_t call_site = call_offset + 5;
 
-		if (!superv::process::memory::read_proc_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
+		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(original_rel))) {
 			printf("[ERR]: read_proc_memory failed to read memory in the remote process.\n");
 			return false;
 		}
@@ -146,13 +147,13 @@ namespace superv::patch {
 			memcpy(&buffer[0x28], &call_rel, sizeof(call_rel));
 		}
 
-		if (!superv::process::memory::write_proc_memory(proc->handle, hook_addr, buffer, sizeof(decoder_hook))) {
+		if (!rvm64::memory::write_proc_memory(proc->handle, hook_addr, buffer, sizeof(decoder_hook))) {
 			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
 			return false;
 		}
 
 		int32_t hook_offset = (int32_t)(hook_addr - (call_site + 5));
-		if (!superv::process::memory::write_proc_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
+		if (!rvm64::memory::write_process_memory(proc->handle, call_site + 1, (uint8_t*)&hook_offset, sizeof(hook_offset))) {
 			printf("[ERR]: write_proc_memory failed to write hook in the remote process.\n");
 			return false;
 		}

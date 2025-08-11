@@ -42,14 +42,13 @@ namespace rvm64::ipc {
 
 		vmcs->channel->view.size = CHANNEL_BUFFER_SIZE;
 		vmcs->channel->view.buffer = rvm64::memory::allocate_2GB_range(hprocess, PAGE_READWRITE, hmodule, VM_CHANNEL_BUFFER_SIZE); 
-
 		if (!vmcs->channel->view.buffer) {
 			destroy_channel();
 			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
 		}
 	}
 
-	shared_buffer* load_vm_channel(win_process* proc) {
+	shared_buffer* get_vm_channel(win_process* proc) {
  		static constexpr char vm_magic[16] = "RMV64_II_BEACON_";
 
 		auto map_offset = superv::scan::signature_scan(proc->handle, proc->base, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");

@@ -11,11 +11,6 @@ namespace rvm64::memory {
 		if (!vmcs->process.address) {
 		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
 	    }
-
-		vmcs->channel = (vm_channel*)rvm64::memory::allocate_local_2GB_range(GetCurrentProcess(), PAGE_EXECUTE_READWRITE, GetModuleHandle(0), sizeof(vm_channel));
-		if (!vmcs->channel) {
-		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
-		}
 	}
 
 	_native void memory_end() {

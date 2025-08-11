@@ -6,11 +6,10 @@
 #include "../vmmain.hpp"
 
 namespace superv::loader {
-	bool write_elf_file(mapped_view* shbuf, const char* filepath) {
+	bool write_elf_file(vm_channel* channel, const char* filepath) {
 		FILE* f = fopen(filepath, "rb");
 		if (!f) {
 			printf("[-] Failed to open file: %s\n", filepath);
-			destroy_mapped_view(&shbuf);
 			return false;
 		}
 
@@ -21,15 +20,14 @@ namespace superv::loader {
 		if (fsize > 0x100000) {
 			printf("[-] ELF too large\n");
 			fclose(f);
-			destroy_mapped_view(&shbuf);
 			return false;
 		}
 
-		fread((uint8_t*)(shbuf->view + sizeof(mapped_view)), 1, fsize, f);
+		fread((uint8_t*)channel->view.buffer, 1, fsize, f);
 		fclose(f);
 
-		shbuf->size = fsize;
-		shbuf->ipc.signal = 0;
+		// TODO:
+		channel->ipc.signal = 0;
 		shbuf->ready = 1;
 
 		printf("[+] ELF loaded into shared memory: %zu bytes\n", fsize);
