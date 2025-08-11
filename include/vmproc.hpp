@@ -11,12 +11,21 @@ namespace rvm64::process {
 		if (!base) {
 			return 0;
 		}
-		auto dos_head = (PIMAGE_DOS_HEADER)base;
+		constexpr size_t head_size = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS);
+		uint8_t* buffer = (uint8_t*)HeapAlloc(GetProcessHeap, 0, head_size);
+		size_t read = 0;
+
+		if (!ReadProcessMemory(hprocess, base, buffer, head_size, &read) || read != head_size) {
+			printf("[ERR] get_process_size: failed to read process memory: 0x%lx", GetLastError());
+			return 0;
+		}
+
+		auto dos_head = (PIMAGE_DOS_HEADER)buffer;
 		if (dos_head->e_magic != IMAGE_DOS_SIGNATURE) {
 			return 0;
 		}
 
-		auto nt_head = (PIMAGE_NT_HEADERS)((UINT8*)(base) + dos_head->e_lfanew);
+		auto nt_head = (PIMAGE_NT_HEADERS)((UINT8*)(buffer) + dos_head->e_lfanew);
 		if (nt_head->Signature != IMAGE_NT_SIGNATURE) {
 			return 0;
 		}
@@ -24,6 +33,7 @@ namespace rvm64::process {
 		auto section = IMAGE_FIRST_SECTION(nt_head);
 		for (WORD i = 0; i < nt_head->FileHeader.NumberOfSections; i++, section++) {
 			if (strncmp((const char*)section->Name, ".text", 5) == 0) {
+
 				uintptr_t txt_base = (uintptr_t)base + section->VirtualAddress;
 				return txt_base + section->Misc.VirtualSize;
 			}
@@ -129,6 +139,13 @@ defer:
 		if (!success) {
 			destroy_process_info(&proc);
 		}
+
+		printf(R"(
+	process name: %s
+	process id: %d
+	process base: 0x%llx
+	process handle: 0x%llx
+	process size: 0x%lx)", target_name, proc->pid, proc->address, proc->handle, proc->size);
 
 		return proc;
 	}
