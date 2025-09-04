@@ -42,9 +42,7 @@ namespace superv {
 			return 1;
 		}
 
-		printf("vm should be starting now..\n");
-		// superv::start(vmcs);
-		
+		// superv::start_reading();
 		return 0;
 	}
 }

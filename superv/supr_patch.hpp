@@ -105,12 +105,11 @@ defer:
 			goto defer;
 		}
 
-		printf("[INF] allocate new trampoline=0x%llx\n", trampoline);
 		FlushInstructionCache(hprocess, (LPCVOID)trampoline, n_prolg + sizeof(jmp_back));
 		*tramp_out = trampoline;
 
+		printf("[INF] allocate new trampoline=0x%llx\n", trampoline);
 		success = true;
-
 defer:
 		if (!success && trampoline) {
 			VirtualFreeEx(hprocess, (LPVOID)trampoline, 0, MEM_RELEASE);

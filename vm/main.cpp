@@ -11,12 +11,11 @@ namespace rvm64 {
 		save_host_context();
 		rvm64::ipc::vm_create_channel(magic1, magic2);
 
-		printf("waiting...\n");
 		while (*(volatile uint64_t*)&vmcs->channel.ready != 1ULL) {
 			Sleep(10);
 		}
 
-		printf("ready.\n");
+		*(volatile uint64_t*)&vmcs->channel.ready = 0ULL;
 		if (setjmp(vmcs->exit_handler)) {
 			goto defer;	
 		}

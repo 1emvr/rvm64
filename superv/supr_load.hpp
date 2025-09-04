@@ -269,7 +269,7 @@ namespace superv::loader {
 			return false;
 		}
 
-		printf("[INF] ELF loaded into shared memory\n");
+		printf("[INF] ELF loaded into shared memory. VM should be starting now...\n");
 		return true; 
 	}
 }
