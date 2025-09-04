@@ -48,7 +48,6 @@ namespace superv::loader {
 
 	bool remote_write_file(HANDLE hprocess, vm_channel* channel, const char* filepath) {
 		LARGE_INTEGER li = {};
-		INT32 signal = 1, ready = 1;
 
 		printf("[INF] Reading target ELF file.\n");
 		HANDLE hfile = CreateFileA(filepath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);                 
@@ -102,18 +101,23 @@ namespace superv::loader {
 			printf("[ERR] channel write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
+		printf("[INF] Writing file size to channel @ 0x%llx\n", channel->view.write_size);
 
+		INT32 signal = 1;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ipc.signal, (LPCVOID)&signal, sizeof(INT32), &write) || write != sizeof(INT32)) {
 			printf("[ERR] channel write error (ipc.signal).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
+		printf("[INF] Writing signal to channel @ 0x%llx\n", channel->ipc.signal);
 
+		INT32 ready = 1;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ready, (LPCVOID)&ready, sizeof(INT32), &write) || write != sizeof(INT32)) {
 			printf("[ERR] channel write error (ready).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
+		printf("[INF] Writing ready to channel @ 0x%llx\n", channel->ready);
 
-		printf("[+] ELF loaded into shared memory\n");
+		printf("[INF] ELF loaded into shared memory\n");
 		return true; 
 	}
 }
