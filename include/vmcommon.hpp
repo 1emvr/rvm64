@@ -20,6 +20,7 @@
 #define VM_NATIVE_STACK_ALLOC   0x210
 #define VSTACK_MAX_CAPACITY     (1024 * 2)
 #define RVM_TRAP_EXCEPTION		0xE0424242  // any 0xExxxxxxx value is safe
+#define VM_PROCESS_SIZE 		(1024 * 10) * 2
 
 #define CHANNEL_BUFFER_SIZE 	0x10000
 #define VM_MAGIC1 				0x524d5636345f4949ULL  // "RMV64_II" 

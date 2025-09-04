@@ -262,7 +262,7 @@ namespace rvm64::elf {
 		}
 	}
 
-	_native void load_elf_image(uintptr_t image_data, size_t image_size) {
+	_native void load_elf_image(uintptr_t image_data, size_t image_size) { // vmcs->channel.view.buffer, vmcs->channel.view.size
 		// TODO: switch this to write to channel view buffer
 		auto ehdr = (elf64_ehdr*)(image_data);
 
@@ -273,8 +273,9 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
 
-		// yo
 		elf64_phdr* phdrs = (elf64_phdr*)((uint8_t*)image_data + ehdr->e_phoff);
+
+		uint8_t *copy_buffer = nullptr;
 		uint64_t base = UINT64_MAX;
 		uint64_t limit = 0;
 
@@ -294,10 +295,16 @@ namespace rvm64::elf {
 				continue;
 			}
 
-			void *dest = (uint8_t*)vmcs->process.address + (phdrs[i].p_vaddr - base);
+			copy_buffer = (uint8_t*)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+			if (!copy_buffer) {
+				printf("[ERR] could not allocate a copy buffer for the ELF: GetLastError=0x%lx\n", GetLastError());
+				CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+			}
+
+			void *dest = (uint8_t*)copy_buffer + (phdrs[i].p_vaddr - base);
 			void *src = (uint8_t*)image_data + phdrs[i].p_offset;
 
-			// TODO: memcpy or memset breaking the loop (access violation)
 			__debugbreak();
 			x_memcpy(dest, src, phdrs[i].p_filesz);
 
@@ -306,8 +313,14 @@ namespace rvm64::elf {
 				x_memset((uint8_t*)dest + phdrs[i].p_filesz, 0, phdrs[i].p_memsz - phdrs[i].p_filesz);
 			}
 		}
-		vmcs->process.size = image_size;
-		vmcs->pc = (uintptr_t)vmcs->process.address + (ehdr->e_entry - base);
+
+		x_memcpy(vmcs->channel.view.buffer, copy_buffer, CHANNEL_BUFFER_SIZE);
+		vmcs->pc = (uintptr_t)vmcs->channel.view.buffer + (ehdr->e_entry - base);
+
+		// TODO: resize channel view buffer to fit VM_PROCESS_SIZE
+		if (copy_buffer) {
+			VirtualFree(copy_buffer, 0, MEM_RELEASE);
+		}
 	}
 };
 #endif // VMELF_H
