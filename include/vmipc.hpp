@@ -7,59 +7,99 @@
 namespace rvm64::ipc {
 	void vm_destroy_channel() {
 		if (vmcs->channel.view.buffer) {
-			VirtualFree((LPVOID)vmcs->channel.view.buffer, 0, MEM_FREE);
+			VirtualFree((LPVOID)vmcs->channel.view.buffer, 0, MEM_RELEASE);
 			vmcs->channel.view.buffer = 0;
+			vmcs->channel.view.write_size = 0;
 			vmcs->channel.view.size = 0;
+
+			vmcs->channel.ready = 0;
+			vmcs->channel.error = 0;
+
+			vmcs->channel.size_ptr = 0;
+			vmcs->channel.ready_ptr = 0;
+			vmcs->channel.error_ptr = 0;
+			vmcs->channel.write_size_ptr = 0;
+
+			vmcs->channel.magic1 = 0;
+			vmcs->channel.magic2 = 0;
+			vmcs->channel.self   = 0;
 		}
 	}
 
 	void vm_create_channel(uint64_t magic1, uint64_t magic2) {
-		HANDLE hprocess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
-		HMODULE hmodule = GetModuleHandle(0);
-
-		// vm ipc channel starts by copying it's own pointers for the supervisor to use
-		vmcs->channel.self = (uint64_t)&vmcs->channel;
-		vmcs->channel.magic1 = magic1;
-		vmcs->channel.magic2 = magic2;
-
-		vmcs->channel.view.size = CHANNEL_BUFFER_SIZE;
-		vmcs->channel.view.buffer = (uint64_t)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); 
+		vmcs->channel.view.size   = CHANNEL_BUFFER_SIZE;
+		vmcs->channel.view.buffer = (uint64_t)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		if (!vmcs->channel.view.buffer) {
 			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
+			return;
 		}
+
+		vmcs->channel.view.write_size = 0;
+		vmcs->channel.ready = 0;
+		vmcs->channel.error = 0;
+
+		vmcs->channel.self   = (uint64_t)&vmcs->channel;
+		vmcs->channel.magic1 = magic1;
+		vmcs->channel.magic2 = magic2;
+
+		vmcs->channel.ready_ptr      = (uint64_t)&vmcs->channel.ready;
+		vmcs->channel.error_ptr      = (uint64_t)&vmcs->channel.error;
+		vmcs->channel.size_ptr 		 = (uint64_t)&vmcs->channel.view.size;
+		vmcs->channel.write_size_ptr = (uint64_t)&vmcs->channel.view.write_size;
 	}
 
-	bool read_channel_buffer(uintptr_t data, uintptr_t offset, size_t size) {
-		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
+	bool get_channel_ready(HANDLE hprocess, vm_channel* channel) {
+		uint64_t v = 0;
+		if (!rvm64::memory::read_process_memory(hprocess, (uintptr_t)channel->ready_ptr, (uint8_t*)&v, sizeof(v))) {
+			printf("[ERR] read channel->ready failed.\n");
 			return false;
 		}
-		if (!vmcs->channel.view.buffer) {
-			CSR_SET_TRAP(vmcs->pc, load_access_fault, 0, 0, 1);
-		}
-		if (!vmcs->channel.ready) {
+		return v == 1ULL;
+	}
+
+	bool set_channel_ready(HANDLE hprocess, vm_channel* channel, uint64_t ready) {
+		size_t write = 0;
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)channel->ready_ptr, (uint8_t*)&ready, sizeof(ready), &write)) {
+			printf("[ERR] write channel->ready failed.\n");
 			return false;
 		}
-
-		memcpy((uint8_t*)data, (uint8_t*)(vmcs->channel.view.buffer + offset), size);
-		vmcs->channel.ready = 0;
-
 		return true;
 	}
 
-	bool write_channel_buffer(const uintptr_t data, uintptr_t offset, size_t size) {
-		if (!data || offset > CHANNEL_BUFFER_SIZE || size > CHANNEL_BUFFER_SIZE - offset) {
+	uint64_t get_channel_write_size(HANDLE hprocess, vm_channel* channel) {
+		uint64_t v = 0;
+		if (!rvm64::memory::read_process_memory(hprocess, (uintptr_t)channel->write_size_ptr, (uint8_t*)&v, sizeof(v))) {
+			printf("[ERR] read channel->view.write_size failed.\n");
+			return 0;
+		}
+		return v;
+	}
+
+	bool set_channel_write_size(HANDLE hprocess, vm_channel* channel, uint64_t nbytes) {
+		size_t write = 0;
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)channel->write_size_ptr, (uint8_t*)&nbytes, sizeof(nbytes), &write)) {
+			printf("[ERR] write channel->view.write_size failed.\n");
 			return false;
 		}
-		if (!vmcs->channel.view.buffer) {
-			CSR_SET_TRAP(vmcs->pc, store_amo_access_fault, 0, 0, 1);
+		return true;
+	}
+
+	uint64_t get_channel_error(HANDLE hprocess, vm_channel* channel) {
+		uint64_t v = 0;
+		if (!rvm64::memory::read_process_memory(hprocess, (uintptr_t)channel->error_ptr, (uint8_t*)&v, sizeof(v))) {
+			printf("[ERR] read channel->error failed.\n");
+			return UINT64_MAX; // or 0; but make it explicit
 		}
+		return v;
+	}
 
-		memcpy((uint8_t*)(vmcs->channel.view.buffer + offset), (uint8_t*)data, size);
-
-		vmcs->channel.view.write_size = (uint64_t)size;
-		vmcs->channel.ready = 1;
-
+	bool set_channel_error(HANDLE hprocess, vm_channel* channel, uint64_t code) {
+		size_t write = 0;
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)channel->error_ptr, (uint8_t*)&code, sizeof(code), &write)) {
+			printf("[ERR] write channel->error failed.\n");
+			return false;
+		}
 		return true;
 	}
 }

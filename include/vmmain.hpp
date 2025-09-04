@@ -27,19 +27,25 @@ typedef struct {
 } vm_csr;
 
 typedef struct {
-	uint64_t magic1;
-	uint64_t magic2;
-	uint64_t thread_id;
-	uint64_t self; 
+    uint64_t magic1, magic2;
+    uint64_t thread_id;
+    uint64_t self;
 
-	struct {
-		uint64_t buffer;
-		uint64_t size;
-		uint64_t write_size;
-	} view;
+    struct {
+        uint64_t buffer;
+        uint64_t size;
+        uint64_t write_size;   // values
+    } view;
 
-	uint64_t ready;
-	uint64_t error;
+    // control (values)
+    volatile uint64_t ready;   
+    volatile uint64_t error;   
+
+    // published addresses (shadow pointers -> where to WPM)
+	uint64_t size_ptr;
+    uint64_t ready_ptr;        // &ready
+    uint64_t error_ptr;        // &error
+    uint64_t write_size_ptr;   // &view.write_size
 } vm_channel;
 
 

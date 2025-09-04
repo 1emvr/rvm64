@@ -48,20 +48,18 @@ namespace rvm64::memory {
         return valid;
     }
 
-	bool write_process_memory(HANDLE hprocess, uintptr_t address, const uint8_t *new_bytes, size_t length) {
+	bool write_process_memory(HANDLE hprocess, uintptr_t address, const uint8_t *buffer, size_t length, size_t *write) {
 		DWORD oldprot = 0;
-		SIZE_T written = 0;
-
 		if (!VirtualProtectEx(hprocess, (LPVOID)address, length, PAGE_EXECUTE_READWRITE, &oldprot)) {
 			return false;
 		}
 
-		BOOL result = WriteProcessMemory(hprocess, (LPVOID)address, new_bytes, length, &written);
+		BOOL result = WriteProcessMemory(hprocess, (LPVOID)address, buffer, length, write);
 
 		VirtualProtectEx(hprocess, (LPVOID)address, length, oldprot, &oldprot);
 		FlushInstructionCache(hprocess, (LPCVOID)address, length);
 
-		return result && written == length;
+		return result && *write == length;
 	}
 
 	bool read_process_memory(HANDLE hprocess, uintptr_t address, uint8_t *read_bytes, size_t length) {

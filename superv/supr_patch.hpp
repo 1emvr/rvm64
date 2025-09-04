@@ -33,6 +33,7 @@ namespace superv::patch {
 		static uint8_t buffer[sizeof(spin_hook)];
 		uintptr_t ch_ready = 0;
 		bool success = false;
+		size_t write = 0;
 
 		*hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(spin_hook), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!*hook) {
@@ -51,7 +52,7 @@ namespace superv::patch {
 			x_memcpy(&buffer[SH_OFF_RESUME_IMM64], 		trampoline, 	sizeof(uintptr_t)); 
 		}
 
-		if (!rvm64::memory::write_process_memory(proc->handle, *hook, buffer, sizeof(spin_hook))) {
+		if (!rvm64::memory::write_process_memory(proc->handle, *hook, buffer, sizeof(spin_hook), &write)) {
 			printf("[ERR] install_spin_hook failed to write hook: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
@@ -73,6 +74,7 @@ defer:
 		uint8_t *buffer = nullptr;
 		uint64_t back_addr = 0;
 		uintptr_t trampoline = 0;
+		size_t write = 0;
 
 		if (n_prolg < 12) {
 			printf("[ERR] install_trampoline: function prologue must be at least 12 bytes\n"); 
@@ -101,7 +103,7 @@ defer:
 			goto defer;
 		}
 
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg + sizeof(jmp_back))) {
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg + sizeof(jmp_back), &write)) {
 			printf("[ERR] install_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
@@ -127,6 +129,7 @@ defer:
 		bool success = false;
 		uint8_t *buffer = nullptr;
 		DWORD old_prot = 0;	
+		size_t write = 0;
 
 		if (n_prolg < 12) {
 			printf("[ERR] patch_callee: function prologue must be at least 12 bytes\n"); 
@@ -142,8 +145,7 @@ defer:
 		memcpy(buffer, jmp_back, sizeof(jmp_back));
 		memcpy(buffer + 2, &hook, sizeof(uintptr_t));
 
-		// NOTE: write_process_memory handles page protections.
- 		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back))) {
+ 		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back), &write)) {
 			printf("[ERR] patch_callee could not write to process memory: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
@@ -152,7 +154,7 @@ defer:
 			uint32_t n_fill = n_prolg - sizeof(jmp_back);
 			memset(buffer, 0x90, n_fill);		
 
-			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_fill)) {
+			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_fill, &write)) {
 				printf("[ERR] patch_callee could not fill nops in the callee (prologue > 12): 0x%lx.", GetLastError());
 				goto defer;
 			}
