@@ -15,53 +15,50 @@ namespace superv::patch {
 		0xff, 0xe0 
 	};	
 
-	_rdata static const uint8_t spin_hook[] = {
-		0xcc,                                   						// +0x00: bp for testing
-		0x0f, 0xb6, 0x05, 0x00, 0x00, 0x00, 0x00,                		// +0x01: movzx eax, byte ptr [rip+disp32]
-		0x84, 0xc0,                              						// +0x08: test al, al
-		0x75, 0xf5,                              						// +0x0a: jne -0x0b
-		0xc6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,               		// +0x0c: mov byte ptr [rip+disp32], 0
-		0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		// +0x13: mov rax, imm64
-		0xff, 0xe0                               						// +0x1d: jmp rax
+	_rdata static const uint8_t spin_hook64[] = {
+		0xcc,
+		0x48, 0xb8,                      				// mov rax, imm64
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 ready_addr> @ +0x03
+		0x0f, 0xb6, 0x00,                				// movzx eax, byte ptr [rax]
+		0x84, 0xc0,                      				// test  al, al
+		0x74, 0xf9,                      				// je    -7  (spin while zero)
+		0xc6, 0x00, 0x00,                				// mov   byte ptr [rax], 0
+		0x48, 0xb8,                      				// mov rax, imm64
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 tramp_addr> @ +0x17
+		0xff, 0xe0                       				// jmp   rax
 	};
 
-	static constexpr size_t SH_OFF_SIGNAL_LOAD_DISP = 0x04; // next IP = hook+0x08
-	static constexpr size_t SH_OFF_SIGNAL_CLR_DISP  = 0x0e; // next IP = hook+0x13
-	static constexpr size_t SH_OFF_RESUME_IMM64     = 0x15; // imm64 at +0x15
+	static constexpr size_t SH_OFF_READY_IMM64 = 0x03; 
+	static constexpr size_t SH_OFF_TRAMP_IMM64 = 0x17; // next IP = hook+0x13
 
 	bool install_spin_hook(win_process* proc, vm_channel* channel, uintptr_t* hook, uintptr_t* trampoline) {
-		static uint8_t buffer[sizeof(spin_hook)];
+		static uint8_t buffer[sizeof(spin_hook64)];
 		uintptr_t ch_ready = 0;
 		bool success = false;
 		size_t write = 0;
 
-		*hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(spin_hook), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		x_memcpy(buffer, spin_hook64, sizeof(spin_hook64));
+		ch_ready = (uintptr_t)channel->self + offsetof(vm_channel, ready);
+		{
+			x_memcpy(&buffer[SH_OFF_READY_IMM64], &ch_ready, sizeof(uintptr_t));
+			x_memcpy(&buffer[SH_OFF_TRAMP_IMM64], trampoline, sizeof(uintptr_t)); 
+		}
+
+		*hook = (uintptr_t)VirtualAllocEx(proc->handle, nullptr, sizeof(spin_hook64), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!*hook) {
 			printf("[ERR] install_spin_hook failed to allocate in the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
-		x_memcpy(buffer, spin_hook, sizeof(spin_hook));
-		ch_ready = (uintptr_t)channel->self + offsetof(vm_channel, ready);
-		{
-			int32_t d32_sgn_load = (int32_t)(ch_ready - (*hook + 0x08)); 
-			int32_t d32_sgn_clear = (int32_t)(ch_ready - (*hook + 0x13)); 
-
-			x_memcpy(&buffer[SH_OFF_SIGNAL_LOAD_DISP], 	&d32_sgn_load, 	sizeof(int32_t));
-			x_memcpy(&buffer[SH_OFF_SIGNAL_CLR_DISP], 	&d32_sgn_clear, sizeof(int32_t));
-			x_memcpy(&buffer[SH_OFF_RESUME_IMM64], 		trampoline, 	sizeof(uintptr_t)); 
-		}
-
-		if (!rvm64::memory::write_process_memory(proc->handle, *hook, buffer, sizeof(spin_hook), &write)) {
+		if (!rvm64::memory::write_process_memory(proc->handle, *hook, buffer, sizeof(spin_hook64), &write)) {
 			printf("[ERR] install_spin_hook failed to write hook: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
-		printf("[INF] wrote hook to remote process: hook=0x%llx, trampoline=0x%llx\n", *hook, trampoline);
-		FlushInstructionCache(proc->handle, (LPCVOID)*hook, sizeof(spin_hook));
-
+		FlushInstructionCache(proc->handle, (LPCVOID)*hook, sizeof(spin_hook64));
 		success = true;
 
+		printf("[INF] wrote hook to remote process: hook=0x%p, trampoline=0x%p\n", (void*)*hook, (void*)*trampoline);
 defer:
 		if (!success && *hook) {
 			VirtualFreeEx(proc->handle, (LPVOID)*hook, 0, MEM_RELEASE);
@@ -171,8 +168,8 @@ defer:
 		return success;
 	}
 
-	_rdata static const char entry_mask[] = "xxxxxxxx????x????";
-	_rdata static const uint8_t entry_sig[] = {
+	_rdata static const char entry_mask64[] = "xxxxxxxx????x????";
+	_rdata static const uint8_t entry_sig64[] = {
 		0x0f, 0x95, 0xc0,   					// +0x00: setnz   al
 		0x84, 0xc0,                             // +0x03: test    al, al
 		0x75, 0x0c,                     		// +0x05: jnz     short loc_7FF7FBE03461
@@ -181,7 +178,7 @@ defer:
 	};
 
 	bool install_entry_hook(win_process *proc, vm_channel* channel) {
-		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
+		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig64, entry_mask64);
 		if (!sig_offset) { 
 			printf("[ERR] Signature_scan failed for entry.\n"); 
 			return false; 
@@ -221,8 +218,8 @@ defer:
 		return true;
 	}
 
-	_rdata static const char decoder_mask[] = "xxxxxxxx????";
-	_rdata static const uint8_t decoder_sig[] = { 
+	_rdata static const char decoder_mask64[] = "xxxxxxxx????";
+	_rdata static const uint8_t decoder_sig64[] = { 
 		0xff, 0xd0,						// +0x00: call    rax ; __imp_RaiseException
 		0x8b, 0x45, 0xfc,				// +0x02: mov     eax, dword ptr [rbp+var_4]
 		0x89, 0xc1,                    	// +0x05: mov     ecx, eax                        ; this
@@ -230,7 +227,7 @@ defer:
 	};
 
 	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
-		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
+		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig64, decoder_mask64);
 		if (!sig_offset) { 
 			printf("[ERR] signature_scan failed for decoder.\n"); 
 			return false; 
