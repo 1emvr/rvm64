@@ -9,12 +9,12 @@
 
 typedef LONG NTSTATUS;
 typedef NTSTATUS (NTAPI* NtQueryInformationThread_t)(
-  [in]            HANDLE          ThreadHandle,
-  [in]            THREADINFOCLASS ThreadInformationClass,
-  [in, out]       PVOID           ThreadInformation,
-  [in]            ULONG           ThreadInformationLength,
-  [out, optional] PULONG          ReturnLength
-);
+		[in]            HANDLE          ThreadHandle,
+		[in]            THREADINFOCLASS ThreadInformationClass,
+		[in, out]       PVOID           ThreadInformation,
+		[in]            ULONG           ThreadInformationLength,
+		[out, optional] PULONG          ReturnLength
+		);
 
 namespace superv::loader {
 	struct remote_channel {
