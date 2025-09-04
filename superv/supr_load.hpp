@@ -142,13 +142,13 @@ namespace superv::loader {
 
 							printf("\tmagic 1=0x%llx\n", channel->magic1);
 							printf("\tmagic 2=0x%llx\n", channel->magic2);
-							printf("\taddress self=0x%llx\n", channel->self); 		
-							printf("\taddress view buffer=0x%llx\n", channel->view.buffer); 
+							printf("\taddress self=0x%p\n", channel->self); 		
+							printf("\taddress view buffer=0x%p\n", channel->view.buffer); 
 
 							printf("\taddress view size=0x%llx\n", channel->view.size); 	
 							printf("\taddress view write size=0x%llx\n", channel.view.write_size); 
-							printf("\taddress 'ready'=0x%llx\n", channel->ready);
-							printf("\taddress 'error'=0x%llx\n\n", channel->error);
+							printf("\taddress 'ready'=0x%d\n", channel->ready);
+							printf("\taddress 'error'=0x%d\n\n", channel->error);
 
 							CloseHandle(thread);
 							CloseHandle(snapshot);
@@ -157,7 +157,7 @@ namespace superv::loader {
 						}
 					}
 				}
-				next = (uint8_t*)mbi.BaseAddress + (uint8_t*)mbi.RegionSize;
+				next = (uint8_t*)mbi.BaseAddress + mbi.RegionSize;
 			}
 			CloseHandle(thread);
 		} while(Thread32Next(snapshot, &entry));
