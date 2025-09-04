@@ -16,17 +16,18 @@ namespace superv::patch {
 	};	
 
 	_rdata static const uint8_t spin_hook64[] = {
-		0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  	// mov rax, imm64
-		0x0f, 0xb6, 0x00,                								// movzx eax, byte ptr [rax]
-		0x84, 0xc0,                      								// test  al, al
-		0x74, 0xf9,                      								// je    -7  (spin while zero)
-		0xc6, 0x00, 0x00,                								// mov   byte ptr [rax], 0
-		0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 	// mov rax, imm64
-		0xff, 0xe0                       								// jmp   rax
+		0x49, 0xba,                         			// +00: mov  r10, imm64
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // +02: <imm64 ready_addr>  (SH_OFF_READY_IMM64)
+		0x41, 0x80, 0x3a, 0x00,             			// +0a: cmp  byte ptr [r10], 0
+		0x74, 0xfb,                         			// +0e: je   -5   (spin while zero)
+		0x41, 0xc6, 0x02, 0x00,             			// +10: mov  byte ptr [r10], 0  (auto-rearm)
+		0x48, 0xb8,                         			// +14: mov  rax, imm64
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // +16: <imm64 tramp_addr>   (SH_OFF_TRAMP_IMM64)
+		0xff, 0xe0                          			// +1e: jmp  rax
 	};
 
-	static constexpr size_t SH_OFF_READY_IMM64 = 0x02; 
-	static constexpr size_t SH_OFF_TRAMP_IMM64 = 0x16; // next IP = hook+0x13
+	static constexpr size_t SH_OFF_READY_IMM64 = 0x02; // imm64 for &ready (or ready_ptr)
+	static constexpr size_t SH_OFF_TRAMP_IMM64 = 0x16; // imm64 for trampoline
 
 	bool install_spin_hook(win_process* proc, vm_channel* channel, uintptr_t* hook, uintptr_t* trampoline) {
 		static uint8_t buffer[sizeof(spin_hook64)];
