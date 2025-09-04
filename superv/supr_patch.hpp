@@ -118,9 +118,8 @@ defer:
 		return success;
 	}
 
+	// NOTE: prologues with relative addressing or short branches will need to be fixed up. (not supported)
 	bool patch_callee(HANDLE hprocess, uintptr_t callee, uintptr_t hook, size_t n_prolg) {
-		// NOTE: prologues with relative addressing or short branches will need to be fixed up. (not supported)
-		
 		bool success = false;
 		uint8_t *buffer = nullptr;
 		DWORD old_prot = 0;	
@@ -195,17 +194,20 @@ defer:
 		uintptr_t trampoline = 0;
 		size_t n_prolg = 12; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
 		
+		printf("[INF] Installing entrypoint trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
 			printf("[ERR] install_entry_hook failed to install trampoline: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		uintptr_t hook = 0;
+		printf("[INF] Installing entrypoint spin hook.\n");
 		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
 			printf("[ERR] install_entry_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
+		printf("[INF] Patching entrypoint call site.\n");
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
 			printf("[ERR] install_entry_hook failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
@@ -243,17 +245,20 @@ defer:
 		uintptr_t trampoline = 0;
 		size_t n_prolg = 12;
 
+		printf("[INF] Installing decoder trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
 			printf("[ERR] install_decoder_hook failed to install trampoline: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		uintptr_t hook = 0;
+		printf("[INF] Installing decoder spin hook.\n");
 		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
 			printf("[ERR] install_decoder_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
+		printf("[INF] Patching decoder call site.\n");
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
 			printf("[ERR] install_decoder_hook failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;

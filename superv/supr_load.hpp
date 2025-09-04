@@ -10,7 +10,6 @@
 namespace superv::loader {
 	vm_channel* get_channel(win_process* proc) {
  		static constexpr uint64_t vm_magic[2] = { (uint64_t)VM_MAGIC1, (uint64_t)VM_MAGIC2 }; 
-
 		printf("searching for vm magic: 0x%llx, 0x%llx\n", vm_magic[0], vm_magic[1]);
 
 		uintptr_t ch_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, (const uint8_t*)vm_magic, "xxxxxxxxxxxxxxxx");
@@ -115,9 +114,10 @@ namespace superv::loader {
 			printf("[ERR] channel write error (ready).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
-		printf("[INF] Writing ready to channel @ 0x%llx\n", channel->ready);
 
+		printf("[INF] Writing ready to channel @ 0x%llx\n", channel->ready);
 		printf("[INF] ELF loaded into shared memory\n");
+
 		return true; 
 	}
 }

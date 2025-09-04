@@ -65,7 +65,6 @@ int main(int argc, char** argv) {
 				elf_name = argv[i + 1];
 			}
 		}
-
 		if (!proc_name || !elf_name) {
 			superv::print_usage();
 			return 1;
