@@ -117,11 +117,11 @@ namespace superv::loader {
 
 						for (size_t i = 0; i + sizeof(vm_channel) <= read; i += sizeof(uintptr_t)) {
 							const vm_channel *scanner = (const vm_channel*)(buffer + i);
+							uintptr_t remote = (uintptr_t)region_base + i;
+
 							if (scanner->magic1 != vm_magic1 || scanner->magic2 != vm_magic2) {
 								continue;
 							}
-
-							uintptr_t remote = (uintptr_t)region_base + i;
 
 							read = 0;
 							if (!ReadProcessMemory(proc->handle, (LPCVOID)remote, &ch_buffer, sizeof(ch_buffer), &read) || read != sizeof(ch_buffer)) {

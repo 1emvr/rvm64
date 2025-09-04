@@ -2,7 +2,6 @@
 #define HYPRSCAN_HPP
 #include <windows.h>
 
-
 namespace superv::scanner {
 	bool data_compare(const uint8_t* data, const uint8_t* pattern, const char* mask) {
 		for (; *mask; ++mask, ++data, ++pattern) {
@@ -11,6 +10,7 @@ namespace superv::scanner {
 		}
 		return true;
 	}
+
 	uintptr_t signature_scan(HANDLE hprocess, uintptr_t base, size_t size, const uint8_t* pattern, const char* mask) {
 		uint8_t *buffer = (uint8_t*)HeapAlloc(GetProcessHeap(), 0, size);
 
