@@ -122,14 +122,13 @@ namespace superv::loader {
 							}
 
 							uintptr_t remote = (uintptr_t)region_base + i;
-							read = 0;
 
+							read = 0;
 							if (!ReadProcessMemory(proc->handle, (LPCVOID)remote, &ch_buffer, sizeof(ch_buffer), &read) || read != sizeof(ch_buffer)) {
 								continue;
 							}
 
 							size_t check_size = (size_t)CHANNEL_BUFFER_SIZE;
-
 							if (ch_buffer.self != remote) 			continue;
 							if (ch_buffer.view.size != check_size) 	continue;
 							if (ch_buffer.view.buffer == 0)  		continue;
