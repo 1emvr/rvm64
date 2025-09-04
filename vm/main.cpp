@@ -20,7 +20,6 @@ namespace rvm64 {
 			goto defer;	
 		}
 
-		__debugbreak(); // TODO: follow this and find what's wrong.....
 		rvm64::entry::vm_init(); 
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 								  

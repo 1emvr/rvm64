@@ -165,13 +165,14 @@ defer:
 		return success;
 	}
 
-	_rdata static const char entry_mask64[] = "xxxxxxxx????x????";
+	_rdata static const char entry_mask64[] = "xxxxxxxxxx????x????";
 	_rdata static const uint8_t entry_sig64[] = {
-		0x0f, 0x95, 0xc0,   					// +0x00: setnz   al
-		0x84, 0xc0,                             // +0x03: test    al, al
-		0x75, 0x0c,                     		// +0x05: jnz     short loc_7FF7FBE03461
-		0xe8, 0x01, 0xfd, 0xff, 0xff,     		// +0x07: call    _ZN5rvm645entry7vm_initEv       ; rvm64::entry::vm_init(void)
-		0xe8, 0x26, 0xfe, 0xff, 0xff, 			// +0x0c: call    _ZN5rvm645entry8vm_entryEv      ; rvm64::entry::vm_entry(void)
+		0x85, 0xc0,                     // test    eax, eax
+		0x0f, 0x95, 0xc0,               // setnz   al
+		0x84, 0xc0,                     // test    al, al
+		0x75, 0x0c,                     // jnz     short loc_7FF7B36E30CA
+		0xe8, 0x42, 0xfd, 0xff, 0xff,   // call    _ZN5rvm645entry7vm_initEv       
+		0xe8, 0x39, 0xfe, 0xff, 0xff, 	// call    _ZN5rvm645entry8vm_entryEv
 	};
 
 	bool install_entry_hook(win_process *proc, vm_channel* channel) {
@@ -181,7 +182,7 @@ defer:
 			return false; 
 		}
 
-		uintptr_t call_site = sig_offset + 0x0c;
+		uintptr_t call_site = sig_offset + 0x0e;
 		int32_t original_rel = 0;
 
 		if (!rvm64::memory::read_process_memory(proc->handle, call_site + 1, (uint8_t*)&original_rel, sizeof(int32_t))) {
@@ -191,7 +192,7 @@ defer:
 
 		uintptr_t callee = call_site + 5 + original_rel;
 		uintptr_t trampoline = 0;
-		size_t n_prolg = 12; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
+		size_t n_prolg = 18; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
 		
 		printf("[INF] installing entrypoint trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
