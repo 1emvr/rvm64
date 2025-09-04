@@ -31,6 +31,7 @@ namespace superv::loader {
 			return nullptr;
 		}
 
+		channel->self 				= (uint64_t)ch_offset + offsetof(vm_channel, self);
 		channel->view.buffer 		= (uint64_t)ch_offset + offsetof(vm_channel, view.buffer); 									
 		channel->view.size 			= (uint64_t)ch_offset + offsetof(vm_channel, view.size); 							
 		channel->view.write_size 	= (uint64_t)ch_offset + offsetof(vm_channel, view.write_size); 						
@@ -41,14 +42,14 @@ namespace superv::loader {
 		channel->ready = (uint64_t)ch_offset + offsetof(vm_channel, ready); 					
 		channel->error = (uint64_t)ch_offset + offsetof(vm_channel, error); 					
 
-		printf("[INF] Channel success!\n");
+		printf("[INF] discovered channel at 0x%llx\n", channel->self);
 		return channel;
 	}
 
 	bool remote_write_file(HANDLE hprocess, vm_channel* channel, const char* filepath) {
 		LARGE_INTEGER li = {};
 
-		printf("[INF] Reading target ELF file.\n");
+		printf("[INF] writing target ELF file.\n");
 		HANDLE hfile = CreateFileA(filepath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);                 
 		if (hfile == INVALID_HANDLE_VALUE) {
 			return false;
@@ -69,7 +70,6 @@ namespace superv::loader {
 		SIZE_T total = li.QuadPart, sent = 0; // tracking how much is written
 		BYTE buffer[64 * 1024];
 
-		printf("[INF] Writing ELF file to channel.\n");
 		while (sent < total) {
 			DWORD to_read = (DWORD)MIN(sizeof(buffer), total - sent);	
 			DWORD read = 0;
@@ -95,19 +95,20 @@ namespace superv::loader {
 			sent += read;
 		}
 
+		printf("[INF] wrote %d bytes to channel buffer at 0x%llx\n", sent, channel->view.buffer);
+
  		SIZE_T write = 0;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->view.write_size, (LPCVOID)&total, sizeof(SIZE_T), &write) || write != sizeof(SIZE_T)) {
 			printf("[ERR] channel write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
-		printf("[INF] Writing file size to channel @ 0x%llx\n", channel->view.write_size);
+		printf("[INF] writing ELF information to channel\n");
 
 		INT32 signal = 1;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ipc.signal, (LPCVOID)&signal, sizeof(INT32), &write) || write != sizeof(INT32)) {
 			printf("[ERR] channel write error (ipc.signal).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
-		printf("[INF] Writing signal to channel @ 0x%llx\n", channel->ipc.signal);
 
 		INT32 ready = 1;
 		if (!WriteProcessMemory(hprocess, (LPVOID)channel->ready, (LPCVOID)&ready, sizeof(INT32), &write) || write != sizeof(INT32)) {
@@ -115,9 +116,7 @@ namespace superv::loader {
 			return false;
 		}
 
-		printf("[INF] Writing ready to channel @ 0x%llx\n", channel->ready);
 		printf("[INF] ELF loaded into shared memory\n");
-
 		return true; 
 	}
 }

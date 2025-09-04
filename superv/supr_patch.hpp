@@ -56,7 +56,9 @@ namespace superv::patch {
 			goto defer;
 		}
 
+		printf("[INF] wrote hook to remote process: hook=0x%llx, trampoline=0x%llx\n", *hook, trampoline);
 		FlushInstructionCache(proc->handle, (LPCVOID)*hook, sizeof(spin_hook));
+
 		success = true;
 
 defer:
@@ -104,8 +106,10 @@ defer:
 			goto defer;
 		}
 
+		printf("[INF] allocate new trampoline=0x%llx\n", trampoline);
 		FlushInstructionCache(hprocess, (LPCVOID)trampoline, n_prolg + sizeof(jmp_back));
 		*tramp_out = trampoline;
+
 		success = true;
 
 defer:
@@ -154,6 +158,7 @@ defer:
 			}
 		}
 
+		printf("[INF] patching call site=0x%llx\n", callee + sizeof(jmp_back));
 		FlushInstructionCache(hprocess, (LPCVOID)callee, n_prolg);
 		success = true;
 
@@ -174,7 +179,7 @@ defer:
 	};
 
 	bool install_entry_hook(win_process *proc, vm_channel* channel) {
-		printf("[INF] Installing entrypoint hook.\n");
+		printf("[INF] installing entrypoint hook.\n");
 
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, entry_sig, entry_mask);
 		if (!sig_offset) { 
@@ -194,20 +199,20 @@ defer:
 		uintptr_t trampoline = 0;
 		size_t n_prolg = 12; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
 		
-		printf("[INF] Installing entrypoint trampoline.\n");
+		printf("[INF] installing entrypoint trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
 			printf("[ERR] install_entry_hook failed to install trampoline: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		uintptr_t hook = 0;
-		printf("[INF] Installing entrypoint spin hook.\n");
+		printf("[INF] installing entrypoint spin hook.\n");
 		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
 			printf("[ERR] install_entry_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
-		printf("[INF] Patching entrypoint call site.\n");
+		printf("[INF] patching entrypoint call site.\n");
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
 			printf("[ERR] install_entry_hook failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
@@ -225,11 +230,11 @@ defer:
 	};
 
 	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
-		printf("[INF] Installing decoder hook.\n");
+		printf("[INF] installing decoder hook.\n");
 
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig, decoder_mask);
 		if (!sig_offset) { 
-			printf("[ERR] Signature_scan failed for decoder.\n"); 
+			printf("[ERR] signature_scan failed for decoder.\n"); 
 			return false; 
 		}
 
@@ -245,20 +250,20 @@ defer:
 		uintptr_t trampoline = 0;
 		size_t n_prolg = 12;
 
-		printf("[INF] Installing decoder trampoline.\n");
+		printf("[INF] installing decoder trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
 			printf("[ERR] install_decoder_hook failed to install trampoline: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
 		uintptr_t hook = 0;
-		printf("[INF] Installing decoder spin hook.\n");
+		printf("[INF] installing decoder spin hook.\n");
 		if (!install_spin_hook(proc, channel, &hook, &trampoline)) {
 			printf("[ERR] install_decoder_hook failed to write a hook: 0x%lx.\n", GetLastError()); 
 			return false;
 		}
 
-		printf("[INF] Patching decoder call site.\n");
+		printf("[INF] patching decoder call site.\n");
 		if (!patch_callee(proc->handle, callee, hook, n_prolg)) {
 			printf("[ERR] install_decoder_hook failed to patch prologue: 0x%lx.\n", GetLastError()); 
 			return false;
