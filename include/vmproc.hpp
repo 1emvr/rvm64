@@ -2,7 +2,6 @@
 #define HYPRPROC_HPP
 #include <windows.h>
 #include <tlhelp32.h>
-#include <string>
 
 #include "../include/vmlib.hpp"
 

@@ -36,5 +36,6 @@ namespace superv::scanner {
 
 		HeapFree(GetProcessHeap(), 0, buffer);
 		return offset;
+	}
 }
 #endif // HYPRSCAN_HPP

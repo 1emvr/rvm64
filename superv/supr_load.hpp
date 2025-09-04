@@ -2,7 +2,7 @@
 #define HYPRLOAD_HPP
 #include <windows.h>
 #include <tlhelp32.h>
-#include <winternl.h> // TODO: get rid of this because it's using <string>/<vector>
+#include <winternl.h> 
 
 #include "supr_scan.hpp"
 #include "../include/vmmain.hpp"
