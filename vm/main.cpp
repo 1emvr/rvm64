@@ -9,17 +9,18 @@
 namespace rvm64 {
 	_native int32_t vm_main(uint64_t magic1, uint64_t magic2) {
 		save_host_context();
-		rvm64::ipc::vm_create_channel(magic1, magic2);
 
+		rvm64::ipc::vm_create_channel(magic1, magic2);
 		printf("waiting...\n");
+
 		while (true) {
 			Sleep(10);
 			if (vmcs->channel->ready) {
 				break;
 			}
 		}
-		printf("ready.\n");
 
+		printf("ready.\n");
 		if (setjmp(vmcs->exit_handler)) {
 			goto defer;	
 		}
@@ -38,8 +39,8 @@ defer:
 };
 
 int main() {
-	vmcs_t vm_instance = { };
-	vmcs = &vm_instance;
+	vmcs_t instance = { };
+	vmcs = &instance;
 
 	// TODO: incoming packets/supervisor will assign random magics
     return rvm64::vm_main(VM_MAGIC1, VM_MAGIC2);

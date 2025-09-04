@@ -29,14 +29,12 @@ namespace rvm64::ipc {
 		}
 
 		// vm ipc channel starts by copying it's own pointers for the supervisor to use
-		vmcs->channel->self = (uint64_t)vmcs->channel;
-		vmcs->channel->vmcs = (uint64_t)vmcs;
+		vmcs->channel.self = (uint64_t)vmcs->channel;
+		vmcs->channel.magic1 = magic1;
+		vmcs->channel.magic2 = magic2;
 
-		vmcs->channel->magic1 = magic1;
-		vmcs->channel->magic2 = magic2;
-
-		vmcs->channel->view.size = CHANNEL_BUFFER_SIZE;
-		vmcs->channel->view.buffer = (uint64_t)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); 
+		vmcs->channel.view.size = CHANNEL_BUFFER_SIZE;
+		vmcs->channel.view.buffer = (uint64_t)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); 
 
 		if (!vmcs->channel->view.buffer) {
 			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);

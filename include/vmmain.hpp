@@ -7,16 +7,17 @@
 #include "vmcommon.hpp"
 
 typedef struct {
-	uint8_t *address;
-	size_t size;
-} vm_process;
-
-typedef struct {
 	HANDLE handle;
 	DWORD pid;
 	UINT_PTR address;
 	SIZE_T size;
 } win_process;
+
+
+typedef struct {
+	uint8_t *address;
+	size_t size;
+} vm_process;
 
 typedef struct {
 	uintptr_t m_epc;
@@ -25,13 +26,10 @@ typedef struct {
 	uintptr_t m_tval;
 } vm_csr;
 
-// NOTE: vm populates vm_channel then forgets about it. 
-// only controlled by superv/implant/injected stubs.
-typedef struct _align64 {
-	uint64_t magic1;
-	uint64_t magic2;
+typedef struct {
+	uint64_t magic1 = VM_MAGIC1;
+	uint64_t magic2 = VM_MAGIC2;
 	uint64_t self; 
-	uint64_t vmcs;
 
 	struct {
 		uint64_t buffer;
@@ -39,32 +37,28 @@ typedef struct _align64 {
 		uint64_t write_size;
 	} view;
 
-	struct {
-		uint64_t opcode;
-		uint64_t signal;
-		uint64_t _pad0;
-	} ipc;
-
 	uint64_t ready;
 	uint64_t error;
-	uint8_t _pad1[64];
 } vm_channel;
 
+
+// NOTE: channel embeded and on the stack
 typedef struct _vmcs {
-	uintptr_t pc;
-	uintptr_t vscratch[8];
-	uintptr_t vregs[32];
-	uintptr_t vstack[VSTACK_MAX_CAPACITY];
+	vm_channel channel;
 
-	vm_channel* channel;
-	uintptr_t load_rsv_addr;
-	uintptr_t load_rsv_valid;
-
-	jmp_buf trap_handler;
-	jmp_buf exit_handler;
+	uint64_t pc;
+	uint64_t vscratch[8];
+	uint64_t vregs[32];
+	uint64_t vstack[32];
 
 	vm_process process;
 	vm_csr csr;
+
+	uint64_t load_rsv_addr;
+	uint64_t load_rsv_valid;
+
+	jmp_buf trap_handler;
+	jmp_buf exit_handler;
 
 	int cache;
 	int trap;
