@@ -17,28 +17,28 @@ namespace superv {
 	int superv_main(const char* proc_name, const char* elf_name) {
 		win_process *proc = rvm64::process::get_process_info(proc_name);
 		if (!proc) {
-			printf("[ERR] Could not find process information for target\n");
+			printf("[ERR] could not find process information for target\n");
 			return 1;
 		}
 
 		vm_channel* channel = superv::loader::get_channel(proc);
 		if (!channel) {
-			printf("[ERR] Could not load vm channel\n");
+			printf("[ERR] could not load vm channel\n");
 			return 1;
 		}
 
 		if (!superv::patch::install_entry_hook(proc, channel)) {
-			printf("[ERR] Could not install entrypoint hook in the vm\n");
+			printf("[ERR] could not install entrypoint hook in the vm\n");
 			return 1;
 		}
 
 		if (!superv::patch::install_decoder_hook(proc, channel)) {
-			printf("[ERR] Could not install decoder hook in the vm\n");
+			printf("[ERR] could not install decoder hook in the vm\n");
 			return 1;
 		}
 
 		if (!superv::loader::remote_write_file(proc->handle, channel, elf_name)) {
-			printf("[ERR] Could not load elf to the vm channel\n");
+			printf("[ERR] could not load elf to the vm channel\n");
 			return 1;
 		}
 

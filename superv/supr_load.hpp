@@ -47,14 +47,16 @@ namespace superv::loader {
 
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 		if (snapshot == INVALID_HANDLE_VALUE) {
-			printf("[ERR] could not get handle to remote process threads");
+			printf("[ERR] could not get handle to remote process threads: GetLastError=0x%lx\n", GetLastError());
 			return nullptr;
 		}
 
 		THREADENTRY32 entry = { };
 		entry.dwSize = sizeof(entry);
 
+		printf("Thread32First\n");
 		if (!Thread32First(snapshot, &entry)) {
+			printf("[ERR] could not get list to remote process threads: GetLastError=0x%lx\n", GetLastError());
 			CloseHandle(snapshot);
 			return nullptr;
 		}
@@ -67,6 +69,7 @@ namespace superv::loader {
 				continue;
 			}
 
+			printf("[INF] found entry with PID %d. Opening thread and searching for magic...\n", proc->pid);
 			HANDLE thread = OpenThread(THREAD_QUERY_INFORMATION, FALSE, entry.th32ThreadID);
 			if (!thread) {
 				continue;
@@ -90,7 +93,9 @@ namespace superv::loader {
 
 			for (uint8_t* next = stacklo; next < stackhi; ) {
 				MEMORY_BASIC_INFORMATION mbi = { };
+
 				if (!VirtualQueryEx(proc->handle, next, &mbi, sizeof(mbi))) {
+					printf("[ERR] unable to query basic memory information: GetLastError=0x%lx\n", GetLastError());
 					break;
 				}
 
@@ -112,6 +117,7 @@ namespace superv::loader {
 					}
 
 					read = 0;
+					// TODO: not finding the magic anymore...
 					if (ReadProcessMemory(proc->handle, region_base, buffer, region_size, &read) && read >= sizeof(vm_channel)) {
 						vm_channel ch_buffer = { };
 
@@ -123,6 +129,7 @@ namespace superv::loader {
 								continue;
 							}
 
+							printf("vm magic found. reading channel\n");
 							read = 0;
 							if (!ReadProcessMemory(proc->handle, (LPCVOID)remote, &ch_buffer, sizeof(ch_buffer), &read) || read != sizeof(ch_buffer)) {
 								continue;

@@ -132,7 +132,6 @@ namespace rvm64::rvni {
 				break;
 			}
 		}
-
 		return native;
 	}
 
