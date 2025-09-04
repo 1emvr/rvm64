@@ -15,7 +15,7 @@ namespace rvm64 {
 
 		while (true) {
 			Sleep(10);
-			if (vmcs->channel->ready) {
+			if (vmcs->channel.ready) {
 				break;
 			}
 		}

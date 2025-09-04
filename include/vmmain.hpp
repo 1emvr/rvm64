@@ -27,8 +27,9 @@ typedef struct {
 } vm_csr;
 
 typedef struct {
-	uint64_t magic1 = VM_MAGIC1;
-	uint64_t magic2 = VM_MAGIC2;
+	uint64_t magic1;
+	uint64_t magic2;
+	uint64_t thread_id;
 	uint64_t self; 
 
 	struct {

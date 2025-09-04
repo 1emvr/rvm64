@@ -1,36 +1,40 @@
 #ifndef HYPRLOAD_HPP
 #define HYPRLOAD_HPP
 #include <windows.h>
+#include <tlhelp32.h>
+#include <winternl.h> // TODO: get rid of this because it's using <string>/<vector>
 
 #include "supr_scan.hpp"
-
 #include "../include/vmmain.hpp"
 #include "../include/vmmem.hpp"
 
+
+typedef struct _THREAD_BASIC_INFORMATION {
+	NTSTATUS ExitStatus;        // The exit status of the thread or STATUS_PENDING when the thread has not terminated. (GetExitCodeThread)
+	PTEB TebBaseAddress;        // The base address of the memory region containing the TEB structure. (NtCurrentTeb)
+	CLIENT_ID ClientId;         // The process and thread identifier of the thread.
+	KAFFINITY AffinityMask;     // The affinity mask of the thread. (deprecated) (SetThreadAffinityMask)
+	KPRIORITY Priority;         // The current priority of the thread. (GetThreadPriority)
+	KPRIORITY BasePriority;     // The current base priority of the thread determined by the thread priority and process priority class.
+} THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
+
 typedef LONG NTSTATUS;
-typedef NTSTATUS (NTAPI* NtQueryInformationThread_t)(
-		[in]            HANDLE          ThreadHandle,
-		[in]            THREADINFOCLASS ThreadInformationClass,
-		[in, out]       PVOID           ThreadInformation,
-		[in]            ULONG           ThreadInformationLength,
-		[out, optional] PULONG          ReturnLength
+typedef NTSTATUS (NTAPI *NtQueryInformationThread_t)(
+		_In_ HANDLE ThreadHandle,
+		_In_ THREADINFOCLASS ThreadInformationClass,
+		_Out_writes_bytes_(ThreadInformationLength) PVOID ThreadInformation,
+		_In_ ULONG ThreadInformationLength,
+		_Out_opt_ PULONG ReturnLength
 		);
 
 namespace superv::loader {
-	struct remote_channel {
-		vm_channel channel;     
-		uintptr_t  remote_addr; 
-		DWORD      thread_id;   
-	};
-
 	static inline bool is_rw(DWORD prot) {
 		const DWORD p = prot & ~(PAGE_GUARD | PAGE_NOCACHE | PAGE_WRITECOMBINE);
 		return p == PAGE_READWRITE || p == PAGE_WRITECOPY;
 	}
 
-	// TODO: needs refactoring.
-	remote_channel* get_channel(win_process* proc) {
-		remote_channel *channel = nullptr;
+	vm_channel* get_channel(win_process* proc) {
+		vm_channel *channel = nullptr;
 
 		auto NtQueryInformationThread = (NtQueryInformationThread_t)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryInformationThread");
 		if (!NtQueryInformationThread) {
@@ -59,7 +63,7 @@ namespace superv::loader {
 			NT_TIB tib = { };
 			SIZE_T read = 0;
 
-			if (entry.th32OwnerProcessId != proc->pid) {
+			if (entry.th32OwnerProcessID != proc->pid) {
 				continue;
 			}
 
@@ -69,7 +73,7 @@ namespace superv::loader {
 			}
 
 			ULONG retlen = 0;
-			NTSTATUS status = NtQueryInformationThread(thread, 0, &tbi, sizeof(tbi), &retlen);
+			NTSTATUS status = NtQueryInformationThread(thread, ThreadBasicInformation, &tbi, sizeof(tbi), &retlen);
 			if (status < 0 || !tbi.TebBaseAddress) {
 				CloseHandle(thread);
 				continue;
@@ -101,17 +105,18 @@ namespace superv::loader {
 					is_rw(mbi.Protect);
 
 				if (scan) {
-					read = 0;
-					std::vector<uint8_t> buffer(region_size);
-
-					if (!region_base) {
-						continue;
+					uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, region_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+					if (!buffer) {
+						printf("[ERR] fatal. could not allocate buffer: GetLastError=0x%lx\n", GetLastError());
+						return nullptr;
 					}
-					if (ReadProcessMemory(proc->handle, region_base, buffer.data(), buffer.size(), &read) && read >= sizeof(vm_channel)) {
+
+					read = 0;
+					if (ReadProcessMemory(proc->handle, region_base, buffer, region_size, &read) && read >= sizeof(vm_channel)) {
 						vm_channel ch_buffer = { };
 
 						for (size_t i = 0; i + sizeof(vm_channel) <= read; i += sizeof(uintptr_t)) {
-							const vm_channel *scanner = (const vm_channel*)(buffer.data() + i);
+							const vm_channel *scanner = (const vm_channel*)(buffer + i);
 							if (scanner->magic1 != vm_magic1 || scanner->magic2 != vm_magic2) {
 								continue;
 							}
@@ -130,14 +135,14 @@ namespace superv::loader {
 							if (ch_buffer.view.buffer == 0)  		continue;
 							if (ch_buffer.ready == 0) 				continue; // vm channel creation must signal "ready"
 								
-							channel = VirtualAlloc(nullptr, sizeof(remote_channel), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+							channel = (vm_channel*)VirtualAlloc(nullptr, sizeof(vm_channel), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 							if (!channel) {
 								printf("[ERR] could not allocate local channel buffer: GetLastError=0x%lx\n", GetLastError());
+								VirtualFree(buffer, 0, MEM_RELEASE);
 								return nullptr;
 							}
 
-							memcpy(&channel->channel, &ch_buffer, sizeof(ch_buffer));
-							memcpy(&channel->remote_addr, &remote, sizeof(remote));
+							memcpy(channel, &ch_buffer, sizeof(ch_buffer));
 							memcpy(&channel->thread_id, &entry.th32ThreadID, sizeof(DWORD));
 
 							printf("\tmagic 1=0x%llx\n", channel->magic1);
@@ -146,12 +151,13 @@ namespace superv::loader {
 							printf("\taddress view buffer=0x%p\n", channel->view.buffer); 
 
 							printf("\taddress view size=0x%llx\n", channel->view.size); 	
-							printf("\taddress view write size=0x%llx\n", channel.view.write_size); 
+							printf("\taddress view write size=0x%llx\n", channel->view.write_size); 
 							printf("\taddress 'ready'=0x%d\n", channel->ready);
 							printf("\taddress 'error'=0x%d\n\n", channel->error);
 
 							CloseHandle(thread);
 							CloseHandle(snapshot);
+							VirtualFree(buffer, 0, MEM_RELEASE);
 
 							return channel;
 						}

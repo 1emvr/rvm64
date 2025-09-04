@@ -2,56 +2,39 @@
 #define HYPRSCAN_HPP
 #include <windows.h>
 
+
 namespace superv::scanner {
-	uintptr_t find_vm_channel(HANDLE hprocess) {
-		SYSTEM_INFO si; 
-		uint8_t magic[16];
+	bool data_compare(const uint8_t* data, const uint8_t* pattern, const char* mask) {
+		for (; *mask; ++mask, ++data, ++pattern) {
+			if (*mask == 'x' && *data != *pattern)
+				return false;
+		}
+		return true;
+	}
+	uintptr_t signature_scan(HANDLE hprocess, uintptr_t base, size_t size, const uint8_t* pattern, const char* mask) {
+		uint8_t *buffer = (uint8_t*)HeapAlloc(GetProcessHeap(), 0, size);
 
-		GetSystemInfo(&si);
-		memcpy(magic+0, &VM_MAGIC1, 8);
-		memcpy(magic+8, &VM_MAGIC2, 8);
+		if (!buffer) {
+			printf("[ERR] signature_scan: could not allocate a buffer.\n");
+			return 0;
+		}
 
-		for (uint8_t* base = (uint8_t*)si.lpMinimumApplicationAddress;
-				base < (uint8_t*)si.lpMaximumApplicationAddress;) {
+		size_t bytes_read = 0;
+		uintptr_t offset = 0;
 
-			MEMORY_BASIC_INFORMATION mbi = { };
-			if (!VirtualQueryEx(hprocess, base, &mbi, sizeof(mbi))) {
+		if (!ReadProcessMemory(hprocess, (LPVOID)base, buffer, size, &bytes_read)) {
+			printf("[ERR] signature_scan: could not read process memory: 0x%lx\n", GetLastError());
+			return 0;
+		}
+
+		for (size_t i = 0; i < size; ++i) {
+			if (data_compare(buffer + i, pattern, mask)) {
+				offset = base + i;
 				break;
 			}
-
-			bool scan =
-				(mbi.State == MEM_COMMIT) &&
-				(mbi.Type  == MEM_PRIVATE) &&
-				((mbi.Protect & PAGE_READWRITE) || (mbi.Protect & PAGE_WRITECOPY) ||
-				 (mbi.Protect & PAGE_GUARD)); // allow guard pages
-
-			if (scan) {
-				SIZE_T to_read = mbi.RegionSize;
-				SIZE_T read = 0;
-				std::vector<uint8_t> buffer(to_read);
-
-				if (ReadProcessMemory(hprocess, mbi.BaseAddress, buffer.data(), to_read, &read)) {
-					for (size_t i = 0; i + sizeof(vm_channel) <= rd; ++i) {
-						if (memcmp(buffer.data() + i, magic, 16) == 0) {
-
-							uintptr_t remote = (uintptr_t)mbi.BaseAddress + i;
-							vm_channel cand{};
-							SIZE_T rd2=0;
-
-							if (ReadProcessMemory(hprocess, (LPCVOID)remote, &cand, sizeof(cand), &rd2) &&
-									rd2 == sizeof(cand) &&
-									cand.self == remote &&
-									cand.view.size == CHANNEL_BUFFER_SIZE &&
-									cand.view.bufferfer && cand.vmcs) {
-								return remote;
-							}
-						}
-					}
-				}
-			}
-			base += mbi.RegionSize;
 		}
-		return 0;
-	}
+
+		HeapFree(GetProcessHeap(), 0, buffer);
+		return offset;
 }
 #endif // HYPRSCAN_HPP
