@@ -68,7 +68,8 @@ namespace superv::loader {
 				continue;
 			}
 
-			NTSTATUS status = NtQueryInformationThread(thread, 0, &tbi, sizeof(tbi), (PULONG)&read);
+			ULONG retlen = 0;
+			NTSTATUS status = NtQueryInformationThread(thread, 0, &tbi, sizeof(tbi), &retlen);
 			if (status < 0 || !tbi.TebBaseAddress) {
 				CloseHandle(thread);
 				continue;
@@ -110,19 +111,19 @@ namespace superv::loader {
 						vm_channel ch_buffer = { };
 
 						for (size_t i = 0; i + sizeof(vm_channel) <= read; i += sizeof(uintptr_t)) {
-							vm_channel *scanner = (vm_channel*)buffer.data() + i;
+							const vm_channel *scanner = (const vm_channel*)(buffer.data() + i);
 							if (scanner->magic1 != vm_magic1 || scanner->magic2 != vm_magic2) {
 								continue;
 							}
 
-							uintptr_t remote = region_base + i;
+							uintptr_t remote = (uintptr_t)region_base + i;
 							read = 0;
 
 							if (!ReadProcessMemory(proc->handle, (LPCVOID)remote, &ch_buffer, sizeof(ch_buffer), &read) || read != sizeof(ch_buffer)) {
 								continue;
 							}
 
-							size_t check_size = (size_t)BUFFER_CHANNEL_SIZE;
+							size_t check_size = (size_t)CHANNEL_BUFFER_SIZE;
 
 							if (ch_buffer.self != remote) 			continue;
 							if (ch_buffer.view.size != check_size) 	continue;
@@ -132,7 +133,7 @@ namespace superv::loader {
 							channel = VirtualAlloc(nullptr, sizeof(remote_channel), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 							if (!channel) {
 								printf("[ERR] could not allocate local channel buffer: GetLastError=0x%lx\n", GetLastError());
-								return nullptr
+								return nullptr;
 							}
 
 							memcpy(&channel->channel, &ch_buffer, sizeof(ch_buffer));
@@ -155,15 +156,13 @@ namespace superv::loader {
 							return channel;
 						}
 					}
-					next = (uint8_t*)mbi.BaseAddress + (uint8_t*)mbi.RegionSize;
 				}
+				next = (uint8_t*)mbi.BaseAddress + (uint8_t*)mbi.RegionSize;
 			}
 			CloseHandle(thread);
 		} while(Thread32Next(snapshot, &entry));
 
-		CloseHandle(thread);
 		CloseHandle(snapshot);
-
 		return nullptr;
 	}
 
