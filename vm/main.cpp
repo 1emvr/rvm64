@@ -16,12 +16,11 @@ namespace rvm64 {
 		}
 
 		*(volatile uint64_t*)&vmcs->channel.ready = 0ULL;
-		__debugbreak(); // TODO: follow this and find what's wrong.....
-						//
 		if (setjmp(vmcs->exit_handler)) {
 			goto defer;	
 		}
 
+		__debugbreak(); // TODO: follow this and find what's wrong.....
 		rvm64::entry::vm_init(); 
 		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 								  
