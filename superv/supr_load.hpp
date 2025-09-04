@@ -55,7 +55,6 @@ namespace superv::loader {
 		THREADENTRY32 entry = { };
 		entry.dwSize = sizeof(entry);
 
-		printf("Thread32First\n");
 		if (!Thread32First(snapshot, &entry)) {
 			printf("[ERR] could not get list to remote process threads: GetLastError=0x%lx\n", GetLastError());
 			CloseHandle(snapshot);
@@ -141,7 +140,6 @@ namespace superv::loader {
 							uint8_t *self_ptr 	= (uint8_t*)ch_buffer.self;
 
 							if (!self_ptr || !is_aligned((uintptr_t)self_ptr) || !in_range(self_ptr)) {
-								printf("self pointer was not aligned/in range.. continue.\n");
 								continue;
 							}
 
