@@ -91,6 +91,7 @@ namespace superv::loader {
 			uint8_t *stacklo = (uint8_t*)tib.StackLimit;
 			uint8_t *stackhi = (uint8_t*)tib.StackBase;
 
+			printf("[INF] searching stack for magic: 0x%p - 0x%p\n", stackhi, stacklo);
 			for (uint8_t* next = stacklo; next < stackhi; ) {
 				MEMORY_BASIC_INFORMATION mbi = { };
 
@@ -117,7 +118,6 @@ namespace superv::loader {
 					}
 
 					read = 0;
-					// TODO: not finding the magic anymore...
 					if (ReadProcessMemory(proc->handle, region_base, buffer, region_size, &read) && read >= sizeof(vm_channel)) {
 						vm_channel ch_buffer = { };
 
@@ -129,17 +129,21 @@ namespace superv::loader {
 								continue;
 							}
 
-							printf("vm magic found. reading channel\n");
+							// TODO: address for magic found not lining up as expected. check ptr-maths.
+							// "channel.self does not match remote address"
+							printf("[INF] vm magic found at 0x%p. reading channel\n", remote);
 							read = 0;
+
 							if (!ReadProcessMemory(proc->handle, (LPCVOID)remote, &ch_buffer, sizeof(ch_buffer), &read) || read != sizeof(ch_buffer)) {
+								printf("[ERR] cannot read the stack...\n");
 								continue;
 							}
 
 							size_t check_size = (size_t)CHANNEL_BUFFER_SIZE;
-							if (ch_buffer.self != remote) 			continue;
-							if (ch_buffer.view.size != check_size) 	continue;
-							if (ch_buffer.view.buffer == 0)  		continue;
-							if (ch_buffer.ready == 0) 				continue; // vm channel creation must signal "ready"
+							if (ch_buffer.self != remote) 			{ printf("channel.self does not match remote address\n"); continue; }
+							if (ch_buffer.view.size != check_size) 	{ printf("view size did not pass checks\n"); continue; }
+							if (ch_buffer.view.buffer == 0)  		{ printf("view buffer is null\n"); continue; }
+							if (ch_buffer.ready == 0) 				{ printf("ready not set to 1\n"); continue; }// vm channel creation must signal "ready"
 								
 							channel = (vm_channel*)VirtualAlloc(nullptr, sizeof(vm_channel), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 							if (!channel) {
