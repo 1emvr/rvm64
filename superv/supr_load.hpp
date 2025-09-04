@@ -136,7 +136,7 @@ namespace superv::loader {
 							}
 
 							memcpy(&channel->channel, &ch_buffer, sizeof(ch_buffer));
-							memcpy(&channel->remote_addr, &remote, sizeof(remote);
+							memcpy(&channel->remote_addr, &remote, sizeof(remote));
 							memcpy(&channel->thread_id, &entry.th32ThreadID, sizeof(DWORD));
 
 							printf("\tmagic 1=0x%llx\n", channel->magic1);
