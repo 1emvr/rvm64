@@ -4,6 +4,7 @@
 #include "vmmain.hpp"
 
 namespace rvm64::memory {
+	// TODO: completely remove vm_init. supervisor will handle all constructors/desctructors.
 	_native void memory_init(size_t process_size) {
 		vmcs->process.size = process_size;
 	    vmcs->process.address = (uint8_t*)VirtualAlloc(nullptr, vmcs->process.size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
