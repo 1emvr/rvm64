@@ -16,20 +16,17 @@ namespace superv::patch {
 	};	
 
 	_rdata static const uint8_t spin_hook64[] = {
-		0xcc,
-		0x48, 0xb8,                      				// mov rax, imm64
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 ready_addr> @ +0x03
-		0x0f, 0xb6, 0x00,                				// movzx eax, byte ptr [rax]
-		0x84, 0xc0,                      				// test  al, al
-		0x74, 0xf9,                      				// je    -7  (spin while zero)
-		0xc6, 0x00, 0x00,                				// mov   byte ptr [rax], 0
-		0x48, 0xb8,                      				// mov rax, imm64
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 tramp_addr> @ +0x17
-		0xff, 0xe0                       				// jmp   rax
+		0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  	// mov rax, imm64
+		0x0f, 0xb6, 0x00,                								// movzx eax, byte ptr [rax]
+		0x84, 0xc0,                      								// test  al, al
+		0x74, 0xf9,                      								// je    -7  (spin while zero)
+		0xc6, 0x00, 0x00,                								// mov   byte ptr [rax], 0
+		0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 	// mov rax, imm64
+		0xff, 0xe0                       								// jmp   rax
 	};
 
-	static constexpr size_t SH_OFF_READY_IMM64 = 0x03; 
-	static constexpr size_t SH_OFF_TRAMP_IMM64 = 0x17; // next IP = hook+0x13
+	static constexpr size_t SH_OFF_READY_IMM64 = 0x02; 
+	static constexpr size_t SH_OFF_TRAMP_IMM64 = 0x16; // next IP = hook+0x13
 
 	bool install_spin_hook(win_process* proc, vm_channel* channel, uintptr_t* hook, uintptr_t* trampoline) {
 		static uint8_t buffer[sizeof(spin_hook64)];
