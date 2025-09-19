@@ -28,18 +28,7 @@ namespace superv::debug {
 	}
 
 	void send_signal(win_process* proc, vm_channel* channel, uint64_t signal) {
-		switch(signal) {
-			case SIGNAL_NEXT: 
-				{
-					uint64_t ready = 1;
-					if (!set_channel_ready(proc->handle, channel, ready)) {
-						printf("[ERR] FATAL! could not send the enter key-state to channel->ready\n");
-						return;
-					}
-				}
-			default:
-				break;
-		}
+
 	}
 
 	void read_client_vmcs() {
@@ -54,14 +43,18 @@ namespace superv::debug {
 
 	}
 
-	void user_loop() {
-		// get cmd
-		// get key press
-		// check key press + cmd
-		// send whatever
-		// read client
-		// decode client
-		// print decoded
+	void user_loop(win_process* proc, vm_channel* channel) {
+
+		while (true) {
+			// NOTE: need a method to get user character input
+			// get cmd
+			// get key press
+			// check key press + cmd
+			// send whatever
+			// read client
+			// decode client
+			// print decoded
+		}
 	}
 }
 #endif // HYPRDBG_HPP

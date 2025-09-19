@@ -39,14 +39,21 @@ namespace rvm64::ipc {
 		vmcs->channel.ready = 0;
 		vmcs->channel.error = 0;
 
-		vmcs->channel.self   = (uint64_t)&vmcs->channel;
-		vmcs->channel.magic1 = magic1;
-		vmcs->channel.magic2 = magic2;
+		vmcs->channel.self   	= (uint64_t)&vmcs->channel;
+		vmcs->channel.vmcs_ptr 	= (uint64_t)&vmcs->channel;
+
+		vmcs->channel.magic1 	= magic1;
+		vmcs->channel.magic2 	= magic2;
 
 		vmcs->channel.ready_ptr      = (uint64_t)&vmcs->channel.ready;
 		vmcs->channel.error_ptr      = (uint64_t)&vmcs->channel.error;
 		vmcs->channel.size_ptr 		 = (uint64_t)&vmcs->channel.view.size;
 		vmcs->channel.write_size_ptr = (uint64_t)&vmcs->channel.view.write_size;
+
+		vmcs->channel.vpc_ptr		= (uint64_t)&vmcs->pc;
+		vmcs->channel.vstack_ptr 	= (uint64_t)&vmcs->vstack;
+		vmcs->channel.vregs_ptr		= (uint64_t)&vmcs->vregs;
+		vmcs->channel.vprog_ptr		= (uint64_t)&vmcs->process.address;
 	}
 
 	bool get_channel_ready(HANDLE hprocess, vm_channel* channel) {

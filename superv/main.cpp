@@ -43,7 +43,7 @@ namespace superv {
 			return 1;
 		}
 
-		superv::debug::user_loop();
+		superv::debug::user_loop(proc, channel);
 		return 0;
 	}
 }

@@ -4,10 +4,9 @@
 #include "vmmain.hpp"
 
 namespace rvm64::memory {
-	// TODO: completely remove vm_init. supervisor will handle all constructors/desctructors.
 	_native void memory_init(size_t process_size) {
-		vmcs->process.size = process_size;
-	    vmcs->process.address = (uint8_t*)VirtualAlloc(nullptr, vmcs->process.size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		vmcs->process.size = vmcs->channel.view.size;
+	    vmcs->process.address = vmcs->channel.view.buffer;
 
 		if (!vmcs->process.address) {
 		    CSR_SET_TRAP(nullptr, load_access_fault, GetLastError(), 0, 1);
@@ -15,7 +14,7 @@ namespace rvm64::memory {
 	}
 
 	_native void memory_end() {
-		if (vmcs->process.address) {
+		if (vmcs->process.address && vmcs->channel.view.buffer) {
 			VirtualFree((LPVOID)vmcs->process.address, 0, MEM_RELEASE);
 		}
 	}

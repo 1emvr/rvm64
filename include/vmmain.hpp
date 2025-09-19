@@ -46,6 +46,12 @@ typedef struct {
     uint64_t ready_ptr;        // &ready
     uint64_t error_ptr;        // &error
     uint64_t write_size_ptr;   // &view.write_size
+							   
+	uint64_t vmcs_ptr;
+	uint64_t vpc_ptr;
+	uint64_t vstack_ptr;
+	uint64_t vregs_ptr;
+	uint64_t vprog_ptr;
 } vm_channel;
 
 
