@@ -30,6 +30,7 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_entry() {
+		printf("[INF] hit vm_entry\n");
 		if (setjmp(vmcs->trap_handler)) {}
 
 		while (true) {

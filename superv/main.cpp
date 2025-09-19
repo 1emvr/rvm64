@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "supr_debug.hpp"
 #include "supr_load.hpp"
 #include "supr_patch.hpp"
 #include "supr_scan.hpp"
@@ -42,7 +43,7 @@ namespace superv {
 			return 1;
 		}
 
-		// superv::start_reading();
+		superv::debug::user_loop();
 		return 0;
 	}
 }
