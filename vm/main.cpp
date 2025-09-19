@@ -29,6 +29,7 @@ defer:
 		rvm64::ipc::vm_destroy_channel();
 
 		restore_host_context();
+		printf("m_cause: 0x%lx\n", vmcs->csr.m_cause);
 		return vmcs->csr.m_cause;
 	}
 };
