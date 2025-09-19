@@ -16,7 +16,7 @@ namespace rvm64::entry {
 		rvm64::memory::memory_init(vmcs->channel.view.write_size); // using the channel->view for process
 																	
 		rvm64::elf::load_elf_image(vmcs->channel.view.buffer, vmcs->channel.view.write_size);
-		rvm64::elf::patch_elf_plt();
+		rvm64::elf::patch_elf_plt_and_set_entry();
 
 		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
 		vmcs->cache

@@ -225,7 +225,6 @@ namespace superv::loader {
 			DWORD read = 0;
 			SIZE_T write = 0;
 
-			printf("write loop...\n");
 			if (!ReadFile(hfile, buffer, to_read, &read, nullptr)) {
 				printf("[ERR] unable to read from file.\n GetLastError=0x%08x\n", GetLastError());
 				CloseHandle(hfile);
@@ -245,23 +244,19 @@ namespace superv::loader {
 			}
 
 			sent += read;
-
-			printf("[INF] sent bytes: %zu, total: %zu\n", sent, total);
-			fflush(stdout);
 		}
 
+		fflush(stdout);
 		printf("[INF] wrote %zu bytes to channel buffer at 0x%p\n", (size_t)sent, (void*)channel->view.buffer);
 
  		uint64_t ready = 1;
 
-		// TODO: create superv channel getter/setter (don't accidentally overwrite the stored addresses)
 		if (!rvm64::ipc::set_channel_write_size(hprocess, channel, (uint64_t)sent)) {
 			printf("[ERR] channel write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
 		printf("[INF] writing ELF information to channel\n");
 
-		// TODO: create set_channel_unready()
 		if (!rvm64::ipc::set_channel_ready(hprocess, channel, ready)) {
 			printf("[ERR] channel write error (ready).\n GetLastError=0x%08x\n", GetLastError());
 			return false;

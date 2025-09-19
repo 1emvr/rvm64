@@ -10,41 +10,42 @@
 #include "rvni.hpp"
 
 // Dynamic section tags
-#define DT_NULL         0       // End of dynamic section
-#define DT_PLTGOT		3		// the global offset table
-#define DT_SYMTAB       6       // Pointer to symbol table
-#define DT_STRTAB       5       // Pointer to string table
-#define DT_SYMENT       11      // Size of one symbol table entry
-#define DT_JMPREL       23      // Pointer to PLT relocation entries
-#define DT_PLTRELSZ     2       // Size in bytes of PLT relocations
-#define DT_PLTREL       20      // Type of PLT relocations (DT_RELA or DT_REL)
-#define DT_RELA         7       // Address of relocation table with addends
-#define DT_RELASZ       8       // Size of the DT_RELA table
-#define DT_RELAENT      9       // Size of one DT_RELA entry
-								//
-#define EI_MAG0			0   // 0x7F
-#define EI_MAG1			1   // 'E'
-#define EI_MAG2			2   // 'L'
-#define EI_MAG3			3   // 'F'
-#define EI_CLAS			4   // File class
-#define EI_DATA			5   // Data encoding
-#define EI_VERS			6   // File version
-#define EI_OSAB			7   // OS/ABI identification
-#define EI_ABIVERSION	8 // ABI version
-#define EI_PAD			9   // Start of padding bytes (up to 16)
-#define EI_NIDENT		16  // Size of e_ident[]
+#define DT_NULL         0       
+#define DT_PLTGOT		3		
+#define DT_SYMTAB       6       
+#define DT_STRTAB       5       
+#define DT_STRSZ 		10
+#define DT_SYMENT       11      
+#define DT_JMPREL       23     
+#define DT_PLTRELSZ     2     
+#define DT_PLTREL       20   
+#define DT_RELA         7   
+#define DT_RELASZ       8  
+#define DT_RELAENT      9 
+								
+#define EI_MAG0			0   
+#define EI_MAG1			1   
+#define EI_MAG2			2  
+#define EI_MAG3			3 
+#define EI_CLASS		4
+#define EI_DATA			5  
+#define EI_VERS			6 
+#define EI_OSAB			7
+#define EI_ABIVERSION	8 
+#define EI_PAD			9   
+#define EI_NIDENT		16 
 
 #define ELFCLASS32		1
 #define ELFCLASS64		2
 
-#define ET_NONE			0 // No file type
-#define ET_REL 			1 // Relocatable file
-#define ET_EXEC			2 // Executable file
-#define ET_DYN 			3 // Shared object file
-#define ET_CORE			4 // Core file
+#define ET_NONE			0 
+#define ET_REL 			1 
+#define ET_EXEC			2 
+#define ET_DYN 			3 
+#define ET_CORE			4 
 
 #define EM_NONE			0
-#define EM_RISC			243 // RISC-V target
+#define EM_RISC			243 
 
 #define PT_NULL			0
 #define PT_LOAD			1
@@ -55,56 +56,56 @@
 #define PT_PHDR			6
 #define PT_TLS 			7
 
-#define SHT_NULL        0           // Inactive section header
-#define SHT_PROGBITS    1           // Program-defined contents
-#define SHT_SYMTAB      2           // Symbol table
-#define SHT_STRTAB      3           // String table
-#define SHT_RELA        4           // Relocation entries with addends
-#define SHT_NOBITS      8           // Uninitialized data (.bss)
-#define SHT_DYNSYM      11          // Dynamic linker symbol table
-									//
+#define SHT_NULL        0           
+#define SHT_PROGBITS    1           
+#define SHT_SYMTAB      2           
+#define SHT_STRTAB      3           
+#define SHT_RELA        4           
+#define SHT_NOBITS      8           
+#define SHT_DYNSYM      11          
+									
 #define SHN_UNDEF 		0	
 #define SHN_LORESERVE   0xff00
 #define SHN_LOPROC      0xff00
 #define SHN_HIPROC      0xff1f
-#define SHN_ABS         0xfff1   // Absolute values, not affected by relocation
-#define SHN_COMMON      0xfff2   // Common symbols
+#define SHN_ABS         0xfff1   
+#define SHN_COMMON      0xfff2   
 #define SHN_HIRESERVE   0xffff
 
 #define R_RISCV_NONE          	0
-#define R_RISCV_32             	1   // Direct 32-bit
-#define R_RISCV_64             	2   // Direct 64-bit
-#define R_RISCV_RELATIVE       	3   // Adjust by program base
-#define R_RISCV_COPY           	4   // Copy symbol at runtime
-#define R_RISCV_JUMP_SLOT      	5   // Create PLT entry
+#define R_RISCV_32             	1   
+#define R_RISCV_64             	2   
+#define R_RISCV_RELATIVE       	3   
+#define R_RISCV_COPY           	4   
+#define R_RISCV_JUMP_SLOT      	5   
 #define R_RISCV_TLS_DTPMOD32   	6
 #define R_RISCV_TLS_DTPMOD64   	7
 #define R_RISCV_TLS_DTPREL32   	8
 #define R_RISCV_TLS_DTPREL64   	9
 #define R_RISCV_TLS_TPREL32   	10
 #define R_RISCV_TLS_TPREL64   	11
-#define R_RISCV_BRANCH        	16   // PC-relative branch
-#define R_RISCV_JAL           	17   // PC-relative jump (J-type)
-#define R_RISCV_CALL          	18   // Call (with register save)
-#define R_RISCV_CALL_PLT      	19   // PLT call
-#define R_RISCV_GOT_HI20      	20   // High 20 bits of GOT address
+#define R_RISCV_BRANCH        	16   
+#define R_RISCV_JAL           	17   
+#define R_RISCV_CALL          	18   
+#define R_RISCV_CALL_PLT      	19   
+#define R_RISCV_GOT_HI20      	20   
 #define R_RISCV_TLS_GOT_HI20  	21
 #define R_RISCV_TLS_GD_HI20   	22
-#define R_RISCV_PCREL_HI20    	23   // High 20 bits PC-relative
-#define R_RISCV_PCREL_LO12_I  	24   // Low 12 bits for I-type
-#define R_RISCV_PCREL_LO12_S  	25   // Low 12 bits for S-type
-#define R_RISCV_HI20          	26   // High 20 bits of absolute address
-#define R_RISCV_LO12_I        	27   // Low 12 bits of absolute address (I-type)
-#define R_RISCV_LO12_S        	28   // Low 12 bits of absolute address (S-type)
+#define R_RISCV_PCREL_HI20    	23   
+#define R_RISCV_PCREL_LO12_I  	24   
+#define R_RISCV_PCREL_LO12_S  	25   
+#define R_RISCV_HI20          	26   
+#define R_RISCV_LO12_I        	27   
+#define R_RISCV_LO12_S        	28   
 #define R_RISCV_TPREL_HI20    	29
 #define R_RISCV_TPREL_LO12_I  	30
 #define R_RISCV_TPREL_LO12_S  	31
-#define R_RISCV_RELAX         	51   // Instruction can be relaxed
-#define R_RISCV_ALIGN         	52   // Alignment hint
+#define R_RISCV_RELAX         	51   
+#define R_RISCV_ALIGN         	52   
 
-#define ELF64_R_SYM(info)    	((info) >> 32)   // Extract symbol index from relocation info
-#define ELF64_REL_TYPE(info)   	((info) & 0xFFFFFFFF)   // Extract relocation type from relocation info
-#define ELF64_R_INFO(S, T) 		((((uint64_t)(S)) << 32) + (T))  // Construct relocation info from symbol index and type
+#define ELF64_R_SYM(info)    	((info) >> 32)   				// Extract symbol index from relocation info
+#define ELF64_REL_TYPE(info)   	((info) & 0xFFFFFFFF)   		// Extract relocation type from relocation info
+#define ELF64_R_INFO(S, T) 		((((uint64_t)(S)) << 32) + (T)) // Construct relocation info from symbol index and type
 
 #define ELF64_ST_BIND(info)   	((info) >> 4)
 #define ELF64_ST_TYPE(info)   	((info) & 0xF)
@@ -183,144 +184,299 @@ typedef struct {
 } elf64_dyn;
 
 
-// NOTE: I do not understand the elf format.
 namespace rvm64::elf {
-	_native void patch_elf_plt() {
-		auto ehdr = (elf64_ehdr*)vmcs->process.address;
-		auto proc_base = (uint8_t*)vmcs->process.address;
+	// ========= helpers/state =========
+	static inline uint64_t align_up(uint64_t x, uint64_t a) { return (x + a - 1) & ~(a - 1); }
+	static inline bool in_img(uint64_t off, uint64_t len, uint64_t img_size) {
+		return off <= img_size && len <= img_size - off;
+	}
 
+	static uint64_t g_elf_base = 0;   // min p_vaddr of PT_LOAD
+	static uint64_t g_img_size = 0;   // relocated image size (copied into vm buffer)
+
+	// ========= loader =========
+	_native void load_elf_image(uintptr_t image_data, size_t image_size) {
+		const uint8_t* file = (const uint8_t*)image_data;
+		const elf64_ehdr* fe = (const elf64_ehdr*)file;
+
+		if (!(file[0]==0x7F && file[1]=='E' && file[2]=='L' && file[3]=='F')) {
+			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
+		}
+		if (fe->e_ident[EI_CLASS] != ELFCLASS64 || fe->e_ident[EI_DATA] != 1 /*LE*/ || fe->e_machine != EM_RISC) {
+			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
+		}
+		if ((uint64_t)fe->e_phoff + (uint64_t)fe->e_phentsize * fe->e_phnum > image_size) {
+			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+		}
+
+		const elf64_phdr* fph = (const elf64_phdr*)(file + fe->e_phoff);
+
+		// Compute load range
+		uint64_t base = UINT64_MAX, end = 0;
+		for (int i = 0; i < fe->e_phnum; ++i) {
+			const auto& ph = fph[i];
+			if (ph.p_type == PT_LOAD) {
+				base = MIN(base, ph.p_vaddr);
+				end  = MAX(end,  ph.p_vaddr + ph.p_memsz);
+			}
+		}
+		if (base == UINT64_MAX || end <= base) {
+			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+		}
+
+		// Mirror headers at offset 0 so ehdr/phdrs are readable in relocated image
+		uint64_t header_span = fe->e_phoff + (uint64_t)fe->e_phentsize * fe->e_phnum;
+		if (header_span < fe->e_ehsize) header_span = fe->e_ehsize;
+		if (header_span > image_size) header_span = image_size;
+
+		uint64_t need = MAX(header_span, end - base);
+		uint64_t img_size = align_up(need, 0x1000);
+
+		uint8_t* img = (uint8_t*)VirtualAlloc(nullptr, img_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		if (!img) {
+			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+		}
+
+		x_memset(img, 0, img_size);
+		x_memcpy(img, file, header_span);
+
+		// Copy PT_LOAD segments into (p_vaddr - base)
+		for (int i = 0; i < fe->e_phnum; ++i) {
+			const auto& ph = fph[i];
+			if (ph.p_type != PT_LOAD) continue;
+
+			if ((uint64_t)ph.p_offset + ph.p_filesz > image_size) {
+				VirtualFree(img, 0, MEM_RELEASE);
+				CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+			}
+			uint64_t dest_off = ph.p_vaddr - base;
+			if (!in_img(dest_off, ph.p_memsz, img_size)) {
+				VirtualFree(img, 0, MEM_RELEASE);
+				CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+			}
+			if (ph.p_filesz) x_memcpy(img + dest_off, file + ph.p_offset, ph.p_filesz);
+			// bss is already zeroed (memsz - filesz)
+		}
+
+		// Publish to VM buffer
+		if (img_size > CHANNEL_BUFFER_SIZE) {
+			VirtualFree(img, 0, MEM_RELEASE);
+			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+		}
+
+		x_memcpy((void*)vmcs->channel.view.buffer, img, img_size);
+		VirtualFree(img, 0, MEM_RELEASE);
+
+		g_elf_base = base;
+		g_img_size = img_size;
+	}
+
+	// ========= reloc + PLT + entry =========
+	static void apply_relative_relocs(uint8_t* img) {
+		auto* ehdr = (elf64_ehdr*)img;
+		auto* phdr = (elf64_phdr*)(img + ehdr->e_phoff);
+
+		// Find PT_DYNAMIC
+		uint64_t dyn_vaddr = 0, dyn_size = 0;
+		for (int i = 0; i < ehdr->e_phnum; ++i) { // typo fix later
+			if (phdr[i].p_type == PT_DYNA /* PT_DYNAMIC */) {
+				dyn_vaddr = phdr[i].p_vaddr;
+				dyn_size  = phdr[i].p_memsz;
+				break;
+			}
+		}
+		if (!dyn_vaddr || !dyn_size) return;
+
+		uint64_t dyn_off = dyn_vaddr - g_elf_base;
+		if (!in_img(dyn_off, sizeof(elf64_dyn), g_img_size)) return;
+
+		uint64_t rela_va=0, rela_sz=0, rela_ent=sizeof(elf64_rela);
+		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off);
+				in_img((uint8_t*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
+
+			if (d->d_tag == DT_RELA)     rela_va  = d->d_un.d_ptr;
+			else if (d->d_tag == DT_RELASZ)  rela_sz  = d->d_un.d_val;
+			else if (d->d_tag == DT_RELAENT) rela_ent = d->d_un.d_val ? d->d_un.d_val : sizeof(elf64_rela);
+		}
+		if (!rela_va || !rela_sz || !rela_ent) return;
+
+		uint64_t rela_off = rela_va - g_elf_base;
+		size_t n = (size_t)(rela_sz / rela_ent);
+
+		for (size_t i = 0; i < n; ++i) {
+			uint64_t off = rela_off + i * rela_ent;
+			if (!in_img(off, sizeof(elf64_rela), g_img_size)) {
+				break;
+			}
+			const elf64_rela* r = (const elf64_rela*)(img + off);
+			uint32_t rtype = ELF64_REL_TYPE(r->r_info);
+
+			if (rtype == R_RISCV_RELATIVE) {
+				uint64_t where_off = r->r_offset - g_elf_base;
+
+				if (!in_img(where_off, 8, g_img_size)) {
+					continue;
+				}
+				*(uint64_t*)(img + where_off) = g_elf_base + (uint64_t)r->r_addend;
+			}
+		}
+	}
+
+	static uint64_t find_entry(uint8_t* img) {
+		auto* ehdr = (elf64_ehdr*)img;
+		auto* phdr = (elf64_phdr*)(img + ehdr->e_phoff);
+
+		// Prefer e_entry if present
+		if (ehdr->e_entry) return ehdr->e_entry;
+
+		// Find PT_DYNAMIC
+		uint64_t dyn_vaddr = 0;
+		for (int i = 0; i < ehdr->e_phnum; ++i) {
+			if (phdr[i].p_type == PT_DYNA) { dyn_vaddr = phdr[i].p_vaddr; break; }
+		}
+		if (!dyn_vaddr) return 0;
+
+		uint64_t dyn_off = dyn_vaddr - g_elf_base;
+		if (!in_img(dyn_off, sizeof(elf64_dyn), g_img_size)) return 0;
+
+		// Pull tables
+		uint64_t symtab_va=0, strtab_va=0, syment=sizeof(elf64_sym), strsz=0;
+		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off);
+				in_img((uint8_t*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
+			if (d->d_tag == DT_SYMTAB)  symtab_va = d->d_un.d_ptr;
+			else if (d->d_tag == DT_STRTAB)  strtab_va = d->d_un.d_ptr;
+			else if (d->d_tag == DT_SYMENT)  syment    = d->d_un.d_val ? d->d_un.d_val : sizeof(elf64_sym);
+			else if (d->d_tag == DT_STRSZ)   strsz     = d->d_un.d_val;
+		}
+		if (!symtab_va || !strtab_va) return 0;
+
+		uint64_t sym_off = symtab_va - g_elf_base;
+		uint64_t str_off = strtab_va - g_elf_base;
+		if (!in_img(sym_off, sizeof(elf64_sym), g_img_size)) return 0;
+		if (!in_img(str_off, 1, g_img_size)) return 0;
+		if (strsz == 0 || !in_img(str_off, strsz, g_img_size)) strsz = g_img_size - str_off;
+
+		// Walk bounded
+		const uint64_t MAX_ITERS = 1u << 20;
+		for (uint64_t i = 0, off = sym_off; i < MAX_ITERS && in_img(off, syment, g_img_size); ++i, off += syment) {
+			const elf64_sym* s = (const elf64_sym*)(img + off);
+			if (!s->st_value) continue;
+
+			uint32_t name_off = s->st_name;
+			if (name_off >= strsz) continue;
+			const char* name = (const char*)(img + str_off + name_off);
+			size_t remain = (size_t)(strsz - name_off);
+			const void* nul = memchr(name, 0, remain);
+			if (!nul) continue;
+
+			if (strcmp(name, "_start") == 0 || strcmp(name, "main") == 0) {
+				return s->st_value; // VADDR
+			}
+		}
+		return 0;
+	}
+
+	static void patch_plt(uint8_t* img) {
+		auto* ehdr = (elf64_ehdr*)img;
+		auto* phdr = (elf64_phdr*)(img + ehdr->e_phoff);
+
+		// Find PT_DYNAMIC
+		uint64_t dyn_vaddr = 0;
+		for (int i = 0; i < ehdr->e_phnum; ++i) {
+			if (phdr[i].p_type == PT_DYNA) { dyn_vaddr = phdr[i].p_vaddr; break; }
+		}
+		if (!dyn_vaddr) return;
+
+		uint64_t dyn_off = dyn_vaddr - g_elf_base;
+		if (!in_img(dyn_off, sizeof(elf64_dyn), g_img_size)) return;
+
+		uint64_t symtab_va=0, strtab_va=0, strsz=0, syment=sizeof(elf64_sym);
+		uint64_t jmprel_va=0, pltrel_sz=0, plt_rel_kind=0;
+
+		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off);
+				in_img((uint8_t*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
+			switch (d->d_tag) {
+				case DT_SYMTAB:   symtab_va   = d->d_un.d_ptr; break;
+				case DT_STRTAB:   strtab_va   = d->d_un.d_ptr; break;
+				case DT_STRSZ:    strsz       = d->d_un.d_val; break;
+				case DT_SYMENT:   syment      = d->d_un.d_val ? d->d_un.d_val : sizeof(elf64_sym); break;
+				case DT_JMPREL:   jmprel_va   = d->d_un.d_ptr; break;
+				case DT_PLTRELSZ: pltrel_sz   = d->d_un.d_val; break;
+				case DT_PLTREL:   plt_rel_kind= d->d_un.d_val; break;
+				default: break;
+			}
+		}
+		if (!jmprel_va || !pltrel_sz || plt_rel_kind != DT_RELA || !symtab_va || !strtab_va) return;
+
+		uint64_t rela_off   = jmprel_va - g_elf_base;
+		uint64_t symtab_off = symtab_va - g_elf_base;
+		uint64_t strtab_off = strtab_va - g_elf_base;
+		if (!in_img(rela_off, pltrel_sz, g_img_size)) return;
+		if (!in_img(symtab_off, sizeof(elf64_sym), g_img_size)) return;
+		if (!in_img(strtab_off, 1, g_img_size)) return;
+		if (strsz == 0 || !in_img(strtab_off, strsz, g_img_size)) strsz = g_img_size - strtab_off;
+
+		size_t n = pltrel_sz / sizeof(elf64_rela);
+		for (size_t i = 0; i < n; ++i) {
+			uint64_t off = rela_off + i * sizeof(elf64_rela);
+			if (!in_img(off, sizeof(elf64_rela), g_img_size)) break;
+			const elf64_rela* r = (const elf64_rela*)(img + off);
+
+			uint32_t rtype = ELF64_REL_TYPE(r->r_info);
+			if (rtype != R_RISCV_JUMP_SLOT && rtype != R_RISCV_CALL_PLT) continue;
+
+			uint32_t sym_idx = (uint32_t)ELF64_R_SYM(r->r_info);
+			uint64_t s_off = symtab_off + (uint64_t)sym_idx * syment;
+			if (!in_img(s_off, sizeof(elf64_sym), g_img_size)) continue;
+
+			const elf64_sym* s = (const elf64_sym*)(img + s_off);
+			uint32_t name_off = s->st_name;
+			if (name_off >= strsz) continue;
+
+			const char* name = (const char*)(img + strtab_off + name_off);
+			size_t remain = (size_t)(strsz - name_off);
+			if (!memchr(name, 0, remain)) continue;
+
+			void* target = rvm64::rvni::resolve_ucrt_import(name);
+			if (!target) {
+				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)name, 1);
+			}
+
+			uint64_t where_off = r->r_offset - g_elf_base;
+			if (!in_img(where_off, 8, g_img_size)) continue;
+			*(uint64_t*)(img + where_off) = (uint64_t)target;
+		}
+	}
+
+	_native void patch_elf_plt_and_set_entry() {
+		uint8_t* img = (uint8_t*)vmcs->channel.view.buffer;
+		if (!img || g_img_size == 0) {
+			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+		}
+
+		auto* ehdr = (elf64_ehdr*)img;
+		if (ehdr->e_ident[0] != 0x7F || ehdr->e_ident[1] != 'E' || ehdr->e_ident[2] != 'L' || ehdr->e_ident[3] != 'F') {
+			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
+		}
 		if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
 
-		auto phdrs = (elf64_phdr*)((uint8_t*)(proc_base) + ehdr->e_phoff);
-		uint64_t dyn_vaddr = 0;
-		uint64_t dyn_size = 0;
+		apply_relative_relocs(img);
+		patch_plt(img);
 
-		for (int i = 0; i < ehdr->e_phnum; ++i) { 
-			if (phdrs[i].p_type == PT_DYNA) {
-				dyn_vaddr = phdrs[i].p_vaddr;
-				dyn_size = phdrs[i].p_memsz;
-				break;
-			}
+		// 3) set entry
+		uint64_t entry_vaddr = find_entry(img);
+		if (!entry_vaddr) {
+			CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)"<no entry>", 1);
 		}
-		if (!dyn_vaddr || !dyn_size) {
+
+		uint64_t pc_off = entry_vaddr - g_elf_base;
+		if (!in_img(pc_off, 4, g_img_size)) {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		auto* dyn_entries = (elf64_dyn*) (proc_base + dyn_vaddr);
-		uint64_t symtab_vaddr = 0, strtab_vaddr = 0, rela_plt_vaddr = 0, rela_plt_size = 0;
-
-		for (elf64_dyn *dyn = dyn_entries; dyn->d_tag != DT_NULL; ++dyn) {
-			switch (dyn->d_tag) {
-				case DT_SYMTAB:   symtab_vaddr 		= dyn->d_un.d_ptr; break;
-				case DT_STRTAB:   strtab_vaddr 		= dyn->d_un.d_ptr; break;
-				case DT_JMPREL:   rela_plt_vaddr 	= dyn->d_un.d_ptr; break;
-				case DT_PLTRELSZ: rela_plt_size 	= dyn->d_un.d_val; break;
-				case DT_PLTREL: {
-					if (dyn->d_un.d_val != DT_RELA) {
-						CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
-					}
-					break;
-				}
-				default: break;
-			}
-		}
-
-		if (!symtab_vaddr || !strtab_vaddr || !rela_plt_vaddr || !rela_plt_size) {
-			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
-		}
-
-		auto rela_entries 	= (elf64_rela*) (proc_base + rela_plt_vaddr);
-		auto symtab 		= (elf64_sym*) (proc_base + symtab_vaddr);
-		auto strtab 		= (const char*) (proc_base + strtab_vaddr);
-		size_t rela_count 	= rela_plt_size / sizeof(elf64_rela);
-
-		for (size_t i = 0; i < rela_count; ++i) {
-			uint32_t sym_idx = ELF64_R_SYM(rela_entries[i].r_info);
-			uint32_t rel_type = ELF64_REL_TYPE(rela_entries[i].r_info);
-
-			auto reloc_addr = (uint64_t*) (proc_base + rela_entries[i].r_offset);
-			const char *sym_name = strtab + symtab[sym_idx].st_name;
-
-			if (rel_type != R_RISCV_JUMP_SLOT && rel_type != R_RISCV_CALL_PLT) {
-				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)sym_name, 1);
-			}
-
-			void *win_func = rvm64::rvni::resolve_ucrt_import(sym_name);
-			if (!win_func) {
-				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)sym_name, 1);
-			}
-
-			*reloc_addr = (uint64_t)(win_func);
-		}
-
-		auto shdrs = (elf64_shdr*) (proc_base + ehdr->e_shoff);
-		if (ehdr->e_shstrndx != SHN_UNDEF) {
-			auto& strtab_hdr = shdrs[ehdr->e_shstrndx];
-			strtab = (const char*)(proc_base + strtab_hdr.sh_offset);
-		}
-	}
-
-	_native void load_elf_image(uintptr_t image_data, size_t image_size) { // vmcs->channel.view.buffer, vmcs->channel.view.size
-		// TODO: switch this to write to channel view buffer
-		auto ehdr = (elf64_ehdr*)(image_data);
-
-		if (ehdr->e_ident[0] != 0x7F || ehdr->e_ident[1] != 'E' || ehdr->e_ident[2] != 'L' || ehdr->e_ident[3] != 'F') {
-			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
-		}
-		if (ehdr->e_ident[EI_CLAS] != ELFCLASS64 || ehdr->e_machine != EM_RISC) {
-			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
-		}
-
-		elf64_phdr* phdrs = (elf64_phdr*)((uint8_t*)image_data + ehdr->e_phoff);
-
-		uint8_t *copy_buffer = nullptr;
-		uint64_t base = UINT64_MAX;
-		uint64_t limit = 0;
-
-		for (int i = 0; i < ehdr->e_phnum; ++i) {
-			if (phdrs[i].p_type == PT_LOAD) {
-				base = MIN(base, phdrs[i].p_vaddr);
-				limit = MAX(limit, phdrs[i].p_vaddr + phdrs[i].p_memsz);
-			}
-		}
-
-		if (base == UINT64_MAX || limit <= base) {
-			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
-		}
-
-		for (int i = 0; i < ehdr->e_phnum; ++i) {
-			if (phdrs[i].p_type != PT_LOAD) {
-				continue;
-			}
-
-			copy_buffer = (uint8_t*)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-			if (!copy_buffer) {
-				printf("[ERR] could not allocate a copy buffer for the ELF: GetLastError=0x%lx\n", GetLastError());
-				CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
-			}
-
-			void *dest = (uint8_t*)copy_buffer + (phdrs[i].p_vaddr - base);
-			void *src = (uint8_t*)image_data + phdrs[i].p_offset;
-
-			__debugbreak();
-			x_memcpy(dest, src, phdrs[i].p_filesz);
-
-			if (phdrs[i].p_memsz > phdrs[i].p_filesz) {
-				__debugbreak();
-				x_memset((uint8_t*)dest + phdrs[i].p_filesz, 0, phdrs[i].p_memsz - phdrs[i].p_filesz);
-			}
-		}
-
-		x_memcpy(vmcs->channel.view.buffer, copy_buffer, CHANNEL_BUFFER_SIZE);
-		vmcs->pc = (uintptr_t)vmcs->channel.view.buffer + (ehdr->e_entry - base);
-
-		// TODO: resize channel view buffer to fit VM_PROCESS_SIZE
-		if (copy_buffer) {
-			VirtualFree(copy_buffer, 0, MEM_RELEASE);
-		}
+		vmcs->pc = (uintptr_t)(img + pc_off);
 	}
 };
 #endif // VMELF_H
