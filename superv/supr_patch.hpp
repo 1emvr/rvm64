@@ -225,12 +225,13 @@ defer:
 		return true;
 	}
 
-	_rdata static const char decoder_mask64[] = "xxxxxxxx????";
+	_rdata static const char decoder_mask64[] = "xx?????xxxxxxxx????";
 	_rdata static const uint8_t decoder_sig64[] = { 
-		0xff, 0xd0,						// +0x00: call    rax ; __imp_RaiseException
-		0x8b, 0x45, 0xfc,				// +0x02: mov     eax, dword ptr [rbp+var_4]
-		0x89, 0xc1,                    	// +0x05: mov     ecx, eax                        ; this
-		0xe8, 0xe9, 0xf1, 0xfe, 0xff,  	// +0x07: call    _ZN5rvm647decoder9vm_decodeEj   ; rvm64::decoder::vm_decode(uint)
+		   0x48, 0x8b, 0x05, 0xae, 0xfe, 0x01, 0x00,	// mov     rax, cs:__imp_RaiseException
+		   0xff, 0xd0,                               	// call    rax ; __imp_RaiseException
+		   0x8b, 0x45, 0xec,                            // mov     eax, dword ptr [rbp+var_14]
+		   0x89, 0xc1, 									// mov     ecx, eax                        ; this
+		   0xe8, 0x72, 0xdc, 0xfe, 0xff,				// call    _ZN5rvm647decoder9vm_decodeEj   ; rvm64::decoder::vm_decode(uint)
 	};
 
 	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
