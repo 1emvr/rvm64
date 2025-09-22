@@ -27,7 +27,6 @@ namespace rvm64::entry {
 	_vmcall void vm_exit() {
 		RemoveVectoredExceptionHandler(veh_handle);
 		rvm64::memory::memory_end();
-		printf("vm_exit done\n");
 	}
 
 	_vmcall void vm_entry() {

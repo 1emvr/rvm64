@@ -16,19 +16,20 @@ namespace superv::patch {
 	};	
 
 	static const uint8_t spin_hook64[] = {
-		0x49, 0xba,                          			// mov  r10, imm64
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 ready_addr>  
-		0x41, 0x0f, 0xb6, 0x12,              			// movzx edx, byte ptr [r10]
-		0x85, 0xd2,                          			// test   edx, edx 
-		0x74, 0xf8,                          			// je     -8  
-		0x41, 0xc6, 0x02, 0x00,              			// mov    byte ptr [r10], 0
-		0x48, 0xb8,                          			// mov    rax, imm64
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 tramp_addr> 
-		0xff, 0xe0                           			// jmp    rax
+		0x49, 0xba,                               		// 00: mov  r10, imm64
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 02: <imm64 ready_addr>
+		0x45, 0x0f, 0xb6, 0x1a,                   		// 0a: movzx r11d, byte ptr [r10]
+		0x45, 0x85, 0xdb,                         		// 0e: test  r11d, r11d
+		0x74, 0xf7,                               		// 11: je    -9  
+		0x41, 0xc6, 0x02, 0x00,                   		// 13: mov   byte ptr [r10], 0
+		0x48, 0xb8,                               		// 17: mov   rax, imm64
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 19: <imm64 tramp_addr>
+		0xff, 0xe0                                		// 21: jmp   rax
 	};
 
-	static constexpr size_t SH_OFF_READY_IMM64 = 0x02; // imm64 for &ready (or ready_ptr)
-	static constexpr size_t SH_OFF_TRAMP_IMM64 = 0x18; // imm64 for trampoline
+	// imm64 patch offsets in the blob above:
+	static constexpr size_t SH_OFF_READY_IMM64 = 0x02; // &ready
+	static constexpr size_t SH_OFF_TRAMP_IMM64 = 0x19; // &trampoline
 
 	bool install_spin_hook(win_process* proc, vm_channel* channel, uintptr_t* hook, uintptr_t* trampoline) {
 		bool success = false;
@@ -270,6 +271,7 @@ defer:
 			return false;
 		}
 
+		FlushInstructionCache(proc->handle, (LPCVOID)call_site, 0x5);
 		return true;
 	}
 } 
