@@ -250,7 +250,7 @@ defer:
 
 		uintptr_t callee = call_site + 5 + original_rel;
 		uintptr_t trampoline = 0;
-		size_t n_prolg = 12;
+		size_t n_prolg = 16;
 
 		printf("[INF] installing decoder trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {

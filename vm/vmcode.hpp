@@ -68,7 +68,6 @@ namespace rvm64::decoder {
 	};
 
 	_vmcall void vm_decode(uint32_t opcode) {
-		printf("[INF] hit vm_decode\n");
 		uint8_t decoded = 0;
 		uint8_t opcode7 = opcode & 0x7F;
 

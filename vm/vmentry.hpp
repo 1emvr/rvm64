@@ -30,12 +30,10 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_entry() {
-		printf("[INF] hit vm_entry\n");
 		if (setjmp(vmcs->trap_handler)) {}
 
 		while (true) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
-			printf("next\n");
 
 			if (opcode == RV64_RET) {
 				if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->vregs[regenum::ra])) {
