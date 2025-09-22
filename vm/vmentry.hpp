@@ -30,6 +30,7 @@ namespace rvm64::entry {
 	}
 
 	_vmcall void vm_entry() {
+		volatile void *_pad0 = 0;
 		if (setjmp(vmcs->trap_handler)) {}
 
 		while (true) {

@@ -11,6 +11,7 @@ namespace rvm64 {
 		save_host_context();
 		rvm64::ipc::vm_create_channel(magic1, magic2);
 
+		__debugbreak();
 		while (*(volatile uint64_t*)&vmcs->channel.ready != 1ULL) {
 			Sleep(10);
 		}

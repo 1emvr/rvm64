@@ -10,10 +10,12 @@
 #include "supr_scan.hpp"
 
 namespace superv::patch {
-	_rdata static const uint8_t jmp_back[12] = { 
-		0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-		0xff, 0xe0 
-	};	
+// Use R11 (volatile) for the back jump: 13 bytes total.
+	static const uint8_t jmp_back_r11[13] = {
+		0x49, 0xBB,                         			// mov r11, imm64
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 back_addr>
+		0x41, 0xFF, 0xE3                    			// jmp r11
+	};
 
 	static const uint8_t spin_hook64[] = {
 		0x49, 0xba,                               		// 00: mov  r10, imm64
@@ -77,12 +79,12 @@ defer:
 		uintptr_t trampoline = 0;
 		size_t write = 0;
 
-		if (n_prolg < 12) {
-			printf("[ERR] install_trampoline: function prologue must be at least 12 bytes\n"); 
+		if (n_prolg < 13) {
+			printf("[ERR] install_trampoline: function prologue must be at least 13 bytes\n"); 
 			goto defer;
 		}
 
-		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back_r11), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!buffer) {
 			printf("[ERR] install_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
 			goto defer;
@@ -95,21 +97,21 @@ defer:
 
 		back_addr = (uint64_t)(callee + n_prolg);
 
-		memcpy(buffer + n_prolg, jmp_back, sizeof(jmp_back));
+		memcpy(buffer + n_prolg, jmp_back_r11, sizeof(jmp_back_r11));
 		memcpy(buffer + n_prolg + 2, &back_addr, sizeof(uint64_t));
 
-		trampoline = (uintptr_t)VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		trampoline = (uintptr_t)VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back_r11), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!trampoline) {
 			printf("[ERR] install_trampoline could not allocate in the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg + sizeof(jmp_back), &write)) {
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg + sizeof(jmp_back_r11), &write)) {
 			printf("[ERR] install_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
-		FlushInstructionCache(hprocess, (LPCVOID)trampoline, n_prolg + sizeof(jmp_back));
+		FlushInstructionCache(hprocess, (LPCVOID)trampoline, n_prolg + sizeof(jmp_back_r11));
 		*tramp_out = trampoline;
 
 		printf("[INF] allocate new trampoline=0x%llx\n", trampoline);
@@ -131,8 +133,8 @@ defer:
 		DWORD old_prot = 0;	
 		size_t write = 0;
 
-		if (n_prolg < 12) {
-			printf("[ERR] patch_callee: function prologue must be at least 12 bytes\n"); 
+		if (n_prolg < 13) {
+			printf("[ERR] patch_callee: function prologue must be at least 13 bytes\n"); 
 			goto defer;
 		}
 
@@ -142,20 +144,20 @@ defer:
 			goto defer;
 		}
 
-		memcpy(buffer, jmp_back, sizeof(jmp_back));
+		memcpy(buffer, jmp_back_r11, sizeof(jmp_back_r11));
 		memcpy(buffer + 2, &hook, sizeof(uintptr_t));
 
- 		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back), &write)) {
+ 		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back_r11), &write)) {
 			printf("[ERR] patch_callee could not write to process memory: 0x%lx.\n", GetLastError()); 
 			goto defer;
 		}
 
-		if (n_prolg > sizeof(jmp_back)) {
-			uint32_t n_fill = n_prolg - sizeof(jmp_back);
+		if (n_prolg > sizeof(jmp_back_r11)) {
+			uint32_t n_fill = n_prolg - sizeof(jmp_back_r11);
 			memset(buffer, 0x90, n_fill);		
 
-			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back), buffer, n_fill, &write)) {
-				printf("[ERR] patch_callee could not fill nops in the callee (prologue > 12): 0x%lx.", GetLastError());
+			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back_r11), buffer, n_fill, &write)) {
+				printf("[ERR] patch_callee could not fill nops in the callee (prologue > 13): 0x%lx.", GetLastError());
 				goto defer;
 			}
 		}
@@ -198,7 +200,7 @@ defer:
 
 		uintptr_t callee = call_site + 5 + original_rel;
 		uintptr_t trampoline = 0;
-		size_t n_prolg = 18; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
+		size_t n_prolg = 15; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
 		
 		printf("[INF] installing entrypoint trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
