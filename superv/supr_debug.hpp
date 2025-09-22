@@ -99,6 +99,8 @@ namespace superv::debug {
 
 			Sleep(50);
 		}
+
+		clear_screen();
 	}
 }
 #endif // HYPRDBG_HPP

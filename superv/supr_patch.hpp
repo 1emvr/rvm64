@@ -130,8 +130,6 @@ defer:
 		DWORD old_prot = 0;	
 		size_t write = 0;
 
-		printf("[INF] ===== patch callee =====\n");
-
 		if (n_prolg < 12) {
 			printf("[ERR] patch_callee: function prologue must be at least 12 bytes\n"); 
 			goto defer;
@@ -234,6 +232,7 @@ defer:
 
 	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
 		printf("[INF] ====== install decoder hook =====\n");
+
 		uintptr_t sig_offset = superv::scanner::signature_scan(proc->handle, proc->address, proc->size, decoder_sig64, decoder_mask64);
 		if (!sig_offset) { 
 			printf("[ERR] signature_scan failed for decoder.\n"); 

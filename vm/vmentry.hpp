@@ -36,6 +36,7 @@ namespace rvm64::entry {
 
 		while (true) {
 			int32_t opcode = *(int32_t*)vmcs->pc;
+			printf("next\n");
 
 			if (opcode == RV64_RET) {
 				if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->vregs[regenum::ra])) {
@@ -44,7 +45,6 @@ namespace rvm64::entry {
 			}
 			rvm64::decoder::vm_decode(opcode); // decoder patch here -> hook for every new ins.
 			vmcs->pc += 4;
-			printf("next\n");
 		}
 	}
 };
