@@ -15,7 +15,7 @@ namespace superv {
 		printf("usage: superv --process <vm> --elf <riscv_elf>\n");
 	}
 
-	int superv_main(const char* proc_name, const char* elf_name) {
+	int64_t superv_main(const char* proc_name, const char* elf_name) {
 		win_process *proc = rvm64::process::get_process_info(proc_name);
 		if (!proc) {
 			printf("[ERR] could not find process information for target\n");
@@ -43,9 +43,7 @@ namespace superv {
 			return 1;
 		}
 
-
-		superv::debug::user_loop(proc, channel);
-		return 0;
+		return superv::debug::user_loop(proc, channel);
 	}
 }
 

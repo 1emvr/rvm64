@@ -72,15 +72,15 @@ namespace superv::debug {
 		// TODO: read stack from vmcs.vregs[sp]
 	}
 
-	void user_loop(win_process* proc, vm_channel* channel) {
+	int64_t user_loop(win_process* proc, vm_channel* channel) {
 		std::string last_cmd;
 		std::cout << "[INF] press enter to continue.\n" << std::flush;
 
 		if (!std::getline(std::cin, last_cmd)) {
-			return;
+			return -1;
 		}
 		if (last_cmd == "q" || last_cmd == "quit" || last_cmd == "exit") {
-			return;
+			return -1;
 		}
 
 		last_cmd.clear();
@@ -114,6 +114,7 @@ namespace superv::debug {
 		}
 
 		clear_screen();
+		return 0;
 	}
 }
 #endif // HYPRDBG_HPP
