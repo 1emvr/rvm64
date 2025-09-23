@@ -1,6 +1,5 @@
 CLG=/usr/bin/clang++
-CXX=/usr/bin/x86_64-w64-mingw32-g++
-LLD=/usr/bin/ld.lld
+CXX=/usr/bin/x86_64-w64-mingw32-g++ LLD=/usr/bin/ld.lld
 
 CFLAGS= -O0 -static-libgcc -static-libstdc++ 
 EFLAGS= --target=riscv64 -march=rv64g 		\
@@ -15,7 +14,6 @@ all:
 	${CXX} ${CFLAGS} ./superv/main.cpp -I./superv -I./include -o ./build/superv.exe
 	${CLG} ${EFLAGS} -c ./test/test.cpp -o ./build/test.o
 	${LLD} ${LDFLAGS} ./build/test.o -o ./build/test.elf 	
-
 
 clean:
 	rm ./build/vmctx.o ./build/rvm64.exe ./build/test.o ./build/test.elf ./build/superv.exe

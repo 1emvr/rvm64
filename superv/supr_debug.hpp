@@ -66,6 +66,9 @@ namespace superv::debug {
 		}
 
 		std::printf("\n");
+		
+		// TODO: read csr registers
+		// TODO: read data from vmcs.pc
 	}
 
 	void user_loop(win_process* proc, vm_channel* channel) {
