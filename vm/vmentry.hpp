@@ -41,7 +41,7 @@ namespace rvm64::entry {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
-			rvm64::decoder::vm_decode(opcode); // decoder patch here -> hook for every new ins.
+			rvm64::decoder::vm_decode(opcode); // decoder patch here -> check for inconsistency
 			vmcs->pc += 4;
 		}
 	}
