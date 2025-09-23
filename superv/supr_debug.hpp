@@ -62,15 +62,24 @@ namespace superv::debug {
 		std::printf("[DBG] vmcs->vregs:\n");
 
 		for (int i = 0; i < 32; ++i) {
-			std::printf("x%02d=0x%016" PRIxPTR "%s",
-					i, (uintptr_t)vmcs.vregs[i],
-					((i + 1) % 8 == 0) ? "\n" : "  ");
+			std::printf("x%02d = 0x%016" PRIxPTR "%s", i, (uintptr_t)vmcs.vregs[i], ((i + 1) % 8 == 0) ? "\n" : "  ");
 		}
+
 		std::printf("\n");
 	}
 
 	void user_loop(win_process* proc, vm_channel* channel) {
 		std::string last_cmd;
+		std::cout << "[INF] press enter to continue.\n" << std::flush;
+
+		if (!std::getline(std::cin, last_cmd)) {
+			return;
+		}
+		if (last_cmd == "q" || last_cmd == "quit" || last_cmd == "exit") {
+			return;
+		}
+
+		last_cmd.clear();
 
 		while (true) {
 			print_decode(proc, channel);

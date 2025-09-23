@@ -8,6 +8,7 @@
 #include "../include/vmlib.hpp"
 
 #include "supr_scan.hpp"
+#include "supr_utils.hpp"
 
 namespace superv::patch {
 // Use R11 (volatile) for the back jump: 13 bytes total.
@@ -73,103 +74,87 @@ defer:
 	}
 
 	bool install_trampoline(HANDLE hprocess, uintptr_t callee, size_t n_prolg, uintptr_t* tramp_out) {
-		bool success = false;
-		uint8_t *buffer = nullptr;
+		uint8_t prolg[64] = { };
+		uint8_t buffer[128] = { };
+
 		uint64_t back_addr = 0;
 		uintptr_t trampoline = 0;
+
+		size_t total = n_prolg + sizeof jmp_back_r11;
 		size_t write = 0;
 
 		if (n_prolg < 13) {
 			printf("[ERR] install_trampoline: function prologue must be at least 13 bytes\n"); 
-			goto defer;
+			return false;
 		}
-
-		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg + sizeof(jmp_back_r11), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-		if (!buffer) {
-			printf("[ERR] install_trampoline could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
-			goto defer;
+		if (n_prolg > sizeof prolg || total > sizeof buffer) {
+			printf("[ERR] install_trampoline: prologue size is too large - Buffer overflow.\n");
+			return false;
 		}
-
-		if (!rvm64::memory::read_process_memory(hprocess, callee, buffer, n_prolg)) {
+		if (!rvm64::memory::read_process_memory(hprocess, callee, prolg, n_prolg)) {
 			printf("[ERR] install_trampoline could not read from the remote process: 0x%lx.\n", GetLastError()); 
-			goto defer;
+			return false;
 		}
 
 		back_addr = (uint64_t)(callee + n_prolg);
 
-		memcpy(buffer + n_prolg, jmp_back_r11, sizeof(jmp_back_r11));
-		memcpy(buffer + n_prolg + 2, &back_addr, sizeof(uint64_t));
+		memcpy(buffer, prolg, n_prolg);
+		memcpy(buffer + n_prolg, jmp_back_r11, sizeof jmp_back_r11);
+		memcpy(buffer + n_prolg + 2, &back_addr, sizeof back_addr);
 
-		trampoline = (uintptr_t)VirtualAllocEx(hprocess, nullptr, n_prolg + sizeof(jmp_back_r11), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		trampoline = (uintptr_t)VirtualAllocEx(hprocess, nullptr, total, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!trampoline) {
 			printf("[ERR] install_trampoline could not allocate in the remote process: 0x%lx.\n", GetLastError()); 
-			goto defer;
+			return false;
 		}
 
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, n_prolg + sizeof(jmp_back_r11), &write)) {
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)trampoline, buffer, total, &write)) {
 			printf("[ERR] install_trampoline could not write to the remote process: 0x%lx.\n", GetLastError()); 
-			goto defer;
+			VirtualFreeEx(hprocess, (LPVOID)trampoline, 0, MEM_RELEASE);
+			return false;
 		}
 
-		FlushInstructionCache(hprocess, (LPCVOID)trampoline, n_prolg + sizeof(jmp_back_r11));
+		FlushInstructionCache(hprocess, (LPCVOID)trampoline, total);
 		*tramp_out = trampoline;
 
-		printf("[INF] allocate new trampoline=0x%llx\n", trampoline);
-		success = true;
-defer:
-		if (!success && trampoline) {
-			VirtualFreeEx(hprocess, (LPVOID)trampoline, 0, MEM_RELEASE);
-		}
-		if (buffer) {
-			VirtualFree(buffer, 0, MEM_RELEASE);
-		}
-		return success;
+		printf("[INF] trampoline=0x%016" PRIxPTR " size=%zu (n_prolg=%zu, tail=13)\n", (uintptr_t)trampoline, total, n_prolg);
+		superv::utils::print_bytes(buffer, total);
+
+		return true;
 	}
 
 	// NOTE: prologues with relative addressing or short branches will need to be fixed up. (not supported)
 	bool patch_callee(HANDLE hprocess, uintptr_t callee, uintptr_t hook, size_t n_prolg) {
-		bool success = false;
-		uint8_t *buffer = nullptr;
-		DWORD old_prot = 0;	
+		uint8_t buffer[128] = { };
 		size_t write = 0;
 
 		if (n_prolg < 13) {
 			printf("[ERR] patch_callee: function prologue must be at least 13 bytes\n"); 
-			goto defer;
+			return false;
+		}
+		if (n_prolg > sizeof buffer) {
+			printf("[ERR] patch callee: prologue size too large - Buffer overflow\n");
+			return false;
 		}
 
-		buffer = (uint8_t*)VirtualAlloc(nullptr, n_prolg, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-		if (!buffer) {
-			printf("[ERR] patch_callee could not allocate it's own buffer: 0x%lx.\n", GetLastError()); 
-			goto defer;
-		}
-
-		memcpy(buffer, jmp_back_r11, sizeof(jmp_back_r11));
+		memcpy(buffer, jmp_back_r11, sizeof jmp_back_r11);
 		memcpy(buffer + 2, &hook, sizeof(uintptr_t));
 
- 		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, sizeof(jmp_back_r11), &write)) {
-			printf("[ERR] patch_callee could not write to process memory: 0x%lx.\n", GetLastError()); 
-			goto defer;
+		if (n_prolg > sizeof jmp_back_r11) {
+			memset(buffer + sizeof jmp_back_r11, 0x90, n_prolg - sizeof jmp_back_r11);
 		}
 
-		if (n_prolg > sizeof(jmp_back_r11)) {
-			uint32_t n_fill = n_prolg - sizeof(jmp_back_r11);
-			memset(buffer, 0x90, n_fill);		
-
-			if (!rvm64::memory::write_process_memory(hprocess, callee + sizeof(jmp_back_r11), buffer, n_fill, &write)) {
-				printf("[ERR] patch_callee could not fill nops in the callee (prologue > 13): 0x%lx.", GetLastError());
-				goto defer;
-			}
+ 		if (!rvm64::memory::write_process_memory(hprocess, callee, buffer, n_prolg, &write)) {
+			printf("[ERR] patch_callee could not write to process memory: 0x%lx.\n", GetLastError()); 
+			return false;
 		}
 
 		FlushInstructionCache(hprocess, (LPCVOID)callee, n_prolg);
-		success = true;
 
-defer:
-		if (buffer) {
-			VirtualFree(buffer, 0, MEM_RELEASE);
-		}
-		return success;
+		printf("[INF] prologue=0x%016" PRIxPTR " n_prolg=%zu\n", (uintptr_t)callee, n_prolg);
+		superv::utils::print_bytes(buffer, n_prolg);
+
+		return true;
 	}
 
 	_rdata static const char entry_mask64[] = "xxxxxxxxxx????x????";
@@ -200,7 +185,7 @@ defer:
 
 		uintptr_t callee = call_site + 5 + original_rel;
 		uintptr_t trampoline = 0;
-		size_t n_prolg = 15; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
+		size_t n_prolg = 16; // I'm not doing automated disasm to find the prologue size. It will be static and I'll have to change it accordingly.
 		
 		printf("[INF] installing entrypoint trampoline.\n");
 		if (!install_trampoline(proc->handle, callee, n_prolg, &trampoline)) {
@@ -225,13 +210,12 @@ defer:
 		return true;
 	}
 
-	_rdata static const char decoder_mask64[] = "xx?????xxxxxxxx????";
+	_rdata static const char decoder_mask64[] = "xxxxxxxx????";
 	_rdata static const uint8_t decoder_sig64[] = { 
-		   0x48, 0x8b, 0x05, 0xae, 0xfe, 0x01, 0x00,	// mov     rax, cs:__imp_RaiseException
-		   0xff, 0xd0,                               	// call    rax ; __imp_RaiseException
-		   0x8b, 0x45, 0xec,                            // mov     eax, dword ptr [rbp+var_14]
-		   0x89, 0xc1, 									// mov     ecx, eax                        ; this
-		   0xe8, 0x72, 0xdc, 0xfe, 0xff,				// call    _ZN5rvm647decoder9vm_decodeEj   ; rvm64::decoder::vm_decode(uint)
+		0xFF, 0xD0,                               	// call    rax ; __imp_RaiseException
+		0x8B, 0x45, 0xF4,							// mov     eax, dword ptr [rbp+var_C]
+		0x89, 0xC1,                               	// mov     ecx, eax                        ; this
+		0xE8, 0x7A, 0xDC, 0xFE, 0xFF,				// call    _ZN5rvm647decoder9vm_decodeEj
 	};
 
 	bool install_decoder_hook(win_process* proc, vm_channel* channel) {
