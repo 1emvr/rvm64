@@ -148,7 +148,6 @@ namespace superv::loader {
 								printf("dereferenced self pointer could not be read from... continue.\n");
 								continue;
 							}
-
 							if (ch_buffer.magic1 != vm_magic1 || ch_buffer.magic2 != vm_magic2) {
 								printf("!! critical: self pointer points to non-magic values... continue.\n");
 								continue;

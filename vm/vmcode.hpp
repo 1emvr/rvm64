@@ -71,6 +71,7 @@ namespace rvm64::decoder {
 		uint8_t decoded = 0;
 		uint8_t opcode7 = opcode & 0x7F;
 
+		printf("next instruction.\n");
 		for (int idx = 0; idx < sizeof(encoding); idx++) {
 			if (encoding[idx].mask == opcode7) {
 				decoded = encoding[idx].type;

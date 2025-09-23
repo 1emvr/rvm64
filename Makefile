@@ -1,8 +1,9 @@
 CLG=/usr/bin/clang++
-CXX=/usr/bin/x86_64-w64-mingw32-g++ LLD=/usr/bin/ld.lld
+CXX=/usr/bin/x86_64-w64-mingw32-g++ 
+LLD=/usr/bin/ld.lld
 
 CFLAGS= -O0 -static-libgcc -static-libstdc++ 
-EFLAGS= --target=riscv64 -march=rv64g 		\
+EFLAGS= --target=riscv64 -march=rv64g 			\
 		-fPIC -ffreestanding -fno-builtin 	\
 		-I /usr/local/musl/include 			
 
