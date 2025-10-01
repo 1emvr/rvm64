@@ -11,7 +11,6 @@
 #include "supr_utils.hpp"
 
 namespace superv::patch {
-// Use R11 (volatile) for the back jump: 13 bytes total.
 	static const uint8_t jmp_back_r11[13] = {
 		0x49, 0xBB,                         			// mov r11, imm64
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <imm64 back_addr>

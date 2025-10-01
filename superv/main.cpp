@@ -33,17 +33,18 @@ namespace superv {
 			return 1;
 		}
 
-		if (!superv::patch::install_decoder_hook(proc, channel)) {
-			printf("[ERR] could not install decoder hook in the vm\n");
-			return 1;
-		}
+		// if (!superv::patch::install_decoder_hook(proc, channel)) {
+		// 	printf("[ERR] could not install decoder hook in the vm\n");
+		// 	return 1;
+		// }
 
 		if (!superv::loader::remote_write_file(proc->handle, channel, elf_name)) {
 			printf("[ERR] could not load elf to the vm channel\n");
 			return 1;
 		}
 
-		return superv::debug::user_loop(proc, channel);
+		// return superv::debug::user_loop(proc, channel);
+		return 0; // forgetting about the debugger
 	}
 }
 
