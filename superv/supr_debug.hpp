@@ -53,19 +53,21 @@ namespace superv::debug {
 	void print_decode(win_process* proc, vm_channel* channel) {
 		vmcs_t vmcs{};
 
-		if (!rvm64::memory::read_process_memory(proc->handle, (uintptr_t)channel->self, (uint8_t*)&vmcs, sizeof(vmcs))) {
-			std::printf("[ERR] unable to read vmcs from remote (GLE=0x%lx)\n", (unsigned long)GetLastError());
+		if (!rvm64::memory::read_process_memory(proc->handle, (uintptr_t)channel->self,
+					reinterpret_cast<uint8_t*>(&vmcs), sizeof(vmcs))) {
+			std::printf("[ERR] unable to read vmcs from remote (GLE=0x%lx)\n",
+					(unsigned long)GetLastError());
 			return;
 		}
 
-		// clear screen (if you have a helper, otherwise remove)
 		clear_screen();
 
 		std::printf("[DBG] vmcs.pc = 0x%016" PRIxPTR "\n", (uintptr_t)vmcs.pc);
 		std::printf("[DBG] vmcs->vregs:\n");
-
 		for (int i = 0; i < 32; ++i) {
-			std::printf("x%02d = 0x%016" PRIxPTR "%s", i, (uintptr_t)vmcs.vregs[i], ((i + 1) % 8 == 0) ? "\n" : "  ");
+			std::printf("x%02d = 0x%016" PRIxPTR "%s",
+					i, (uintptr_t)vmcs.vregs[i],
+					((i + 1) % 8 == 0) ? "\n" : "  ");
 		}
 		std::printf("\n");
 
@@ -74,29 +76,14 @@ namespace superv::debug {
 		constexpr size_t BYTES   = (INS_BEFORE + INS_AFTER + 1) * 4;
 
 		uintptr_t start = vmcs.pc - INS_BEFORE * 4;
-		uint8_t buffer[64] = {};
+		uint8_t buffer[BYTES] = {};
 		SIZE_T bytes_read = 0;
 
-		// Check memory region before reading
-		MEMORY_BASIC_INFORMATION mbi{};
-		if (!VirtualQueryEx(proc->handle, (LPCVOID)start, &mbi, sizeof(mbi))) {
-			std::printf("[ERR] VirtualQueryEx failed (GLE=%lu)\n", GetLastError());
-			return;
-		}
-		if (!(mbi.State & MEM_COMMIT)) {
-			std::printf("[ERR] Region at %p not committed (State=0x%lx)\n",
-					mbi.BaseAddress, mbi.State);
-			return;
-		}
-
-		// Actually read memory
 		if (!ReadProcessMemory(proc->handle, (LPCVOID)start, buffer, sizeof(buffer), &bytes_read)) {
 			std::printf("[ERR] could not read instructions near PC (GLE=%lu)\n", GetLastError());
 			return;
 		}
-		std::printf("[DBG] ReadProcessMemory got %zu bytes from %p\n", bytes_read, (void*)start);
 
-		// Capstone disassembly
 		csh handle;
 		if (cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &handle) != CS_ERR_OK) {
 			std::printf("[ERR] capstone init failed\n");
@@ -104,17 +91,50 @@ namespace superv::debug {
 		}
 		cs_option(handle, CS_OPT_DETAIL, CS_OPT_OFF);
 
-		cs_insn* insn = nullptr;
-		size_t count = cs_disasm(handle, buffer, bytes_read, start, 0, &insn);
+		size_t offset = 0;
+		while (offset < bytes_read) {
+			uintptr_t addr = start + offset;
+			uint32_t word = 0;
+			size_t chunk = sizeof(word);
 
-		if (count == 0) {
-			std::printf("[ERR] capstone disasm failed\n");
-		} else {
-			for (size_t i = 0; i < count; i++) {
-				bool at_pc = (insn[i].address == vmcs.pc);
-				std::printf("%s 0x%llx:\t%s\t%s\n", at_pc ? " >" : "  ", (unsigned long long)insn[i].address, insn[i].mnemonic, insn[i].op_str);
+			// Read one 32-bit word
+			if (offset + chunk > bytes_read) break;
+			std::memcpy(&word, buffer + offset, chunk);
+
+			if (word == 0) {
+				// Print raw zero word (not passed to Capstone)
+				std::printf("%s 0x%016llx:  00 00 00 00           (zero)\n",
+						(addr == vmcs.pc) ? ">" : " ",
+						(unsigned long long)addr);
+				offset += chunk;
+				continue;
 			}
-			cs_free(insn, count);
+
+			cs_insn *insn = nullptr;
+			size_t count = cs_disasm(handle, buffer + offset, chunk, addr, 1, &insn);
+			if (count == 0) {
+				// print raw word if disasm failed
+				std::printf("%s 0x%016llx:  %02x %02x %02x %02x   (undecodable)\n",
+						(addr == vmcs.pc) ? ">" : " ",
+						(unsigned long long)addr,
+						buffer[offset+0], buffer[offset+1],
+						buffer[offset+2], buffer[offset+3]);
+				offset += chunk;
+			} else {
+				const cs_insn &ci = insn[0];
+				std::printf("%s 0x%016llx:  ",
+						(ci.address == vmcs.pc) ? ">" : " ",
+						(unsigned long long)ci.address);
+
+				for (size_t j = 0; j < ci.size; j++)
+					std::printf("%02x ", ci.bytes[j]);
+				for (size_t j = ci.size; j < 8; j++)
+					std::printf("   ");
+
+				std::printf(" %s %s\n", ci.mnemonic, ci.op_str);
+				offset += ci.size;
+				cs_free(insn, count);
+			}
 		}
 
 		cs_close(&handle);
