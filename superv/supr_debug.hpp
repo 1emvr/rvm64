@@ -51,13 +51,14 @@ namespace superv::debug {
 	}
 
 	void print_decode(win_process* proc, vm_channel* channel) {
-		vmcs_t vmcs{ };
+		vmcs_t vmcs{};
 
 		if (!rvm64::memory::read_process_memory(proc->handle, (uintptr_t)channel->self, (uint8_t*)&vmcs, sizeof(vmcs))) {
-			std::printf("[ERR] decoder unable to read process memory (vmcs): GetLastError=0x%lx\n", (unsigned long)GetLastError());
+			std::printf("[ERR] unable to read vmcs from remote (GLE=0x%lx)\n", (unsigned long)GetLastError());
 			return;
 		}
 
+		// clear screen (if you have a helper, otherwise remove)
 		clear_screen();
 
 		std::printf("[DBG] vmcs.pc = 0x%016" PRIxPTR "\n", (uintptr_t)vmcs.pc);
@@ -66,44 +67,54 @@ namespace superv::debug {
 		for (int i = 0; i < 32; ++i) {
 			std::printf("x%02d = 0x%016" PRIxPTR "%s", i, (uintptr_t)vmcs.vregs[i], ((i + 1) % 8 == 0) ? "\n" : "  ");
 		}
-
 		std::printf("\n");
 
-		const int INS_BEFORE = 4;
-		const int INS_AFTER  = 4;
-		const size_t BYTES = (INS_BEFORE + INS_AFTER + 1) * 4;
+		constexpr int INS_BEFORE = 4;
+		constexpr int INS_AFTER  = 4;
+		constexpr size_t BYTES   = (INS_BEFORE + INS_AFTER + 1) * 4;
 
-		uintptr_t start = (uintptr_t)vmcs.pc - INS_BEFORE * 4;
-		std::vector<uint8_t> buf(BYTES);
+		uintptr_t start = vmcs.pc - INS_BEFORE * 4;
+		uint8_t buffer[64] = {};
+		SIZE_T bytes_read = 0;
 
-		if (!rvm64::memory::read_process_memory(proc->handle, start, buf.data(), BYTES)) {
-			std::printf("[ERR] could not read instructions near PC\n");
+		// Check memory region before reading
+		MEMORY_BASIC_INFORMATION mbi{};
+		if (!VirtualQueryEx(proc->handle, (LPCVOID)start, &mbi, sizeof(mbi))) {
+			std::printf("[ERR] VirtualQueryEx failed (GLE=%lu)\n", GetLastError());
+			return;
+		}
+		if (!(mbi.State & MEM_COMMIT)) {
+			std::printf("[ERR] Region at %p not committed (State=0x%lx)\n",
+					mbi.BaseAddress, mbi.State);
 			return;
 		}
 
+		// Actually read memory
+		if (!ReadProcessMemory(proc->handle, (LPCVOID)start, buffer, sizeof(buffer), &bytes_read)) {
+			std::printf("[ERR] could not read instructions near PC (GLE=%lu)\n", GetLastError());
+			return;
+		}
+		std::printf("[DBG] ReadProcessMemory got %zu bytes from %p\n", bytes_read, (void*)start);
+
+		// Capstone disassembly
 		csh handle;
 		if (cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &handle) != CS_ERR_OK) {
 			std::printf("[ERR] capstone init failed\n");
 			return;
 		}
-
-		// optionally skip detail info (faster)
 		cs_option(handle, CS_OPT_DETAIL, CS_OPT_OFF);
-		cs_insn *insn = nullptr;
 
-		size_t count = cs_disasm(handle, buf.data(), buf.size(), start, 0, &insn);
+		cs_insn* insn = nullptr;
+		size_t count = cs_disasm(handle, buffer, bytes_read, start, 0, &insn);
 
-		if (count > 0) {
-			std::printf("[DBG] instructions around PC:\n");
-
-			for (size_t i = 0; i < count; i++) {
-				bool is_pc = insn[i].address == (uintptr_t)vmcs.pc;
-				std::printf("%c 0x%016" PRIx64 ": %-8s %s\n", is_pc ? '>' : ' ', insn[i].address, insn[i].mnemonic, insn[i].op_str);
-			}
-
-			cs_free(insn, count);
-		} else {
+		if (count == 0) {
 			std::printf("[ERR] capstone disasm failed\n");
+		} else {
+			for (size_t i = 0; i < count; i++) {
+				bool at_pc = (insn[i].address == vmcs.pc);
+				std::printf("%s 0x%llx:\t%s\t%s\n", at_pc ? " >" : "  ", (unsigned long long)insn[i].address, insn[i].mnemonic, insn[i].op_str);
+			}
+			cs_free(insn, count);
 		}
 
 		cs_close(&handle);

@@ -16,8 +16,8 @@
     #define _externc  extern "C"
     #define __typeof__(x) decltype(x)
 #else
-    #define _native   __attribute__((section(".text$B")))
-    #define _vmcall   __attribute__((section(".text$B"))) __attribute__((calling_convention("custom")))
+    #define _native   //__attribute__((section(".text$B")))
+    #define _vmcall   //__attribute__((section(".text$B"))) __attribute__((calling_convention("custom")))
     #define _naked    __attribute__((naked))
     #define _export   __attribute__((visibility("default")))
     #define _rdata    __attribute__((section(".rdata")))

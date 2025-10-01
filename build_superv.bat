@@ -1,9 +1,11 @@
 @echo off
 setlocal
 
-set CL=/nologo /std:c++17 /Zi /EHsc /MD   
+set CLFLAGS=/nologo /std:c++17 /Zi /EHsc /MD
 set INCLUDES=/Iinclude /Isuperv /Iinclude\capstone
-set LIBS=/LIBPATH:lib capstone.lib ucrt.lib msvcrt.lib legacy_stdio_definitions.lib
-cl %CL% superv\main.cpp %INCLUDES% /Fe:build\superv.exe /link %LIBS%
+set LIBPATHS=/LIBPATH:lib
+set LIBS=capstone.lib kernel32.lib user32.lib gdi32.lib advapi32.lib
+
+cl %CLFLAGS% %INCLUDES% superv\main.cpp /Fe:build\superv.exe /link %LIBPATHS% %LIBS%
 
 endlocal
