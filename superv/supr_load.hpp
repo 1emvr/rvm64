@@ -1,22 +1,43 @@
 #ifndef HYPRLOAD_HPP
 #define HYPRLOAD_HPP
-#include <windows.h>
-#include <tlhelp32.h>
-#include <winternl.h> 
 
+// supr_load.hpp or a shared ntwrap.hpp
+#ifndef NTWRAP_HPP
+#define NTWRAP_HPP
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+// Must define this BEFORE including Windows headers to get all NT stuff:
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0601 // Win7+
+#endif
+
+#include <windows.h>
+#include <winternl.h>
+
+// Some SDKs declare the enum but not the constant
+#ifndef ThreadBasicInformation
+#define ThreadBasicInformation (THREADINFOCLASS)0
+#endif
+
+#endif
+#include <tlhelp32.h>
 #include "supr_scan.hpp"
 #include "../include/vmmain.hpp"
 #include "../include/vmmem.hpp"
 #include "../include/vmipc.hpp"
 
-
 typedef struct _THREAD_BASIC_INFORMATION {
-	NTSTATUS ExitStatus;        
-	PTEB TebBaseAddress;        
-	CLIENT_ID ClientId;         
-	KAFFINITY AffinityMask;     
-	KPRIORITY Priority;         
-	KPRIORITY BasePriority;     
+	NTSTATUS ExitStatus;
+	PVOID TebBaseAddress;
+	CLIENT_ID ClientId;
+	KAFFINITY AffinityMask;
+	KPRIORITY Priority;
+	KPRIORITY BasePriority;
 } THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
 
 typedef LONG NTSTATUS;

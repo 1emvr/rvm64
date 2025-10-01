@@ -6,10 +6,12 @@
 #include <iostream>
 #include <cstdint>
 #include <cstddef>
+#include <vector>
 
 #include "../include/vmipc.hpp"
 #include "../include/vmmain.hpp"
 #include "../include/vmcommon.hpp"
+#include "../include/capstone/capstone.h"
 
 #define CMD_NEXT 0x1ULL
 
@@ -66,10 +68,45 @@ namespace superv::debug {
 		}
 
 		std::printf("\n");
-		
-		// TODO: read csr registers
-		// TODO: read data from vmcs.pc
-		// TODO: read stack from vmcs.vregs[sp]
+
+		const int INS_BEFORE = 4;
+		const int INS_AFTER  = 4;
+		const size_t BYTES = (INS_BEFORE + INS_AFTER + 1) * 4;
+
+		uintptr_t start = (uintptr_t)vmcs.pc - INS_BEFORE * 4;
+		std::vector<uint8_t> buf(BYTES);
+
+		if (!rvm64::memory::read_process_memory(proc->handle, start, buf.data(), BYTES)) {
+			std::printf("[ERR] could not read instructions near PC\n");
+			return;
+		}
+
+		csh handle;
+		if (cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &handle) != CS_ERR_OK) {
+			std::printf("[ERR] capstone init failed\n");
+			return;
+		}
+
+		// optionally skip detail info (faster)
+		cs_option(handle, CS_OPT_DETAIL, CS_OPT_OFF);
+		cs_insn *insn = nullptr;
+
+		size_t count = cs_disasm(handle, buf.data(), buf.size(), start, 0, &insn);
+
+		if (count > 0) {
+			std::printf("[DBG] instructions around PC:\n");
+
+			for (size_t i = 0; i < count; i++) {
+				bool is_pc = insn[i].address == (uintptr_t)vmcs.pc;
+				std::printf("%c 0x%016" PRIx64 ": %-8s %s\n", is_pc ? '>' : ' ', insn[i].address, insn[i].mnemonic, insn[i].op_str);
+			}
+
+			cs_free(insn, count);
+		} else {
+			std::printf("[ERR] capstone disasm failed\n");
+		}
+
+		cs_close(&handle);
 	}
 
 	int64_t user_loop(win_process* proc, vm_channel* channel) {

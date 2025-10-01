@@ -6,6 +6,7 @@
 
 #include "vmcommon.hpp"
 
+
 typedef struct {
 	HANDLE handle;
 	DWORD pid;
@@ -85,8 +86,9 @@ struct intel_t {
     uint64_t rflags;
 };
 
+#include "vmport.hpp"
 #ifdef __cplusplus
-_externc {
+VM_EXTERN_C {
 #endif
 
 	void save_host_context();
@@ -94,12 +96,12 @@ _externc {
 	void save_vm_context();
 	void restore_vm_context();
 
-	_data vmcs_t* vmcs = { };
-	_data HANDLE vmcs_mutex = 0;
-	_data HANDLE veh_handle = 0;
+	VM_DATA vmcs_t* vmcs = { };
+	VM_DATA HANDLE vmcs_mutex = 0;
+	VM_DATA HANDLE veh_handle = 0;
 
-	_data intel_t host_context = { };
-	_data intel_t vm_context = { };
+	VM_DATA intel_t host_context = { };
+	VM_DATA intel_t vm_context = { };
 
 	extern const uintptr_t dispatch_table[256];
 
