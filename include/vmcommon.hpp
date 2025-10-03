@@ -34,7 +34,7 @@
 #define VSTACK_MAX_CAPACITY     (1024 * 2)
 #define RVM_TRAP_EXCEPTION      0xE0424242
 
-#define CHANNEL_BUFFER_SIZE     0x10000
+#define PROCESS_BUFFER_SIZE     0x10000
 #define VM_MAGIC1               0x524d5636345f4949ULL  // "RMV64_II"
 #define VM_MAGIC2               0x5f424541434f4e00ULL  // "_BEACON"
 #define VM_BEACON_VER           1

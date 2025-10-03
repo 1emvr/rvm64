@@ -55,8 +55,8 @@ namespace superv::loader {
 		return p == PAGE_READWRITE || p == PAGE_WRITECOPY;
 	}
 
-	vm_channel* get_channel(win_process* proc) {
-		vm_channel *channel = nullptr;
+	vmcs_t* get_vmcs(win_process* proc) {
+		vmcs_t *vmcs = nullptr;
 
 		auto NtQueryInformationThread = (NtQueryInformationThread_t)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryInformationThread");
 		if (!NtQueryInformationThread) {
@@ -64,6 +64,7 @@ namespace superv::loader {
 			return nullptr;
 		}
 
+		// NOTE: obtain magic
 		const uint64_t vm_magic1 = VM_MAGIC1, vm_magic2 = VM_MAGIC2;
 		printf("[INF] searching for vm magic: 0x%llx, 0x%llx\n", vm_magic1, vm_magic2);
 
@@ -127,7 +128,7 @@ namespace superv::loader {
 
 				const bool scan = 
 					(mbi.State == MEM_COMMIT) && (mbi.Type == MEM_PRIVATE) && 
-					region_size >= sizeof(vm_channel) && is_rw(mbi.Protect);
+					region_size >= sizeof(vmcs_t) && is_rw(mbi.Protect);
 
 				if (scan) {
 					uint8_t *buffer = (uint8_t*)VirtualAlloc(nullptr, region_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -137,67 +138,66 @@ namespace superv::loader {
 					}
 
 					read = 0;
-					if (ReadProcessMemory(proc->handle, region_base, buffer, region_size, &read) && read >= sizeof(vm_channel)) {
-						for (size_t i = 0; i + sizeof(vm_channel) <= read; i += sizeof(uintptr_t)) {
+					if (ReadProcessMemory(proc->handle, region_base, buffer, region_size, &read) && read >= sizeof(vmcs_t)) {
+						for (size_t i = 0; i + sizeof(vmcs_t) <= read; i += sizeof(uintptr_t)) {
 
-							const vm_channel *scanner = (const vm_channel*)(buffer + i); // scanner *buffer + offset 
+							const vmcs_t *scanner = (const vmcs_t*)(buffer + i); // scanner *buffer + offset 
 							if (scanner->magic1 != vm_magic1 || scanner->magic2 != vm_magic2) {
 								continue;
 							}
 
-							vm_channel ch_buffer = { }; // empty struct
-							uintptr_t remote = (uintptr_t)region_base + i; // real remote addr
-																		   //
-							size_t chk_size = (size_t)CHANNEL_BUFFER_SIZE;
+							vmcs_t check = { }; 
+							uintptr_t remote = (uintptr_t)region_base + i; 
+							size_t chk_size = (size_t)PROCESS_BUFFER_SIZE;
 							size_t chk_read = 0;
 
-							if (!ReadProcessMemory(proc->handle, (LPCVOID)remote, &ch_buffer, sizeof(ch_buffer), &chk_read) || chk_read != sizeof(ch_buffer)) {
+							if (!ReadProcessMemory(proc->handle, (LPCVOID)remote, &check, sizeof(check), &chk_read) || chk_read != sizeof(check)) {
 								printf("[ERR] cannot read the stack...\n");
 								continue;
 							}
 
-							auto in_range   	= [&](uint8_t* p){ return p >= stacklo && p + sizeof(vm_channel) <= stackhi; };
-							auto is_aligned 	= [&](uintptr_t p){ return (p & (alignof(vm_channel) - 1)) == 0; };
-							uint8_t *self_ptr 	= (uint8_t*)ch_buffer.self;
+							auto in_range   	= [&](uint8_t* p){ return p >= stacklo && p + sizeof(vmcs_t) <= stackhi; };
+							auto is_aligned 	= [&](uintptr_t p){ return (p & (alignof(vmcs_t) - 1)) == 0; };
+							uint8_t *self_ptr 	= (uint8_t*)check.ptrs.self;
 
 							if (!self_ptr || !is_aligned((uintptr_t)self_ptr) || !in_range(self_ptr)) {
 								continue;
 							}
 
 							chk_read = 0;
-							if (!ReadProcessMemory(proc->handle, (LPCVOID)self_ptr, &ch_buffer, sizeof(ch_buffer), &chk_read) || chk_read != sizeof(ch_buffer)) {
+							if (!ReadProcessMemory(proc->handle, (LPCVOID)self_ptr, &check, sizeof(check), &chk_read) || chk_read != sizeof(check)) {
 								printf("dereferenced self pointer could not be read from... continue.\n");
 								continue;
 							}
-							if (ch_buffer.magic1 != vm_magic1 || ch_buffer.magic2 != vm_magic2) {
+							if (check.magic1 != vm_magic1 || check.magic2 != vm_magic2) {
 								printf("!! critical: self pointer points to non-magic values... continue.\n");
 								continue;
 							}
 
-							if (ch_buffer.view.buffer == 0)  			{ printf("[ERR] view buffer is null\n"); continue; }
-							if (ch_buffer.view.size != chk_size) 		{ printf("[ERR] view size did not pass checks: 0x%lx bytes found, expected 0x%lx.\n", ch_buffer.view.size, chk_size); continue; }
+							if (check.proc.buffer == 0)  			{ printf("[ERR] proc buffer is null\n"); continue; }
+							if (check.proc.size != chk_size) 		{ printf("[ERR] proc size did not pass checks: 0x%lx bytes found, expected 0x%lx.\n", check.proc.size, chk_size); continue; }
 								
-							channel = (vm_channel*)VirtualAlloc(nullptr, sizeof(vm_channel), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-							if (!channel) {
-								printf("[ERR] could not allocate local channel buffer: GetLastError=0x%lx\n", GetLastError());
+							vmcs = (vmcs_t*)VirtualAlloc(nullptr, sizeof(vmcs_t), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+							if (!vmcs) {
+								printf("[ERR] could not allocate local vmcs buffer: GetLastError=0x%lx\n", GetLastError());
 								VirtualFree(buffer, 0, MEM_RELEASE);
 								return nullptr;
 							}
 
-							memcpy(channel, &ch_buffer, sizeof(ch_buffer));
-							memcpy(&channel->thread_id, &entry.th32ThreadID, sizeof(DWORD));
+							memcpy(vmcs, &check, sizeof(check));
+							memcpy(&vmcs->thread_id, &entry.th32ThreadID, sizeof(DWORD));
 
-							printf("\taddress self=0x%p\n", channel->self); 		
-							printf("\taddress view buffer=0x%p\n", channel->view.buffer); 
-							printf("\taddress view size=0x%p\n", channel->size_ptr); 	
-							printf("\taddress view write size=0x%p\n", channel->write_size_ptr); 
-							printf("\taddress 'ready'=0x%p\n", channel->ready_ptr);
+							printf("\taddress self=0x%p\n", vmcs->ptrs.self); 		
+							printf("\taddress view buffer=0x%p\n", vmcs->proc.buffer); 
+							printf("\taddress view size=0x%p\n", vmcs->ptrs.size_ptr); 	
+							printf("\taddress view write size=0x%p\n", vmcs->ptrs.write_size_ptr); 
+							printf("\taddress 'ready'=0x%p\n", vmcs->ptrs.ready_ptr);
 
 							CloseHandle(thread);
 							CloseHandle(snapshot);
 							VirtualFree(buffer, 0, MEM_RELEASE);
 
-							return channel;
+							return vmcs;
 						}
 					}
 				}
@@ -210,7 +210,7 @@ namespace superv::loader {
 		return nullptr;
 	}
 
-	bool remote_write_file(HANDLE hprocess, vm_channel* channel, const char* filepath) {
+	bool remote_write_file(HANDLE hprocess, vmcs_t* vmcs, const char* filepath) {
 		LARGE_INTEGER li = {};
 
 		printf("[INF] reading target ELF file.\n");
@@ -227,17 +227,14 @@ namespace superv::loader {
 			return false;
 		}
 
-		if (li.QuadPart < 0 || (SIZE_T)li.QuadPart > CHANNEL_BUFFER_SIZE) {
-			printf("[ERR] ELF too large for the channel buffer.\n");
+		if (li.QuadPart < 0 || (SIZE_T)li.QuadPart > PROCESS_BUFFER_SIZE) {
+			printf("[ERR] ELF too large for the vmcs buffer.\n");
 			CloseHandle(hfile);
 			return false;
 		}
 
 		uint64_t total = li.QuadPart, sent = 0; // tracking how much is written
 		uint8_t buffer[64 * 1024];
-
-		uintptr_t ch_buffer = 0;
-		size_t ch_read = 0;
 
 		while (sent < total) {
 			DWORD to_read = (DWORD)MIN(sizeof(buffer), total - sent);	
@@ -255,7 +252,7 @@ namespace superv::loader {
 				return false;
 			}
 
-			uintptr_t remote = channel->view.buffer + sent;
+			uintptr_t remote = vmcs->proc.buffer + sent;
 			if (!rvm64::memory::write_process_memory(hprocess, remote, buffer, read, &write)) {
 				printf("[ERR] unable to write file to remote process.\n GetLastError=0x%08x\n", GetLastError());
 				CloseHandle(hfile);
@@ -266,18 +263,17 @@ namespace superv::loader {
 		}
 
 		fflush(stdout);
-		printf("[INF] wrote %zu bytes to channel buffer at 0x%p\n", (size_t)sent, (void*)channel->view.buffer);
+		printf("[INF] wrote %zu bytes to vmcs buffer at 0x%p\n", (size_t)sent, (void*)vmcs->view.buffer);
 
- 		uint64_t ready = 1;
-
-		if (!rvm64::ipc::set_channel_write_size(hprocess, channel, (uint64_t)sent)) {
-			printf("[ERR] channel write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
+		if (!rvm64::ipc::set_vmcs_write_size(hprocess, vmcs, (uint64_t)sent)) {
+			printf("[ERR] vmcs write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
-		printf("[INF] writing ELF information to channel\n");
+		printf("[INF] writing ELF information to vmcs\n");
 
-		if (!rvm64::ipc::set_channel_ready(hprocess, channel, ready)) {
-			printf("[ERR] channel write error (ready).\n GetLastError=0x%08x\n", GetLastError());
+ 		uint64_t ready = 1;
+		if (!rvm64::ipc::set_vmcs_ready(hprocess, vmcs, ready)) {
+			printf("[ERR] vmcs write error (ready).\n GetLastError=0x%08x\n", GetLastError());
 			return false;
 		}
 
