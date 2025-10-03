@@ -11,11 +11,11 @@ namespace rvm64 {
 		save_host_context();
 		rvm64::ipc::vm_create_channel(magic1, magic2);
 
-		while (*(volatile uint64_t*)&vmcs->channel.ready != 1ULL) {
+		while (*(volatile uint64_t*)&vmcs->proc.ready != 1ULL) {
 			Sleep(10);
 		}
 
-		*(volatile uint64_t*)&vmcs->channel.ready = 0ULL;
+		*(volatile uint64_t*)&vmcs->proc.ready = 0ULL;
 		if (setjmp(vmcs->exit_handler)) {
 			goto defer;	
 		}
@@ -29,7 +29,7 @@ defer:
 		rvm64::ipc::vm_destroy_channel();
 
 		restore_host_context();
-		return vmcs->csr.m_cause;
+		return vmcs->hdw.csr.m_cause;
 	}
 };
 

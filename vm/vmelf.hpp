@@ -259,7 +259,7 @@ namespace rvm64::elf {
 		}
 
 		// Publish to VM buffer
-		if (img_size > CHANNEL_BUFFER_SIZE) {
+		if (img_size > PROCESS_BUFFER_SIZE) {
 			VirtualFree(img, 0, MEM_RELEASE);
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
@@ -476,7 +476,7 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		vmcs->pc = (uintptr_t)(img + pc_off);
+		vmcs->hdw.pc = (uintptr_t)(img + pc_off);
 	}
 };
 #endif // VMELF_H

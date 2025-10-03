@@ -22,7 +22,7 @@ namespace rvm64::ipc {
 		vmcs->proc.buffer = (uint64_t)VirtualAlloc(nullptr, PROCESS_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		if (!vmcs->proc.buffer) {
-			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
+			CSR_SET_TRAP(vmcs->hdw.pc, GetLastError(), 0, 0, 1);
 			return;
 		}
 

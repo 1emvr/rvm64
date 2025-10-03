@@ -14,13 +14,13 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 																	
-		rvm64::elf::load_elf_image(vmcs->channel.view.buffer, vmcs->channel.view.write_size);
+		rvm64::elf::load_elf_image(vmcs->proc.buffer, vmcs->proc.write_size);
 		rvm64::elf::patch_elf_plt_and_set_entry();
 
-		vmcs->vregs[sp] = (uintptr_t)(vmcs->vstack + VSTACK_MAX_CAPACITY);
+		vmcs->hdw.vregs[sp] = (uintptr_t)(vmcs->hdw.vstack + VSTACK_MAX_CAPACITY);
 		vmcs->cache
-			? rvm64::memory::cache_data(vmcs->channel.view.buffer, vmcs->channel.view.write_size)
-			: rvm64::memory::destroy_data(vmcs->channel.view.buffer, vmcs->channel.view.write_size);
+			? rvm64::memory::cache_data(vmcs->proc.buffer, vmcs->proc.write_size)
+			: rvm64::memory::destroy_data(vmcs->proc.buffer, vmcs->proc.write_size);
 	}
 
 	_vmcall void vm_exit() {
@@ -32,15 +32,15 @@ namespace rvm64::entry {
 		if (setjmp(vmcs->trap_handler)) {}
 
 		while (true) {
-			int32_t opcode = *(int32_t*)vmcs->pc;
+			int32_t opcode = *(int32_t*)vmcs->hdw.pc;
 
 			if (opcode == RV64_RET) {
-				if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->vregs[regenum::ra])) {
+				if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->hdw.vregs[regenum::ra])) {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
 			rvm64::decoder::vm_decode(opcode); // decoder patch here -> check for inconsistency
-			vmcs->pc += 4;
+			vmcs->hdw.pc += 4;
 		}
 	}
 };
