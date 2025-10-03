@@ -15,8 +15,7 @@ typedef struct {
 } win_process;
 
 // NOTE: 
-// - who is allocating/destroying the buffer?
-// - who is loading/mapping the ELF?
+// - vm allocates/destroys process buffer & loads ELF into memory
 typedef struct _vmcs {
     uint64_t magic1, magic2;
 	uint64_t thread_id;
