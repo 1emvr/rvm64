@@ -2251,13 +2251,6 @@ namespace rvm64::operations {
 			reg_read(uint64_t, v1, _rs2);
 
 			address += (intptr_t)_imm;
-			printf("process address: 0x%p\n", vmcs->proc.buffer);
-			printf("process end address: 0x%p\n", vmcs->proc.buffer + PROCESS_BUFFER_SIZE);
-			printf("virtual stack pointer: 0x%p\n", vmcs->hdw.vregs[regenum::sp]);
-			printf("virtual stack start: 0x%p\n", vmcs->hdw.vstack);
-			printf("virtual stack end: 0x%p\n", vmcs->hdw.vstack + VSTACK_MAX_CAPACITY);
-			printf("writing to address: 0x%p\n", address);
-			__debugbreak();
 			mem_write(uint64_t, address, v1);
 		}
 
