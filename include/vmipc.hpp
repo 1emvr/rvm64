@@ -14,19 +14,19 @@ namespace rvm64::ipc {
 		vmcs->proc.size = 0;
 		vmcs->proc.write_size = 0;
 
-		vmcs->ready = 0; vmcs->self = 0; vmcs->magic1 = 0; vmcs->magic2 = 0;
+		vmcs->magic1 = 0; vmcs->magic2 = 0;
 	}
 
 	void vm_create_channel(uint64_t magic1, uint64_t magic2) {
 		vmcs->ptrs.self   = (uint64_t)vmcs;
-		vmcs->proc.size   = CHANNEL_BUFFER_SIZE;
-		vmcs->proc.buffer = (uint64_t)VirtualAlloc(nullptr, CHANNEL_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		vmcs->proc.buffer = (uint64_t)VirtualAlloc(nullptr, PROCESS_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		if (!vmcs->proc.buffer) {
 			CSR_SET_TRAP(vmcs->pc, GetLastError(), 0, 0, 1);
 			return;
 		}
 
+		vmcs->proc.size   			= PROCESS_BUFFER_SIZE;
 		vmcs->proc.write_size 		= (uint64_t)0;
 		vmcs->proc.ready 			= (uint64_t)0;
 

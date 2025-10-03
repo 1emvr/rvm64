@@ -187,11 +187,9 @@ namespace superv::loader {
 							memcpy(vmcs, &check, sizeof(check));
 							memcpy(&vmcs->thread_id, &entry.th32ThreadID, sizeof(DWORD));
 
-							printf("\taddress self=0x%p\n", vmcs->ptrs.self); 		
-							printf("\taddress view buffer=0x%p\n", vmcs->proc.buffer); 
-							printf("\taddress view size=0x%p\n", vmcs->ptrs.size_ptr); 	
-							printf("\taddress view write size=0x%p\n", vmcs->ptrs.write_size_ptr); 
-							printf("\taddress 'ready'=0x%p\n", vmcs->ptrs.ready_ptr);
+							printf("\tvmcs address =0x%p\n", 	vmcs->ptrs.self); 		
+							printf("\tvmcs buffer=0x%p\n", 		vmcs->proc.buffer); 
+							printf("\tvmcs buffer size=%d\n", 	vmcs->proc.size); 	
 
 							CloseHandle(thread);
 							CloseHandle(snapshot);
