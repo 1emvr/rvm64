@@ -18,9 +18,9 @@ namespace rvm64::entry {
 		rvm64::elf::patch_elf_plt_and_set_entry();
 
 		vmcs->hdw.vregs[sp] = (uintptr_t)(vmcs->hdw.vstack + VSTACK_MAX_CAPACITY);
-		vmcs->cache
-			? rvm64::memory::cache_data(vmcs->proc.buffer, vmcs->proc.write_size)
-			: rvm64::memory::destroy_data(vmcs->proc.buffer, vmcs->proc.write_size);
+		if (vmcs->cache) {
+			rvm64::memory::cache_data(vmcs->proc.buffer, vmcs->proc.write_size)
+		}
 	}
 
 	_vmcall void vm_exit() {
@@ -39,7 +39,7 @@ namespace rvm64::entry {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
-			rvm64::decoder::vm_decode(opcode); // decoder patch here -> check for inconsistency
+			rvm64::decoder::vm_decode(opcode); 
 			vmcs->hdw.pc += 4;
 		}
 	}
