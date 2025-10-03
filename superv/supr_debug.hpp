@@ -38,11 +38,11 @@ namespace superv::debug {
 		SetConsoleCursorPosition(h_stdout, home_coords);
 	}
 
-	void send_signal(win_process* proc, vm_channel* channel, uint64_t signal) {
+	void send_signal(win_process* proc, vmcs_t* vmcs, uint64_t signal) {
 		switch(signal) {
 			case CMD_NEXT: 
 				{
-					rvm64::ipc::set_channel_ready(proc->handle, channel, 1);
+					rvm64::ipc::set_channel_ready(proc->handle, vmcs, 1);
 					break;
 				}
 			default:
@@ -50,10 +50,8 @@ namespace superv::debug {
 		}
 	}
 
-	void print_decode(win_process* proc, vm_channel* channel) {
-		vmcs_t vmcs{};
-
-		if (!rvm64::memory::read_process_memory(proc->handle, (uintptr_t)channel->self, (uint8_t*)&vmcs, sizeof(vmcs))) {
+	void print_decode(win_process* proc, vmcs_t* vmcs) {
+		if (!rvm64::memory::read_process_memory(proc->handle, (uintptr_t)vmcs->ptrs.self, (uint8_t*)&vmcs, sizeof(vmcs))) {
 			std::printf("[ERR] unable to read vmcs from remote (GLE=0x%lx)\n", (unsigned long)GetLastError());
 			return;
 		}

@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "supr_debug.hpp"
+//#include "supr_debug.hpp"
 #include "supr_load.hpp"
-#include "supr_patch.hpp"
+//#include "supr_patch.hpp"
 #include "supr_scan.hpp"
 
 #include "../include/vmmain.hpp"
@@ -22,9 +22,9 @@ namespace superv {
 			return 1;
 		}
 
-		vm_channel* channel = superv::loader::get_channel(proc);
-		if (!channel) {
-			printf("[ERR] could not load vm channel\n");
+		vmcs_t* vmcs = superv::loader::get_vmcs(proc);
+		if (!vmcs) {
+			printf("[ERR] could not load vmcs\n");
 			return 1;
 		}
 
@@ -38,8 +38,8 @@ namespace superv {
 		// 	return 1;
 		// }
 
-		if (!superv::loader::remote_write_file(proc->handle, channel, elf_name)) {
-			printf("[ERR] could not load elf to the vm channel\n");
+		if (!superv::loader::remote_write_file(proc->handle, vmcs, elf_name)) {
+			printf("[ERR] could not load elf to the vmcs\n");
 			return 1;
 		}
 

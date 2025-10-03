@@ -19,7 +19,7 @@ namespace rvm64::entry {
 
 		vmcs->hdw.vregs[sp] = (uintptr_t)(vmcs->hdw.vstack + VSTACK_MAX_CAPACITY);
 		if (vmcs->cache) {
-			rvm64::memory::cache_data(vmcs->proc.buffer, vmcs->proc.write_size)
+			rvm64::memory::cache_data(vmcs->proc.buffer, vmcs->proc.write_size);
 		}
 	}
 

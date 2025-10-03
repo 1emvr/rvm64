@@ -261,7 +261,7 @@ namespace superv::loader {
 		}
 
 		fflush(stdout);
-		printf("[INF] wrote %zu bytes to vmcs buffer at 0x%p\n", (size_t)sent, (void*)vmcs->view.buffer);
+		printf("[INF] wrote %zu bytes to vmcs buffer at 0x%p\n", (size_t)sent, (void*)vmcs->proc.buffer);
 
 		if (!rvm64::ipc::set_vmcs_write_size(hprocess, vmcs, (uint64_t)sent)) {
 			printf("[ERR] vmcs write error (write_size).\n GetLastError=0x%08x\n", GetLastError());
