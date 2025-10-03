@@ -2251,6 +2251,7 @@ namespace rvm64::operations {
 			reg_read(uint64_t, v1, _rs2);
 
 			address += (intptr_t)_imm;
+			__debugbreak();
 			mem_write(uint64_t, address, v1);
 		}
 

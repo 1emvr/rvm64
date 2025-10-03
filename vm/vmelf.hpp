@@ -210,9 +210,8 @@ namespace rvm64::elf {
 		}
 
 		const elf64_phdr* fph = (const elf64_phdr*)(file + fe->e_phoff);
-
-		// Compute load range
 		uint64_t base = UINT64_MAX, end = 0;
+
 		for (int i = 0; i < fe->e_phnum; ++i) {
 			const auto& ph = fph[i];
 			if (ph.p_type == PT_LOAD) {
@@ -250,6 +249,7 @@ namespace rvm64::elf {
 				CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 			}
 			uint64_t dest_off = ph.p_vaddr - base;
+
 			if (!in_img(dest_off, ph.p_memsz, img_size)) {
 				VirtualFree(img, 0, MEM_RELEASE);
 				CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);

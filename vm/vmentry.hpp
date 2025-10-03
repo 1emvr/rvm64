@@ -13,7 +13,6 @@
 namespace rvm64::entry {
 	_vmcall void vm_init() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
-		rvm64::memory::memory_init(vmcs->channel.view.write_size); // using the channel->view for process
 																	
 		rvm64::elf::load_elf_image(vmcs->channel.view.buffer, vmcs->channel.view.write_size);
 		rvm64::elf::patch_elf_plt_and_set_entry();
@@ -26,7 +25,6 @@ namespace rvm64::entry {
 
 	_vmcall void vm_exit() {
 		RemoveVectoredExceptionHandler(veh_handle);
-		rvm64::memory::memory_end();
 	}
 
 	_vmcall void vm_entry() {
@@ -41,7 +39,6 @@ namespace rvm64::entry {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
-			__debugbreak();
 			rvm64::decoder::vm_decode(opcode); // decoder patch here -> check for inconsistency
 			vmcs->pc += 4;
 		}

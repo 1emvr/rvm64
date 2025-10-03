@@ -192,7 +192,6 @@ namespace superv::loader {
 							printf("\taddress view size=0x%p\n", channel->size_ptr); 	
 							printf("\taddress view write size=0x%p\n", channel->write_size_ptr); 
 							printf("\taddress 'ready'=0x%p\n", channel->ready_ptr);
-							printf("\taddress 'error'=0x%p\n\n", channel->error_ptr);
 
 							CloseHandle(thread);
 							CloseHandle(snapshot);

@@ -14,59 +14,33 @@ typedef struct {
 	SIZE_T size;
 } win_process;
 
-
-typedef struct {
-	uint8_t *address;
-	size_t size;
-} vm_process;
-
-typedef struct {
-	uintptr_t m_epc;
-	uintptr_t m_cause;
-	uintptr_t m_status;
-	uintptr_t m_tval;
-} vm_csr;
-
-typedef struct {
+// NOTE: 
+// - who is allocating/destroying the buffer?
+// - who is loading/mapping the ELF?
+typedef struct _vmcs {
     uint64_t magic1, magic2;
-    uint64_t thread_id;
     uint64_t self;
 
-    struct {
-        uint64_t buffer;
-        uint64_t size;
-        uint64_t write_size;   // values
-    } view;
-
-    // control (values)
-    volatile uint64_t ready;   
-    volatile uint64_t error;   
-
-    // published addresses (shadow pointers -> where to WPM)
-	uint64_t size_ptr;
-    uint64_t ready_ptr;        // &ready
-    uint64_t error_ptr;        // &error
-    uint64_t write_size_ptr;   // &view.write_size
+	struct {
+		uint64_t buffer;
+		uint64_t size;
+		uint64_t write_size;   
+		volatile uint64_t ready;   
+	} proc;
 							   
-	uint64_t vmcs_ptr;
-	uint64_t vpc_ptr;
-	uint64_t vstack_ptr;
-	uint64_t vregs_ptr;
-	uint64_t vprog_ptr;
-} vm_channel;
+	struct {
+		uint64_t pc;
+		uint64_t vscratch[8];
+		uint64_t vregs[32];
+		uint64_t vstack[32];
 
-
-// NOTE: channel embeded and on the stack
-typedef struct _vmcs {
-	vm_channel channel;
-
-	uint64_t pc;
-	uint64_t vscratch[8];
-	uint64_t vregs[32];
-	uint64_t vstack[32];
-
-	vm_process process;
-	vm_csr csr;
+		struct {
+			uintptr_t m_epc;
+			uintptr_t m_cause;
+			uintptr_t m_status;
+			uintptr_t m_tval;
+		} csr;
+	} hdw;
 
 	uint64_t load_rsv_addr;
 	uint64_t load_rsv_valid;
