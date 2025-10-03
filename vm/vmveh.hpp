@@ -16,20 +16,20 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 
-	vmcs->csr.m_cause = code;
-	vmcs->csr.m_epc = winctx->Rip;
+	vmcs->hdw.csr.m_cause = code;
+	vmcs->hdw.csr.m_epc = winctx->Rip;
 
 	winctx->EFlags &= ~0x100;  // Clear TF before returning
 
 	if (vmcs->halt || code != RVM_TRAP_EXCEPTION) {
 		LONGJMP(vmcs->exit_handler, true);
 	}
-	switch (vmcs->csr.m_cause) {
+	switch (vmcs->hdw.csr.m_cause) {
 		case environment_exit: 		LONGJMP(vmcs->exit_handler, true);
 		case environment_branch: 	LONGJMP(vmcs->trap_handler, true);
 		case environment_execute:
 		{
-			void (__stdcall *memory)() = (void(__stdcall*)())vmcs->pc;
+			void (__stdcall *memory)() = (void(__stdcall*)())vmcs->hdw.pc;
 			memory();
 			break;
 		}
@@ -41,7 +41,7 @@ LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 		default: break;
 	}
 
-	reg_read(uintptr_t, vmcs->pc, regenum::ra); 
+	reg_read(uintptr_t, vmcs->hdw.pc, regenum::ra); 
 	LONGJMP(vmcs->trap_handler, true); 
 
 	return EXCEPTION_CONTINUE_EXECUTION;

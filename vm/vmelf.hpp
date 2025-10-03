@@ -264,7 +264,8 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		x_memcpy((void*)vmcs->channel.view.buffer, img, img_size);
+		x_memcpy((void*)vmcs->proc.buffer, img, img_size);
+		vmcs->proc.write_size = img_size;
 		VirtualFree(img, 0, MEM_RELEASE);
 
 		g_elf_base = base;
@@ -291,8 +292,7 @@ namespace rvm64::elf {
 		if (!in_img(dyn_off, sizeof(elf64_dyn), g_img_size)) return;
 
 		uint64_t rela_va=0, rela_sz=0, rela_ent=sizeof(elf64_rela);
-		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off);
-				in_img((uint8_t*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
+		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off); in_img((uint8_t*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
 
 			if (d->d_tag == DT_RELA)     rela_va  = d->d_un.d_ptr;
 			else if (d->d_tag == DT_RELASZ)  rela_sz  = d->d_un.d_val;
@@ -341,8 +341,8 @@ namespace rvm64::elf {
 
 		// Pull tables
 		uint64_t symtab_va=0, strtab_va=0, syment=sizeof(elf64_sym), strsz=0;
-		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off);
-				in_img((uint8_t*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
+
+		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off); in_img((uint8_t*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
 			if (d->d_tag == DT_SYMTAB)  symtab_va = d->d_un.d_ptr;
 			else if (d->d_tag == DT_STRTAB)  strtab_va = d->d_un.d_ptr;
 			else if (d->d_tag == DT_SYMENT)  syment    = d->d_un.d_val ? d->d_un.d_val : sizeof(elf64_sym);
@@ -449,7 +449,7 @@ namespace rvm64::elf {
 	}
 
 	_native void patch_elf_plt_and_set_entry() {
-		uint8_t* img = (uint8_t*)vmcs->channel.view.buffer;
+		uint8_t* img = (uint8_t*)vmcs->proc.buffer;
 		if (!img || g_img_size == 0) {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
