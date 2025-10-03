@@ -31,7 +31,7 @@
 #define NtCurrentThread()       ((HANDLE)(LONG_PTR)-2)
 
 #define VM_NATIVE_STACK_ALLOC   0x210
-#define VSTACK_MAX_CAPACITY     (1024 * 2)
+#define VSTACK_MAX_CAPACITY     (sizeof(uint64_t) * 32)
 #define RVM_TRAP_EXCEPTION      0xE0424242
 
 #define PROCESS_BUFFER_SIZE     0x10000
