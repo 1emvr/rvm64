@@ -28,10 +28,10 @@ namespace superv {
 			return 1;
 		}
 
-		if (!superv::patch::install_entry_hook(proc, channel)) {
-			printf("[ERR] could not install entrypoint hook in the vm\n");
-			return 1;
-		}
+		// if (!superv::patch::install_entry_hook(proc, channel)) {
+		// 	printf("[ERR] could not install entrypoint hook in the vm\n");
+		// 	return 1;
+		// }
 
 		// if (!superv::patch::install_decoder_hook(proc, channel)) {
 		// 	printf("[ERR] could not install decoder hook in the vm\n");
