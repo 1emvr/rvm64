@@ -16,6 +16,21 @@ typedef struct {
 
 // NOTE: 
 // - vm allocates/destroys process buffer & loads ELF into memory
+
+typedef struct _hardware {
+	uint64_t pc;
+	uint64_t vscratch[8];
+	uint64_t vregs[32];
+	uint64_t vstack[32];
+
+	struct {
+		uintptr_t m_epc;
+		uintptr_t m_cause;
+		uintptr_t m_status;
+		uintptr_t m_tval;
+	} csr;
+} hardware;
+
 typedef struct _vmcs {
     uint64_t magic1, magic2;
 	uint64_t thread_id;
@@ -34,20 +49,7 @@ typedef struct _vmcs {
 		volatile uint64_t ready;   
 	} proc;
 							   
-	struct {
-		uint64_t pc;
-		uint64_t vscratch[8];
-		uint64_t vregs[32];
-		uint64_t vstack[32];
-
-		struct {
-			uintptr_t m_epc;
-			uintptr_t m_cause;
-			uintptr_t m_status;
-			uintptr_t m_tval;
-		} csr;
-	} hdw;
-
+	hardware* hdw;
 	uint64_t load_rsv_addr;
 	uint64_t load_rsv_valid;
 

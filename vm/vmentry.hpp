@@ -14,6 +14,11 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 																	
+		vmcs->hdw = (hardware*)VirtualAlloc(nullptr, sizeof(vmcs->hdw), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		if (!vmcs->hdw) {
+			CSR_SET_TRAP(0, out_of_memory, 0, 0, 1);
+		}
+
 		rvm64::elf::load_elf_image(vmcs->proc.buffer, vmcs->proc.write_size);
 		rvm64::elf::patch_elf_plt_and_set_entry();
 
