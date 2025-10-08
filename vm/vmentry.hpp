@@ -39,6 +39,7 @@ namespace rvm64::entry {
 					CSR_SET_TRAP(nullptr, environment_exit, 0, 0, 1);
 				}
 			}
+			__debugbreak();
 			rvm64::decoder::vm_decode(opcode); 
 			vmcs->hdw.pc += 4;
 		}
