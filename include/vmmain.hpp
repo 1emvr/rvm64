@@ -14,9 +14,6 @@ typedef struct {
 	SIZE_T size;
 } win_process;
 
-// NOTE: 
-// - vm allocates/destroys process buffer & loads ELF into memory
-
 typedef struct _hardware {
 	uint64_t pc;
 	uint64_t vscratch[8];
@@ -29,6 +26,9 @@ typedef struct _hardware {
 		uintptr_t m_status;
 		uintptr_t m_tval;
 	} csr;
+
+	jmp_buf trap_handler;
+	jmp_buf exit_handler;
 } hardware;
 
 typedef struct _vmcs {
@@ -52,9 +52,6 @@ typedef struct _vmcs {
 	hardware* hdw;
 	uint64_t load_rsv_addr;
 	uint64_t load_rsv_valid;
-
-	jmp_buf trap_handler;
-	jmp_buf exit_handler;
 
 	int cache;
 	int trap;

@@ -139,13 +139,13 @@ namespace rvm64::rvni {
 		ucrt_function *api = nullptr;
 
 		for (auto &f : ucrt_function_table) {
-			if (vmcs->hdw.pc == (uintptr_t)f.address) {
+			if (vmcs->hdw->pc == (uintptr_t)f.address) {
 				api = &f;
 				break;
 			}
 		}
 		if (!api) {
-			CSR_SET_TRAP(vmcs->hdw.pc, image_bad_symbol, 0, vmcs->hdw.pc, 1);
+			CSR_SET_TRAP(vmcs->hdw->pc, image_bad_symbol, 0, vmcs->hdw->pc, 1);
 		}
 
 		switch (api->typenum) {
@@ -305,7 +305,7 @@ namespace rvm64::rvni {
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, rvm64::mmu::translate_linux_prot(prot));
 				
 				if (!rvm64::mmu::memory_register((uintptr_t*)&addr, host_mem, len)) {
-					CSR_SET_TRAP(vmcs->hdw.pc, out_of_memory, 0, (uintptr_t)addr, 1);
+					CSR_SET_TRAP(vmcs->hdw->pc, out_of_memory, 0, (uintptr_t)addr, 1);
 				}
 
 				reg_write(uintptr_t, regenum::a0, addr);
@@ -342,7 +342,7 @@ namespace rvm64::rvni {
 				break;
 			}
 			default: {
-				CSR_SET_TRAP(vmcs->hdw.pc, illegal_instruction, 0, api->typenum, 1);
+				CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, api->typenum, 1);
 			}
 		}
 	}

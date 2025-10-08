@@ -16,7 +16,7 @@ namespace rvm64 {
 		}
 
 		*(volatile uint64_t*)&vmcs->proc.ready = 0ULL;
-		if (setjmp(vmcs->exit_handler)) {
+		if (setjmp(vmcs->hdw->exit_handler)) {
 			goto defer;	
 		}
 
@@ -29,7 +29,7 @@ defer:
 		rvm64::ipc::vm_destroy_channel();
 
 		restore_host_context();
-		return vmcs->hdw.csr.m_cause;
+		return vmcs->hdw->csr.m_cause;
 	}
 };
 

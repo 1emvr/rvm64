@@ -43,10 +43,10 @@
 #define RV64_RET                0x00008067
 
 #define CSR_SET_TRAP(epc, cause, stat, val, hlt) 		\
-    vmcs->hdw.csr.m_epc = (uintptr_t)(epc);          	\
-    vmcs->hdw.csr.m_cause = (cause);                 	\
-    vmcs->hdw.csr.m_status = (stat);                 	\
-    vmcs->hdw.csr.m_tval = (val);                    	\
+    vmcs->hdw->csr.m_epc = (uintptr_t)(epc);          	\
+    vmcs->hdw->csr.m_cause = (cause);                 	\
+    vmcs->hdw->csr.m_status = (stat);                 	\
+    vmcs->hdw->csr.m_tval = (val);                    	\
     vmcs->halt = (hlt);                          		\
     RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	\
     VM_UNREACHABLE()

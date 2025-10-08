@@ -476,7 +476,7 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		vmcs->hdw.pc = (uintptr_t)(img + pc_off);
+		vmcs->hdw->pc = (uintptr_t)(img + pc_off);
 	}
 };
 #endif // VMELF_H
