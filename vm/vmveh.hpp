@@ -6,7 +6,7 @@
 #include "../include/vmmem.hpp"
 
 #include "rvni.hpp"
-#define LONGJMP(addr, b) longjmp(addr, b); VM_UNREACHABLE()
+#define LONGJMP(addr, b) __debugbreak(); longjmp(addr, b); VM_UNREACHABLE()
 
 LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
 	CONTEXT *winctx = exception_info->ContextRecord;
