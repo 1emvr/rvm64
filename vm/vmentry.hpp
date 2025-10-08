@@ -14,7 +14,7 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 																	
-		vmcs->hdw = (hardware*)VirtualAlloc(nullptr, sizeof(vmcs->hdw), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		vmcs->hdw = (hardware*)VirtualAlloc(nullptr, sizeof(hardware), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (!vmcs->hdw) {
 			CSR_SET_TRAP(0, out_of_memory, 0, 0, 1);
 		}
