@@ -2251,11 +2251,6 @@ namespace rvm64::operations {
 			reg_read(uint64_t, v1, _rs2);
 
 			address += (intptr_t)_imm;
-			printf("vstack start: 0x%p\n", vmcs->hdw->vstack);
-			printf("vstack end: 0x%p\n", vmcs->hdw->vstack + VSTACK_MAX_CAPACITY);
-			printf("process start: 0x%p\n", vmcs->proc.buffer);
-			printf("process end: 0x%p\n", vmcs->proc.buffer + vmcs->proc.size);
-			printf("write address: 0x%p\n", address);
 			mem_write(uint64_t, address, v1);
 		}
 
