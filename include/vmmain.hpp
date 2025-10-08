@@ -6,7 +6,6 @@
 
 #include "vmcommon.hpp"
 
-
 typedef struct {
 	HANDLE handle;
 	DWORD pid;
