@@ -30,6 +30,9 @@ namespace rvm64::entry {
 
 	_vmcall void vm_exit() {
 		RemoveVectoredExceptionHandler(veh_handle);
+		if (vmcs->hdw) {
+			VirtualFree(vmcs->hdw, 0, MEM_RELEASE);
+		}
 	}
 
 	_vmcall void vm_entry() {
