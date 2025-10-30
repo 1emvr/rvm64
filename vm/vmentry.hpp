@@ -15,7 +15,7 @@ namespace rvm64::entry {
 	_vmcall void vm_init() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 																	
-		vmcs->ptrs.self   = (uint64_t)vmcs;
+		vmcs->self = (uint64_t)vmcs;
 		vmcs->proc.buffer = (uint64_t)VirtualAlloc(nullptr, PROCESS_BUFFER_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		if (!vmcs->proc.buffer) {
@@ -27,9 +27,9 @@ namespace rvm64::entry {
 		vmcs->proc.write_size 		= (uint64_t)0;
 		vmcs->proc.ready 			= (uint64_t)0;
 
-		vmcs->ptrs.size_ptr 		= (uint64_t)&vmcs->proc.size;
-		vmcs->ptrs.write_size_ptr 	= (uint64_t)&vmcs->proc.write_size;
-		vmcs->ptrs.ready_ptr 		= (uint64_t)&vmcs->proc.ready;
+		vmcs->size_ptr 		= (uint64_t)&vmcs->proc.size;
+		vmcs->write_size_ptr 	= (uint64_t)&vmcs->proc.write_size;
+		vmcs->ready_ptr 		= (uint64_t)&vmcs->proc.ready;
 
 		vmcs->magic1 = VM_MAGIC1;
 		vmcs->magic2 = VM_MAGIC2;
@@ -62,9 +62,9 @@ namespace rvm64::entry {
 		vmcs->proc.write_size 		= (uint64_t)0;
 		vmcs->proc.ready 			= (uint64_t)0;
 
-		vmcs->ptrs.size_ptr 		= (uint64_t)0;
-		vmcs->ptrs.write_size_ptr 	= (uint64_t)0;
-		vmcs->ptrs.ready_ptr 		= (uint64_t)0;
+		vmcs->size_ptr 		= (uint64_t)0;
+		vmcs->write_size_ptr 	= (uint64_t)0;
+		vmcs->ready_ptr 		= (uint64_t)0;
 
 		vmcs->magic1 = 0;
 		vmcs->magic2 = 0;

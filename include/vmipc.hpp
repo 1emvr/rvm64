@@ -7,7 +7,7 @@
 namespace rvm64::ipc {
 	bool get_vmcs_ready(HANDLE hprocess, vmcs_t* vmcs) {
 		uint64_t v = 0;
-		if (!rvm64::memory::read_process_memory(hprocess, (uintptr_t)vmcs->ptrs.ready_ptr, (uint8_t*)&v, sizeof(v))) {
+		if (!rvm64::memory::read_process_memory(hprocess, (uintptr_t)vmcs->ready_ptr, (uint8_t*)&v, sizeof(v))) {
 			printf("[ERR] read channel->ready failed.\n");
 			return false;
 		}
@@ -16,7 +16,7 @@ namespace rvm64::ipc {
 
 	bool set_vmcs_ready(HANDLE hprocess, vmcs_t* vmcs, uint64_t ready) {
 		size_t write = 0;
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)vmcs->ptrs.ready_ptr, (uint8_t*)&ready, sizeof(ready), &write)) {
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)vmcs->ready_ptr, (uint8_t*)&ready, sizeof(ready), &write)) {
 			printf("[ERR] write channel->ready failed.\n");
 			return false;
 		}
@@ -25,7 +25,7 @@ namespace rvm64::ipc {
 
 	uint64_t get_vmcs_write_size(HANDLE hprocess, vmcs_t* vmcs) {
 		uint64_t v = 0;
-		if (!rvm64::memory::read_process_memory(hprocess, (uintptr_t)vmcs->ptrs.write_size_ptr, (uint8_t*)&v, sizeof(v))) {
+		if (!rvm64::memory::read_process_memory(hprocess, (uintptr_t)vmcs->write_size_ptr, (uint8_t*)&v, sizeof(v))) {
 			printf("[ERR] read channel->view.write_size failed.\n");
 			return 0;
 		}
@@ -34,7 +34,7 @@ namespace rvm64::ipc {
 
 	bool set_vmcs_write_size(HANDLE hprocess, vmcs_t* vmcs, uint64_t nbytes) {
 		size_t write = 0;
-		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)vmcs->ptrs.write_size_ptr, (uint8_t*)&nbytes, sizeof(nbytes), &write)) {
+		if (!rvm64::memory::write_process_memory(hprocess, (uintptr_t)vmcs->write_size_ptr, (uint8_t*)&nbytes, sizeof(nbytes), &write)) {
 			printf("[ERR] write channel->view.write_size failed.\n");
 			return false;
 		}

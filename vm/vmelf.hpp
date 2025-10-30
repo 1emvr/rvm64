@@ -411,6 +411,7 @@ namespace rvm64::elf {
 		uint64_t rela_off   = jmprel_va - g_elf_base;
 		uint64_t symtab_off = symtab_va - g_elf_base;
 		uint64_t strtab_off = strtab_va - g_elf_base;
+
 		if (!in_img(rela_off, pltrel_sz, g_img_size)) return;
 		if (!in_img(symtab_off, sizeof(elf64_sym), g_img_size)) return;
 		if (!in_img(strtab_off, 1, g_img_size)) return;

@@ -102,7 +102,9 @@ namespace rvm64::rvni {
 
 		void* native = (void*)GetProcAddress(ucrt, alias_name);
 		if (!native) {
-			if (!(native = (void*)GetProcAddress(kern32, alias_name))) {
+			native = (void*)GetProcAddress(kern32, alias_name);
+
+			if (!native) {
 				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (uintptr_t)alias_name, 1);
 			}
 		}

@@ -34,12 +34,10 @@ typedef struct _vmcs {
     uint64_t magic1, magic2;
 	uint64_t thread_id;
 
-	struct {
-		uint64_t self;
-		uint64_t ready_ptr;	
-		uint64_t size_ptr;
-		uint64_t write_size_ptr;
-	} ptrs;
+	uint64_t self;
+	uint64_t ready_ptr;	
+	uint64_t size_ptr;
+	uint64_t write_size_ptr;
 
 	struct {
 		uint64_t buffer;
