@@ -45,7 +45,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 
-VM_CALL VOID VmInit (
+VM_CALL VOID MemoryInit (
 		_Out_ UINT_PTR* Memory, 
 		_Out_ UINT_PTR* MemorySize) 
 {
@@ -58,28 +58,35 @@ VM_CALL VOID VmInit (
 		return;
 	}
 
-	Vmcs->Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	if (! Vmcs->Context) {
-		SetCsrTrap (0, OutOfMemory, 0, 0, 1);
-	}
-
 	Vmcs->Module.Kernel32 = GetModuleHandle ("kernel32.dll");
 	Vmcs->Module.Ucrtbase = GetModuleHandle ("ucrtbase.dll");
 
-	Vmcs->Context->InterHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
-	Vmcs->Context->Halt 		= 0;
-	Vmcs->Context->Ready		= 0;
-
-	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw->Stack + sizeof (Vmcs->Hdw.Stack));
+	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw.Stack + sizeof (Vmcs->Hdw.Stack));
 }
 
 
-VM_CALL VOID VmRelease (_In_ const UINT_PTR* Memory, _In_ const UINT_PTR* MemorySize) {
-	RemoveVectoredExceptionHandler (Vmcs->Context->InterHandle);
-	Vmcs->Context->InterHandle = 0;
+VM_CALL VOID ContextInit (_Inout_ VM_CONTEXT** Context) {
+	if (!Context) {
+		return;
+	}
+	*Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	if (! *Context) {
+		SetCsrTrap (0, OutOfMemory, 0, 0, 1);
+	}
 
+	(*Context)->InterHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
+	(*Context)->Halt 			= 0;
+	(*Context)->Ready			= 0;
+
+}
+
+
+VM_CALL VOID MemoryRelease (
+		_In_ const UINT_PTR* Memory, 
+		_In_ const UINT_PTR* MemorySize) 
+{
 	if (*Memory) {
-		MemSet (*Memory, 0, MemorySize);
+		MemSet (*Memory, 0, *MemorySize);
 		VirtualFree ((LPVOID)*Memory, 0, MEM_RELEASE);
 
 		*Memory = 0;
@@ -90,6 +97,15 @@ VM_CALL VOID VmRelease (_In_ const UINT_PTR* Memory, _In_ const UINT_PTR* Memory
 
 	Vmcs->Magic1 = 0;
 	Vmcs->Magic2 = 0;
+}
+
+
+VM_CALL VOID ContextRelease (_In_ VM_CONTEXT** Context) {
+	RemoveVectoredExceptionHandler ((*Context)->InterHandle);
+	(*Context)->InterHandle = 0;
+
+	VirtualFree (*Context, 0, MEM_RELEASE);
+	*Context = 0;
 }
 
 

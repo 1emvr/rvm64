@@ -12,14 +12,13 @@ NATIVE_CALL INT32 VmMain (
 	Vmcs->Magic1 = Magic1;
 	Vmcs->Magic2 = Magic2;
 
+	ContextInit (&Vmcs->Context);
+	SaveHostRegCtx (Vmcs->Context->HostContext);
+
 	do {
-		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); // TODO: Remove context from init. They need to be separate so that SaveRegCtx can happen independently.
-
-		if (!Vmcs->Context->HostContext) {
-			SaveHostRegCtx (Vmcs->Context->HostContext);
-		}
-
+		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); // TODO: Remove context from init. They need to be separate so that SaveRegCtx can happen independently.
 		Vmcs->Context->Ready = 1;
+
 		while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
 			Sleep (10);
 		}
@@ -27,7 +26,7 @@ NATIVE_CALL INT32 VmMain (
 		LoadImage (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
 		PatchAndExecute (Vmcs->Proc.Memory); 		
 
-		VmRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
+		MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 		if (setjmp (Vmcs->Context->ExitHandler)) {
 			goto defer;	
 		}
@@ -35,7 +34,9 @@ NATIVE_CALL INT32 VmMain (
 
 defer:
 	LoadHostRegCtx (Vmcs->Context->HostContext);
-	VmRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
+
+	MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
+	ContextRelease ();
 
 	return Vmcs->Csr.Cause;
 }
