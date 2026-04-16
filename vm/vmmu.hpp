@@ -53,28 +53,28 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 
-VM_CALL VOID MemoryInit ( 
-		_Out_ UINT_PTR* Memory, 
-		_Out_ UINT_PTR* MemorySize) 
+VM_CALL VOID rvm64_memory_init ( 
+		_Out_ UINT_PTR* arena, 
+		_Out_ UINT_PTR* arena_size) 
 {
-	Vmcs->Self 		= (UINT64) &Vmcs;
-	*MemorySize 	= (UINT64) ARENA_SIZE; 
-	*Memory 		= (UINT64) VirtualAlloc (nullptr, ARENA_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	vmcs->self 	= (UINT64) &vmcs;
+	*arena 		= (UINT64) ARENA_SIZE; 
+	*arena_size = (UINT64) VirtualAlloc (nullptr, ARENA_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-	if (! *Memory) {
+	if (! *arena) {
 		SetCsrTrap (nullptr, GetLastError (), 0, 0, 1);
 		return;
 	}
 
-	Vmcs->Module.Kernel32 = GetModuleHandle ("kernel32.dll");
-	Vmcs->Module.Ucrtbase = GetModuleHandle ("ucrtbase.dll");
+	vmcs->modules.kernel32 = GetModuleHandle ("kernel32.dll");
+	vmcs->modules.ucrtbase = GetModuleHandle ("ucrtbase.dll");
 
 	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw.Stack + sizeof (Vmcs->Hdw.Stack));
 	Vmcs->Context.Ready = 1;
 }
 
 
-VM_CALL VOID ContextInit (_Inout_ VM_CONTEXT** Context) {
+VM_CALL VOID rvm64_context_init (_Inout_ VM_CONTEXT** Context) {
 	if (!Context) {
 		return;
 	}

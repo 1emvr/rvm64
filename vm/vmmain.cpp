@@ -4,18 +4,17 @@
 
 // TODO: StackSpoof, CreateThread, and interact where it lives.
 
+NATIVE_CALL VOID vm_thread (_In_ const PACKET* packet) {
+	vm_mem_init ();
+}
+
 NATIVE_CALL VOID rvm64_main () {
-	if (setjmp (vmcs->context->shutdown)) { 
-		return;	
+	check_packets ();		
+	for (int i = 0; i < packet_num; i++) {
+		packets [i] = CreateThread (nullptr, 0, vm_thread (new_vm), &params, 0, nullptr);
 	}
 
-	while (;;) {
-		// NOTE: in the context of sleepobf do we really want to continue looping forever? prob not...
-		// would probably crash or never sleep
-		//
-		// NOTE: how do we process multiple programs? do we need to?
-		run_packets ();		
-	}
+	WaitForMultipleObjects (packet_num, &packets, true, 5000);
 }
 
 
