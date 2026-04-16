@@ -16,6 +16,11 @@ NATIVE_CALL BOOL is_elf (_In_ UINT_PTR base) {
 }
 
 
+NATIVE_CALL VOID thread_main () {
+	return;
+}
+
+
 NATIVE_CALL BOOL process_packets ( 
 // Process our packed ELF files and their params for thread creation. 
 // PLT_GOT will be dynamically resolved / addresses relocated in the arena. 
@@ -85,37 +90,46 @@ NATIVE_CALL VOID rvm64_main (
 		_In_ const UINT_PTR* data, 	// data points to a pre-made arena
 		_In_ const UINT_PTR* data_size) 
 {
-	HANDLE threads [MAX_VM_THREADS] = { };		// might change it to 5 max threads idk
+	HANDLE threads [MAX_VM_THREADS] = { };		
 	PACKET_SEG new_vms = { };
 
-	process_packets (&data, &new_vms); // track params, elf data and offsets 
+	if (!process_packets (data, data_size, &new_vms)) { // track params / elf data offsets 
+		goto defer;
+	}
 	if (new_vms.count == 0) {
 		return;
 	}
 
-	for (UINT8 i = 0; i < new_vms.count; i++) {
-		UINT_PTR image = data + new_vms.image_offset [i];
-		UINT_PTR params = data + new_vms.params_offset [i];
+	for (int i = 0; i < new_vms.count; i++) {
+		UINT_PTR image_base = *data + new_vms.image_offset [i];
+		UINT_PTR params 	= *data + new_vms.params_offset [i];
 
-		threads [i] = CreateThread (nullptr, 0, vm_thread (data, image), params, 0, nullptr);
+		if (params [0] == 0) {
+			params = nullptr;
+		}
+
+		threads [i] = CreateThread (nullptr, 0, vm_thread (image_base), params, 0, nullptr); // TODO: redesign vmcs to handle multiple threads
 	}
+
 	WaitForMultipleObjects (new_vms.count, &threads, true, 5000);
+	// post_thread_response () ??
+	//
+defer:
+	// arena_release () ??
 }
 
 
-NATIVE_CALL VOID proc_main () {
-}
-
-
-NATIVE_CALL VOID rvm64_start (_In_ const LPVOID data)
+NATIVE_CALL VOID rvm64_start (
+		_In_ const UINT_PTR* data,
+		_In_ const UINT_PTR* data_size)
 {
 	VMCS instance = { };
-	vmcs = &instance;
+	vmcs = &instance; // a global vmcs instance to track everything (?)
 
-	rvm64_init (&vmcs->ctx); // NOTE: create global context for all vms.
+	rvm64_init (&vmcs->ctx); 
 	rvm64_save_reg (&vmcs->ctx->host_ctx);
 
-	rvm64_main (data);
+	rvm64_main (data, data_size); // TODO: arena_allocate () 
 
 	rvm64_load_reg (&vmcs->ctx->host_ctx);
 	rvm64_release (&vmcs->ctx); // NOTE: release context.
