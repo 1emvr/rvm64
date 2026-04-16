@@ -19,11 +19,12 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 	if (Code != RVM_TRAP_EXCEPTION) { // NOTE: If we violate something on the host, do we shutdown or halt?
-		longjmp (Vmcs->Context->Shutdown, true);
+		Vmcs->Context->Halt = 1;
+		longjmp (Vmcs->Context->Interrupt, true);
 	}
 
 	switch (Vmcs->Csr.Cause) {
-		case ENV_EXIT: 		longjmp (Vmcs->Context->Shutdown, true);
+		case ENV_SHUTDOWN: 	longjmp (Vmcs->Context->Shutdown, true);
 		case ENV_BRANCH: 	longjmp (Vmcs->Context->Interrupt, true);
 		case ENV_EXECUTE:
 		{

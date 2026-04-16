@@ -2338,6 +2338,9 @@ VOID Opcall (
 
 VM_CALL VOID VmExecute () {
 	if (setjmp (Vmcs->Context->Interrupt)) { } 
+	if (Vmcs->Context->Halt) {
+		return;
+	}
 
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
