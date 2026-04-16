@@ -16,8 +16,8 @@ NATIVE_CALL INT32 VmMain (
 	do 
 	{
 		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
-
 		Vmcs->Context->Ready = 1;
+
 		while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
 			Sleep (10);
 		}
