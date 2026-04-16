@@ -312,6 +312,8 @@ NATIVE_CALL VOID LoadImage (
 	}
 
 	MemCpy ((LPVOID) *Memory, Buffer, AlignNeed);
+	MemSet ((LPVOID) Buffer, 0, AlignNeed);
+
 	VirtualFree (Buffer, 0, MEM_RELEASE);
 }
 
