@@ -2,9 +2,7 @@
 #define RVNI_H
 #include <windows.h>
 
-#include "../include/vmmain.hpp"
-#include "../include/vmcommon.hpp"
-
+#include "vmmain.hpp"
 #include "vmrwx.hpp"
 #include "vmmu.hpp"
 
