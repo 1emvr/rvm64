@@ -74,6 +74,8 @@ NATIVE_CALL BOOL process_packets (
 			}
 		}
 
+		// TODO: Each program that is PT_LOAD needs to have space reserved for itself within the arena.
+		// They cannot be stacked end to end. Find a way to make this work.
 		total 		+= img_size; 
 		image_base 	+= img_size;
 
