@@ -78,7 +78,7 @@ typedef struct _ucrt_function {
 } UCRT_FUNCTION;
 
 
-DATA_SCN UCRT_FUNCTION FunctionTable[] = {
+DATA_SCN UCRT_FUNCTION FunctionTable [] = {
 	{ .Address = 0, .Name = C_OPEN, 	.Typenum = UCRT_FUNCTION::OPEN		}, 
 	{ .Address = 0, .Name = C_READ, 	.Typenum = UCRT_FUNCTION::READ		}, 
 	{ .Address = 0, .Name = C_WRITE, 	.Typenum = UCRT_FUNCTION::WRITE 	}, 
@@ -156,7 +156,7 @@ VM_CALL VOID NativeCall () {
 
 	for (auto &f : FunctionTable) {
 		if (Vmcs->Hdw.Pc == (UINT_PTR)f.Address) {
-			Api.Address = &f;
+			Api = &f;
 			break;
 		}
 	}
