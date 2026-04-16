@@ -48,6 +48,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 		default:  			
 			longjmp (Vmcs->Context->Interrupt, true); 
 	}
+	return EXCEPTION_CONTINUE_EXECUTION;
 }
 
 
