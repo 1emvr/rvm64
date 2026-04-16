@@ -12,7 +12,7 @@ NATIVE_CALL INT32 VmMain (
 	Vmcs->Magic1 = Magic1;
 	Vmcs->Magic2 = Magic2;
 	{
-		SaveHostContext ();
+		SaveHostRegisterContext ();
 		VmInit (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // init memory/modules.
 														   
 		Vmcs->Context->Ready = 1;
@@ -30,7 +30,7 @@ NATIVE_CALL INT32 VmMain (
 
 defer:
 	VmFree ();
-	RestoreHostContext ();
+	LoadHostRegisterContext ();
 
 	return Vmcs->Csr.Cause;
 }
