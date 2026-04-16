@@ -501,7 +501,7 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 
 
 VM_CALL void lrw () {
-	UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT32 value = 0;
+	INT32 value = 0; UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
@@ -514,7 +514,7 @@ VM_CALL void lrw () {
 
 
 VM_CALL void lrd () {
-	UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT64 value = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
@@ -527,57 +527,57 @@ VM_CALL void lrd () {
 
 
 VM_CALL void fmv_d_x () {
-	UINT8 _rd = 0, _rs1 = 0; INT64 v1 = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (INT64, 	v1, 	_rs1);
-	RegWrite (INT64, 	_rd, 	v1);
+	RegRead (INT64, 	value, 	_rs1);
+	RegWrite (INT64, 	_rd, 	value);
 }
 
 
 VM_CALL void fcvt_s_d () {
-	UINT8 _rd = 0, _rs1 = 0; float v1 = 0;
+	float value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (double, 	v1, _rs1);
-	RegWrite (float, 	_rd, v1);
+	RegRead (double, 	value, 	_rs1);
+	RegWrite (float, 	_rd, 	value);
 }
 
 
 VM_CALL void fcvt_d_s () {
-	UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
+	double value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (float, 	v1, _rs1);
-	RegWrite (double, 	_rd, v1);
+	RegRead (float, 	value, 	_rs1);
+	RegWrite (double, 	_rd, 	value);
 }
 
 
 VM_CALL void fcvt_w_d () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
+	INT32 value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (double, v1, 	_rs1);
-	RegWrite (INT32, _rd, 	v1);
+	RegRead (double, 	value, 	_rs1);
+	RegWrite (INT32, 	_rd, 	value);
 }
 
 
 VM_CALL void fcvt_wu_d () {
-	UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
+	UINT32 value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (double, v1, 	_rs1);
-	RegWrite (UINT32, _rd, 	v1);
+	RegRead (double, 	value, 	_rs1);
+	RegWrite (UINT32, 	_rd, 	value);
 }
 
 
