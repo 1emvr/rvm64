@@ -503,111 +503,111 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 VM_CALL void lrw () {
 	UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT32 value = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
 	RegRead (UINT_PTR, address, _rs1);
 
-	MemRead (INT32, value, address);
-	RegWrite (INT32, _rd, value);
+	MemRead (INT32, 	value, 	address);
+	RegWrite (INT32, 	_rd, 	value);
 }
 
 
 VM_CALL void lrd () {
 	UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT64 value = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
 	RegRead (UINT_PTR, address, _rs1);
 
-	MemRead (INT64, value, address);
-	RegWrite (INT64, _rd, value);
+	MemRead (INT64, 	value, 	address);
+	RegWrite (INT64, 	_rd, 	value);
 }
 
 
 VM_CALL void fmv_d_x () {
 	UINT8 _rd = 0, _rs1 = 0; INT64 v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (INT64, v1, _rs1);
-	RegWrite (INT64, _rd, v1);
+	RegRead (INT64, 	v1, 	_rs1);
+	RegWrite (INT64, 	_rd, 	v1);
 }
 
 
 VM_CALL void fcvt_s_d () {
 	UINT8 _rd = 0, _rs1 = 0; float v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (double, v1, _rs1);
-	RegWrite (float, _rd, v1);
+	RegRead (double, 	v1, _rs1);
+	RegWrite (float, 	_rd, v1);
 }
 
 
 VM_CALL void fcvt_d_s () {
 	UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (float, v1, _rs1);
-	RegWrite (double, _rd, v1);
+	RegRead (float, 	v1, _rs1);
+	RegWrite (double, 	_rd, v1);
 }
 
 
 VM_CALL void fcvt_w_d () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (double, v1, _rs1);
-	RegWrite (INT32, _rd, v1);
+	RegRead (double, v1, 	_rs1);
+	RegWrite (INT32, _rd, 	v1);
 }
 
 
 VM_CALL void fcvt_wu_d () {
 	UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (double, v1, _rs1);
-	RegWrite (UINT32, _rd, v1);
+	RegRead (double, v1, 	_rs1);
+	RegWrite (UINT32, _rd, 	v1);
 }
 
 
 VM_CALL void fcvt_d_w () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (INT32, v1, _rs1);
-	RegWrite (double, _rd, v1);
+	RegRead (INT32, v1, 	_rs1);
+	RegWrite (double, _rd, 	v1);
 }
 
 
 VM_CALL void fcvt_d_wu () {
 	UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (UINT32, v1, _rs1);
-	RegWrite (double, _rd, v1);
+	RegRead (UINT32, v1, 	_rs1);
+	RegWrite (double, _rd, 	v1);
 }
 
 
 VM_CALL void fclass_d () { // NOTE: maybe not even real...
 	UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
 
 	RegRead (double, v1, _rs1);
 	converter.d = v1;
@@ -658,36 +658,36 @@ VM_CALL void fclass_d () { // NOTE: maybe not even real...
 VM_CALL void addi () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (INT32, _imm, IMM);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
+	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT64, v1, _rs1);
-	RegWrite (INT64, _rd, (v1 + _imm));
+	RegRead (INT64, 	v1, 	_rs1);
+	RegWrite (INT64, 	_rd, 	(v1 + _imm));
 }
 
 
 VM_CALL void slti () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (INT32, _imm, IMM);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
+	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT64, v1, _rs1);
-	RegWrite (INT64, _rd, ((v1 < _imm) ? 1 : 0));
+	RegRead (INT64, 	v1, 	_rs1);
+	RegWrite (INT64, 	_rd, 	((v1 < _imm) ? 1 : 0));
 }
 
 
 VM_CALL void sltiu () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT64 v1 = 0;
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (INT32, _imm, IMM);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
+	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (UINT64, v1, _rs1);
-	RegWrite (UINT64, _rd, ((v1 < (UINT32)_imm) ? 1 : 0));
+	RegRead (UINT64, 	v1, 	_rs1);
+	RegWrite (UINT64, 	_rd, 	((v1 < (UINT32)_imm) ? 1 : 0));
 }
 
 
@@ -1358,9 +1358,9 @@ VM_CALL void addw () {
 VM_CALL void subw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1372,9 +1372,9 @@ VM_CALL void subw () {
 VM_CALL void mulw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1386,9 +1386,9 @@ VM_CALL void mulw () {
 VM_CALL void srlw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -1400,9 +1400,9 @@ VM_CALL void srlw () {
 VM_CALL void sraw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -1414,9 +1414,9 @@ VM_CALL void sraw () {
 VM_CALL void divuw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT32, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -1428,9 +1428,9 @@ VM_CALL void divuw () {
 VM_CALL void sllw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1442,9 +1442,9 @@ VM_CALL void sllw () {
 VM_CALL void divw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1456,9 +1456,9 @@ VM_CALL void divw () {
 VM_CALL void remw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1470,9 +1470,9 @@ VM_CALL void remw () {
 VM_CALL void remuw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT32, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -1484,9 +1484,9 @@ VM_CALL void remuw () {
 VM_CALL void add () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1498,9 +1498,9 @@ VM_CALL void add () {
 VM_CALL void sub () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1512,9 +1512,9 @@ VM_CALL void sub () {
 VM_CALL void mul () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1526,9 +1526,9 @@ VM_CALL void mul () {
 VM_CALL void sll () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT32, _rs1, v1);
 	RegRead (INT32, _rs2, v2);
@@ -1540,9 +1540,9 @@ VM_CALL void sll () {
 VM_CALL void mulh () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT_PTR, v1, _rs1);
 	RegRead (INT_PTR, v2, _rs2);
@@ -1562,9 +1562,9 @@ VM_CALL void mulh () {
 VM_CALL void slt () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT_PTR, v1, _rs1);
 	RegRead (INT_PTR, v2, _rs2);
@@ -1576,9 +1576,9 @@ VM_CALL void slt () {
 VM_CALL void mulhsu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0; UINT_PTR v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1597,9 +1597,9 @@ VM_CALL void mulhsu () {
 VM_CALL void sltu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1611,9 +1611,9 @@ VM_CALL void sltu () {
 VM_CALL void mulhu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1631,9 +1631,9 @@ VM_CALL void mulhu () {
 VM_CALL void xor () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1645,9 +1645,9 @@ VM_CALL void xor () {
 VM_CALL void div () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1659,9 +1659,9 @@ VM_CALL void div () {
 VM_CALL void srl () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0; UINT32 v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -1673,9 +1673,9 @@ VM_CALL void srl () {
 VM_CALL void sra () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0; UINT32 v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT_PTR, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -1687,9 +1687,9 @@ VM_CALL void sra () {
 VM_CALL void divu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1705,9 +1705,9 @@ VM_CALL void divu () {
 VM_CALL void or () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT_PTR, _rs1, v1);
 	RegRead (INT_PTR, _rs2, v2);
@@ -1719,9 +1719,9 @@ VM_CALL void or () {
 VM_CALL void rem () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (INT_PTR, v1, _rs1);
 	RegRead (INT_PTR, v2, _rs2);
@@ -1737,9 +1737,9 @@ VM_CALL void rem () {
 VM_CALL void and () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1751,9 +1751,9 @@ VM_CALL void and () {
 VM_CALL void remu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1769,9 +1769,9 @@ VM_CALL void remu () {
 VM_CALL void amoswap_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT64, v2, _rs2);
@@ -1779,16 +1779,15 @@ VM_CALL void amoswap_d () {
 	MemRead (INT64, v1, address);
 	MemWrite (INT64, address, v2);
 	RegWrite (INT64, _rd, v1);
-
 }
 
 
 VM_CALL void amoadd_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT64, v2, _rs2);
@@ -1797,16 +1796,15 @@ VM_CALL void amoadd_d () {
 	MemRead (INT64, v1, address);
 	MemWrite (INT64, address, (v1 + v2));
 	RegWrite (INT64, _rd, v1);
-
 }
 
 
 VM_CALL void amoxor_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT64, v2, _rs2);
@@ -1815,106 +1813,95 @@ VM_CALL void amoxor_d () {
 	MemRead (INT64, v1, address);
 	MemWrite (INT64, address, (v1 ^ v2));
 	RegWrite (INT64, _rd, v1);
-
 }
 
 
 VM_CALL void amoand_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT64, v2, _rs2);
 
-
 	MemRead (INT64, v1, address);
 	MemWrite (INT64, address, (v1 & v2));
 	RegWrite (INT64, _rd, v1);
-
 }
 
 
 VM_CALL void amoor_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT64, v2, _rs2);
 
-
 	MemRead (INT64, v1, address);
 	MemWrite (INT64, address, (v1 | v2));
 	RegWrite (INT64, _rd, v1);
-
 }
 
 
 VM_CALL void amomin_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (UINT64, v2, _rs2);
 
-
 	MemRead (INT64, v1, address);
 	MemWrite (INT64, address, (v1 < v2 ? v1 : v2));
 	RegWrite (UINT64, _rd, v1);
-
 }
 
 
 VM_CALL void amomax_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT64, v2, _rs2);
 
-
 	MemRead (INT64, v1, address);
 	MemWrite (INT64, address, (v1 < v2 ? v2 : v1));
 	RegWrite (INT64, _rd, v1);
-
 }
 
 
 VM_CALL void amominu_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, _rs1, address);
 	RegRead (UINT64, _rs2, v2);
 
-
 	MemRead (UINT64, v1, address);
 	MemWrite (UINT64, address, (v1 < v2 ? v1 : v2));
 	RegWrite (UINT64, _rd, v1);
-
 }
 
 
 VM_CALL void amomaxu_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT64 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (UINT64, v2, _rs2);
@@ -1929,9 +1916,9 @@ VM_CALL void amomaxu_d () {
 VM_CALL void amoswap_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1946,9 +1933,9 @@ VM_CALL void amoswap_w () {
 VM_CALL void amoadd_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1963,9 +1950,9 @@ VM_CALL void amoadd_w () {
 VM_CALL void amoxor_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -1980,116 +1967,104 @@ VM_CALL void amoxor_w () {
 VM_CALL void amoand_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT32, v2, _rs2);
 
-
 	MemRead (INT32, v1, address);
 	MemWrite (INT32, address, (v1 & v2));
 	RegWrite (INT32, _rd, v1);
-
 }
 
 
 VM_CALL void amoor_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT32, v2, _rs2);
 
-
 	MemRead (INT32, v1, address);
 	MemWrite (INT32, address, (v1 | v2));
 	RegWrite (INT32, _rd, v1);
-
 }
 
 
 VM_CALL void amomin_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT32, v2, _rs2);
 
-
 	MemRead (INT32, v1, address);
 	MemWrite (INT32, address, (v1 < v2 ? v1 : v2));
 	RegWrite (INT32, _rd, v1);
-
 }
 
 
 VM_CALL void amomax_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (INT32, v2, _rs2);
 
-
 	MemRead (INT32, v1, address);
 	MemWrite (INT32, address, (v1 < v2 ? v2 : v1));
 	RegWrite (INT32, _rd, v1);
-
 }
 
 
 VM_CALL void amominu_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (UINT32, v2, _rs2);
 
-
 	MemRead (UINT32, v1, address);
 	MemWrite (UINT32, address, (v1 < v2 ? v1 : v2));
 	RegWrite (UINT32, _rd, v1);
-
 }
 
 
 VM_CALL void amomaxu_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT32 v1 = 0, v2 = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (UINT32, v2, _rs2);
 
-
 	MemRead (UINT32, v1, address);
 	MemWrite (UINT32, address, (v1 < v2 ? v2 : v1));
 	RegWrite (UINT32, _rd, v1);
-
 }
 
 
 VM_CALL void lui () {
 	UINT8 _rd = 0; INT32 _imm = 0;
 
-	ScrRead (UINT32, _rd, rd);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT32, _rd, RD);
+	ScrRead (INT32, _imm, IMM);
 	RegWrite (INT32, _rd, _imm);
 }
 
@@ -2097,8 +2072,8 @@ VM_CALL void lui () {
 VM_CALL void auipc () {
 	UINT8 _rd = 0; INT32 _imm = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (INT32, _imm, IMM);
 	RegWrite (INT64, _rd, (INT64)Vmcs->Hdw.Pc + _imm);
 }
 
@@ -2106,8 +2081,8 @@ VM_CALL void auipc () {
 VM_CALL void jal () {
 	UINT8 _rd = 0; INT_PTR offset = 0;
 
-	ScrRead (UINT8, _rd, rd);
-	ScrRead (INT_PTR, offset, imm);
+	ScrRead (UINT8, _rd, RD);
+	ScrRead (INT_PTR, offset, IMM);
 	RegWrite (UINT_PTR, _rd, Vmcs->Hdw.Pc + 4);
 
 	Vmcs->Hdw.Pc += offset;
@@ -2118,9 +2093,9 @@ VM_CALL void jal () {
 VM_CALL void beq () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT_PTR, offset, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT_PTR, offset, IMM);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -2135,9 +2110,9 @@ VM_CALL void beq () {
 VM_CALL void bne () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT_PTR, offset, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT_PTR, offset, IMM);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -2152,9 +2127,9 @@ VM_CALL void bne () {
 VM_CALL void blt () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT_PTR, offset, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT_PTR, offset, IMM);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -2169,9 +2144,9 @@ VM_CALL void blt () {
 VM_CALL void bge () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT_PTR, offset, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT_PTR, offset, IMM);
 
 	RegRead (INT32, v1, _rs1);
 	RegRead (INT32, v2, _rs2);
@@ -2186,9 +2161,9 @@ VM_CALL void bge () {
 VM_CALL void bltu () {
 	UINT8 _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT_PTR, offset, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT_PTR, offset, IMM);
 
 	RegRead (UINT32, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -2203,9 +2178,9 @@ VM_CALL void bltu () {
 VM_CALL void bgeu () {
 	UINT8 _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT_PTR, offset, imm);
+	ScrRead (UINT8, 	_rs1, 	RS1);
+	ScrRead (UINT8, 	_rs2, 	RS2);
+	ScrRead (INT_PTR, 	offset, IMM);
 
 	RegRead (UINT32, v1, _rs1);
 	RegRead (UINT32, v2, _rs2);
@@ -2220,90 +2195,84 @@ VM_CALL void bgeu () {
 VM_CALL void sb () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT8 v1 = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT32, _imm, IMM);
 
-	RegRead (UINT_PTR, address, _rs1);
-	RegRead (INT8, v1, _rs2);
+	RegRead (UINT_PTR, 	address, 	_rs1);
+	RegRead (INT8, 		v1, 		_rs2);
 
-	address += (INT_PTR)_imm;
-	MemWrite (UINT8, address, v1);
+	MemWrite (UINT8, address + (INT_PTR)_imm, v1);
 }
 
 
 VM_CALL void sh () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT16 v1 = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT32, _imm, IMM);
 
-	RegRead (UINT_PTR, address, _rs1);
-	RegRead (UINT16, v1, _rs2);
+	RegRead (UINT_PTR, 	address, 	_rs1);
+	RegRead (UINT16, 	v1, 		_rs2);
 
-	address += (INT_PTR)_imm;
-	MemWrite (UINT16, address, v1);
+	MemWrite (UINT16, address + (INT_PTR)_imm, v1);
 }
 
 
 VM_CALL void sw () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT32 v1 = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT32, _imm, IMM);
 
-	RegRead (UINT_PTR, address, _rs1);
-	RegRead (UINT32, v1, _rs2);
+	RegRead (UINT_PTR, 	address, 	_rs1);
+	RegRead (UINT32, 	v1, 		_rs2);
 
-	address += (INT_PTR)_imm;
-	MemWrite (UINT32, address, v1);
+	MemWrite (UINT32, address + (INT_PTR)_imm, v1);
 }
 
 
 VM_CALL void sd () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT64 v1 = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT32, _imm, IMM);
 
-	RegRead (UINT_PTR, address, _rs1);
-	RegRead (UINT64, v1, _rs2);
+	RegRead (UINT_PTR, 	address, 	_rs1);
+	RegRead (UINT64, 	v1, 		_rs2);
 
-	address += (INT_PTR)_imm;
-	MemWrite (UINT64, address, v1);
+	MemWrite (UINT64, address + (INT_PTR)_imm, v1);
 }
 
 
 VM_CALL void fsw () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; float v1 = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT32, _imm, IMM);
 
 	RegRead (UINT_PTR, address, _rs1);
 	RegRead (float, v1, _rs2);
 
-	address += (INT_PTR)_imm;
-	MemWrite (float, address, v1);
+	MemWrite (float, address + (INT_PTR)_imm, v1);
 }
 
 
 VM_CALL void fsd () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; double v1 = 0;
 
-	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
-	ScrRead (INT32, _imm, imm);
+	ScrRead (UINT8, _rs1, RS1);
+	ScrRead (UINT8, _rs2, RS2);
+	ScrRead (INT32, _imm, IMM);
 
-	RegRead (UINT_PTR, address, _rs1);
-	RegRead (UINT64, v1, _rs2);
+	RegRead (UINT_PTR, 	address, 	_rs1);
+	RegRead (UINT64, 	v1, 		_rs2);
 
-	address += (INT_PTR)_imm;
-	MemWrite (double, address, v1);
+	MemWrite (double, address + (INT_PTR)_imm, v1);
 }
 
 namespace r4type {
