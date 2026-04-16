@@ -11,86 +11,48 @@
 #include "vmmu.hpp"
 
 
-VOID Opcall (_In_ const UINT32 TableIndex);
+#define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
+	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
+	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
 
 
-union {
-	double d;
-	UINT64 u;
-} converter;
+#define STACK_MEMORY_IN_BOUNDS (addr) 									\
+	((addr) >= (uintptr_t)vmcs->hdw->vstack && 							\
+	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
 
 
-VMCALL BOOL is_nan (_In_ const double x) {
-	converter.d = x;
-
-	UINT64 exponent = (converter.u & EXPONENT_MASK) >> 52;
-	UINT64 fraction = converter.u & FRACTION_MASK;
-
-	return (exponent == 0x7FF) && (fraction != 0);
-}
-
-
-int32_t sign_extend (
-		_In_ const uint32_t val, 
-		_In_ constint 		bits) 
+VOID Opcall (
+		_In_ const UINT32 Index) 
 {
-	int shift = 32 - bits;
-	return (int32_t)(val << shift) >> shift;
+	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
+	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
+
+	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)()) b;											
+	operation ();													
 }
 
 
-#if defined(_M_X64) || defined(__x86_64__) || defined(_M_ARM64)
-uint8_t shamt_i (_In_ const uint32_t opcode) {
-    return (opcode >> 20) & 0x3F;  
-}
-#elif defined(_M_IX86) || defined(__i386__) || defined(_M_ARM)
-uint8_t shamt_i (_In_ const uint32_t opcode) {
-    return (opcode >> 20) & 0x1F;  
-}
-#else
-#error Unsupported architecture: Define shamt_i() masking manually.
-#endif
+VM_CALL VOID VmExecute () {
+	if (setjmp (Vmcs->Context->Interrupt)) { } 
+	if (Vmcs->Context->Halt) {
+		return;
+	}
 
+	while (true) {
+		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
-int32_t imm_u (_In_ const uint32_t opcode) {
-	return (int32_t) opcode & 0xFFFFF000;
-}
+		if (Opcode == RV64_RET) {
+			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) {
+				SetTrap (nullptr, EnvExit, 0, 0, 1);
+			}
+		}
 
-
-int32_t imm_i (_In_ const uint32_t opcode) {
-	int32_t imm = opcode >> 20;
-	return sign_extend (imm, 12);
+		VmDecode (Opcode); 
+		Vmcs->Hdw.Pc += 4;
+	}
 }
 
 
-int32_t imm_s (_In_ const uint32_t opcode) {
-	uint32_t imm11_5 	= (opcode 	>> 25) 	& 0x7f;
-	uint32_t imm4_0 	= (opcode 	>> 7) 	& 0x1f;
-	uint32_t imm 		= (imm11_5 	<< 5) 	| imm4_0;
-
-	return sign_extend (imm, 12);
-}
-
-
-int32_t imm_b (_In_ const uint32_t opcode) {
-	int32_t imm = (	((opcode 	>> 31) 	& 1) 	<< 12)
-	              | (((opcode 	>> 25) 	& 0x3F) << 5)
-	              | (((opcode 	>> 8) 	& 0xF) 	<< 1)
-	              | (((opcode 	>> 7) 	& 1) 	<< 11);
-
-	return sign_extend (imm, 13);
-}
-
-
-int32_t imm_j (_In_ const uint32_t opcode) {
-	int32_t imm = (	((opcode 	>> 31) 	& 1) 		<< 20)
-	              | (((opcode 	>> 21) 	& 0x3FF) 	<< 1)
-	              | (((opcode 	>> 20) 	& 1) 		<< 11)
-	              | (((opcode 	>> 12) 	& 0xFF) 	<< 12);
-
-	return sign_extend (imm, 21);
-
-}
 
 
 // TODO: Change reg read/write from macros to functions for size.
@@ -2325,34 +2287,4 @@ DATA_SCN const UINT_PTR DispatchTable [256] = {
     ENCRYPT (jal)
 
 
-VOID Opcall (
-		_In_ const UINT32 Index) 
-{
-	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
-	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
-
-	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)()) b;											
-	operation ();													
-}
-
-
-VM_CALL VOID VmExecute () {
-	if (setjmp (Vmcs->Context->Interrupt)) { } 
-	if (Vmcs->Context->Halt) {
-		return;
-	}
-
-	while (true) {
-		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
-
-		if (Opcode == RV64_RET) {
-			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) {
-				SetTrap (nullptr, EnvExit, 0, 0, 1);
-			}
-		}
-
-		VmDecode (Opcode); 
-		Vmcs->Hdw.Pc += 4;
-	}
-}
 #endif // VMCODE_H

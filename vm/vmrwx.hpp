@@ -8,14 +8,6 @@
 #endif
 
 
-#define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
-	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
-	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
-
-
-#define STACK_MEMORY_IN_BOUNDS (addr) 									\
-	((addr) >= (uintptr_t)vmcs->hdw->vstack && 							\
-	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
 
 
 #define mem_write_check(T, addr) 													\
@@ -41,12 +33,5 @@
 #define reg_write(T, reg_idx, src) 	if (reg_idx != 0) vmcs->hdw->vregs[(reg_idx)] = (T)(src);
 #define scr_write(T, scr_idx, src) 	if (scr_idx <= imm) vmcs->hdw->vscratch[(scr_idx)] = (T)(src);
 #define mem_write(T, addr, value)  	mem_write_check(T, addr); *(T *)(addr) = value;
-
-VOID Opcall (_In_ const UINT32 hdl_idx) {
-	uintptr_t a = ((uintptr_t*)dispatch_table)[hdl_idx];					
-	uintptr_t b = DecryptPtr((uintptr_t)a, (uintptr_t)0);	
-	void (*fn)() = (void (*)())(b);											
-	fn ();													
-}
 
 #endif // VMRWX_HPP

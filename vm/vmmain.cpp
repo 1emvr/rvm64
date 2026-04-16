@@ -2,19 +2,7 @@
 #include "vmmain.hpp"
 
 
-NATIVE_CALL INT32 VmMain (
-		_In_ const UINT64 Magic1, 
-		_In_ const UINT64 Magic2) 
-{
-	VMCS Instance = { };
-	Vmcs = &Instance;
-
-	Vmcs->Magic1 = Magic1;
-	Vmcs->Magic2 = Magic2;
-
-	ContextInit (&Vmcs->Context);
-	SaveHostRegCtx (Vmcs->Context->HostContext);
-
+NATIVE_CALL VOID VmMain () {
 	do {
 		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
 		Vmcs->Context->Ready = 1;
@@ -33,10 +21,24 @@ NATIVE_CALL INT32 VmMain (
 	} while (true);
 
 defer:
-	LoadHostRegCtx (Vmcs->Context->HostContext);
-
 	MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-	ContextRelease (&Vmcs->Context);
+	LoadHostRegCtx (Vmcs->Context->HostContext);
+}
 
-	return Vmcs->Csr.Cause;
+
+NATIVE_CALL VOID VmStart (
+		_In_ const UINT64 Magic1,
+		_In_ const UINT64 Magic2) 
+{
+	VMCS Instance = { };
+	Vmcs = &Instance;
+
+	Vmcs->Magic1 = Magic1;
+	Vmcs->Magic2 = Magic2;
+
+	ContextInit (&Vmcs->Context);
+	SaveHostRegCtx (Vmcs->Context->HostContext);
+
+	VmMain ();
+	ContextRelease (&Vmcs->Context);
 }
