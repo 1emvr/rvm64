@@ -4,9 +4,13 @@
 .text
 .extern VmContext
 .extern HostContext
+.extern Vmcs
 
-.global SaveHostContext
-SaveHostContext:
+INTEL_CTX_SIZE 	18 * 64
+VMCS_HDR_SIZE 	5 * 64
+
+.global SaveHostRegCtx
+SaveHostRegCtx:
     lea     rdi, [rip + HostContext]
 
     mov     [rdi + OFFSET_RSP], rsp
@@ -32,8 +36,8 @@ SaveHostContext:
 
     ret
 
-.global restore_host_context
-RestoreHostContext:
+.global LoadHostRegCtx
+LoadHostRegCtx:
     lea     rsi, [rip + HostContext]
 
     mov     rax, [rsi + OFFSET_RAX]
@@ -58,8 +62,8 @@ RestoreHostContext:
     ret
 
 
-.global SaveVmContext
-SaveVmContext:
+.global SaveVmRegCtx
+SaveVmRegCtx:
     lea     rdi, [rip + VmContext]
 
     mov     [rdi + OFFSET_RAX], rax
@@ -85,8 +89,8 @@ SaveVmContext:
     ret
 
 
-.global RestoreVmContext
-RestoreVmContext:
+.global LoadVmRegCtx
+LoadVmRegCtx:
     lea     rsi, [rip + VmContext]
 
     mov     rax, [rsi + OFFSET_RAX]

@@ -12,11 +12,14 @@ NATIVE_CALL INT32 VmMain (
 	Vmcs->Magic1 = Magic1;
 	Vmcs->Magic2 = Magic2;
 
-	SaveHostRegCtx ();
 	do {
-		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
-		Vmcs->Context->Ready = 1;
+		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); // TODO: Remove context from init. They need to be separate so that SaveRegCtx can happen independently.
 
+		if (!Vmcs->Context->HostContext) {
+			SaveHostRegCtx (Vmcs->Context->HostContext);
+		}
+
+		Vmcs->Context->Ready = 1;
 		while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
 			Sleep (10);
 		}
@@ -31,8 +34,8 @@ NATIVE_CALL INT32 VmMain (
 	} while (true);
 
 defer:
-	VmFree ();
-	LoadHostRegCtx ();
+	LoadHostRegCtx (Vmcs->Context->HostContext);
+	VmRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 
 	return Vmcs->Csr.Cause;
 }
