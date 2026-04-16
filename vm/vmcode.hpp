@@ -2249,7 +2249,7 @@ namespace r4type {
 
 
 #ifdef
-#define ENCRYPT (op) EncryptPtr ((UINT_PTR)(op), (UINT_PTR)0)
+#define ENCRYPT (op) EncryptPtr ((UINT_PTR)(op), (UINT_PTR)DKEY)
 #else
 #define ENCRYPT (op) 
 #endif
