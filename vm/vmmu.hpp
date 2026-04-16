@@ -26,7 +26,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	}
 
 	switch (Vmcs->Csr.Cause) {
-		case EnvBranch: 
+		case EnvBranch: // TODO: why do i need EH for branching?
 			{
 				RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
 				longjmp (Vmcs->Context->Branch, true);
