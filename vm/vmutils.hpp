@@ -2,58 +2,8 @@
 #define VMUTILS_H
 
 #include <windows.h>
+#include <ctypes.h>
 #include "../include/vmmain.hpp"
-
-inline int32_t sign_extend(uint32_t val, int bits) {
-	int shift = 32 - bits;
-	return (int32_t)(val << shift) >> shift;
-}
-
-#if defined(_M_X64) || defined(__x86_64__) || defined(_M_ARM64)
-inline uint8_t shamt_i(uint32_t opcode) {
-    return (opcode >> 20) & 0x3F;  
-}
-#elif defined(_M_IX86) || defined(__i386__) || defined(_M_ARM)
-inline uint8_t shamt_i(uint32_t opcode) {
-    return (opcode >> 20) & 0x1F;  
-}
-#else
-#error Unsupported architecture: Define shamt_i() masking manually.
-#endif
-
-inline int32_t imm_u(uint32_t opcode) {
-	return (int32_t) opcode & 0xFFFFF000;
-}
-
-inline int32_t imm_i(uint32_t opcode) {
-	int32_t imm = opcode >> 20;
-	return sign_extend(imm, 12);
-}
-
-
-inline int32_t imm_s(uint32_t opcode) {
-	uint32_t imm11_5 = (opcode >> 25) & 0x7f;
-	uint32_t imm4_0 = (opcode >> 7) & 0x1f;
-	uint32_t imm = (imm11_5 << 5) | imm4_0;
-
-	return sign_extend(imm, 12);
-}
-
-inline int32_t imm_b(uint32_t opcode) {
-	int32_t imm = (((opcode >> 31) & 1) << 12)
-	              | (((opcode >> 25) & 0x3F) << 5)
-	              | (((opcode >> 8) & 0xF) << 1)
-	              | (((opcode >> 7) & 1) << 11);
-	return sign_extend(imm, 13);
-}
-
-inline int32_t imm_j(uint32_t opcode) {
-	int32_t imm = (((opcode >> 31) & 1) << 20)
-	              | (((opcode >> 21) & 0x3FF) << 1)
-	              | (((opcode >> 20) & 1) << 11)
-	              | (((opcode >> 12) & 0xFF) << 12);
-	return sign_extend(imm, 21);
-}
 
 namespace simple_map {
 	template<typename K, typename V>
