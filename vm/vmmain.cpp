@@ -40,7 +40,7 @@ NATIVE_CALL BOOL process_packets (
 	}
 
 	for (int i = 0; i < n_threads; i++) { 
-		UINT_PTR param_size = image_base [0]; // packed data is [ (param size/data), (ELF data), ... ]
+		UINT_PTR param_size = image_base [0]; // packed data is [param (size/data), elf (data)], ... 
 		{
 			if (param_size != 0) {						
 				new_vms->param_offset [i] = image_base - *data; // param_offset points to the header of the param-> (param size), (param data)
@@ -49,13 +49,11 @@ NATIVE_CALL BOOL process_packets (
 			total 		+= sizeof (UINT_PTR) + param_size;
 			image_base 	+= sizeof (UINT_PTR) + param_size;
 
-			new_vms->image_offset [i] = image_base - *data;
-
-			if (total > *data_size) {	
-				arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
-				image_base = *data + total;
-			}
+			new_vms->image_offset [i] = image_base - *data; 
+			// honest to god we don't really need to consider if a parameter is beyond the arena unless it's a malformed packet.
+			// we should be more worried about expanding the ELF data, and that's when I would perform bounds checking.
 		}
+
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
