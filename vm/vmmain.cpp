@@ -16,13 +16,15 @@ NATIVE_CALL BOOL is_elf (_In_ const UINT_PTR base) {
 
 NATIVE_CALL VOID process_packets ( // process ELF params and headers
 		_In_ const UINT_PTR 	data,
-		_In_ const PACKET_SEG* 	new_vms) 
+		_In_ const PACKET_SEG* 	new_vms,
+		_In_ const SIZE_T 		arena_size) 
 {
-	UINT_PTR image_base = data;
+	UINT_PTR 	image_base = data;
+	SIZE_T 		total_size = 0;
 
 	for (UINT8 i = 0; i < 8; i++) {
 		if (is_param (image_base)) {
-			SIZE_T param_size = *(SIZE_T*)image_base + 2;
+			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or whatever
 
 			new_vms->params [i] = image_base;
 			image_base += param_size + PARAM_HEADER_SIZE;
