@@ -113,43 +113,6 @@ VM_CALL VOID ContextRelease (_In_ VM_CONTEXT** Context) {
 }
 
 
-VM_CALL VOID SetLoadRsv (
-		_In_ const INT 		HartId, 
-		_In_ const UINT_PTR Address) 
-{
-	WaitForSingleObject (Vmcs->Context->MutexRW, INFINITE);
-
-	Vmcs->Context->LoadRsvAddress = Address; // vmcs_array[hart_id]->load_rsv_addr = address;
-	Vmcs->Context->LoadRsvValid = true; // vmcs_array[hart_id]->load_rsv_valid = true;
-
-	ReleaseMutex (Vmcs->Context->RWMutex);
-}
-
-
-VM_CALL VOID ClearLoadRsv (_In_ const INT HartId) {
-	WaitForSingleObject (Vmcs->Context->RWMutex, INFINITE);
-
-	Vmcs->LoadRsvAddr = 0LL; // vmcs_array[hart_id]->load_rsv_addr = 0LL;
-	Vmcs->LoadRsvValid = false; // vmcs_array[hart_id]->load_rsv_valid = false;
-
-	ReleaseMutex (Vmcs->Context->RWMutex);
-}
-
-
-VM_CALL BOOL CheckLoadRsv (
-		_In_ const INT 		HartId, 
-		_In_ const UINT_PTR Address) 
-{
-	INT Valid = 0;
-
-	WaitForSingleObject (Vmcs->Context->RWMutex, INFINITE);
-	Valid = (Vmcs->Context->LoadRsvValid && Vmcs->Context->LoadRsvAddress == address); 
-
-	ReleaseMutex (Vmcs->Context->RWMutex);
-	return Valid;
-}
-
-
 BOOL VmWriteProcessMemory (
 		_In_ const 	HANDLE 		Handle, 
 		_In_ const 	UINT_PTR 	Address, 

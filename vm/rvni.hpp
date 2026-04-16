@@ -353,7 +353,7 @@ VM_CALL VOID NativeCall () {
 
 				INT Result = (Api.Typecaster.munmap) Api.Address (HostMem, Len, MEM_RELEASE);
 
-				if (! MemoryUnregister ((UINT_PTR*)&Addr, HostMem, Len)) {
+				if (! MemoryUnregister ((UINT_PTR)Addr)) {
 					SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
 				}
 
