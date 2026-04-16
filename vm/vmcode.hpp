@@ -10,469 +10,414 @@
 #include "vmrwx.hpp"
 #include "vmmu.hpp"
 
+// TODO: Change reg read/write from macros to functions for size.
 
-namespace rvm64::decoder {
-	enum handler_index : uint8_t {
-		// ITYPE
-		_rv_addi, _rv_slti, _rv_sltiu, _rv_xori,
-		_rv_ori, _rv_andi, _rv_slli, _rv_srli,
-		_rv_srai, _rv_addiw, _rv_slliw, _rv_srliw,
-		_rv_sraiw, _rv_lb, _rv_lh, _rv_lw,
-		_rv_lbu, _rv_lhu, _rv_lwu, _rv_ld,
-		_rv_flq, _rv_fence, _rv_fence_i, _rv_jalr,
-		_rv_ecall, _rv_ebreak, _rv_csrrw, _rv_csrrs,
-		_rv_csrrc, _rv_csrrwi, _rv_csrrsi, _rv_csrrci,
-		_rv_fclass_d, _rv_lrw, _rv_lrd, _rv_fmv_d_x,
-		_rv_fcvt_s_d, _rv_fcvt_d_s, _rv_fcvt_w_d, _rv_fcvt_wu_d,
-		_rv_fcvt_d_w, _rv_fcvt_d_wu,
+VMCALL VOID Decode (const UINT32 opcode) {
+	UINT8 decoded = 0;
+	UINT8 opcode7 = opcode & 0x7F;
 
-		// RTYPE
-		_rv_fadd_d, _rv_fsub_d, _rv_fmul_d, _rv_fdiv_d,
-		_rv_fsgnj_d, _rv_fsgnjn_d, _rv_fsgnjx_d,
-		_rv_fmin_d, _rv_fmax_d, _rv_feq_d, _rv_flt_d,
-		_rv_fle_d, _rv_scw, _rv_amoswap_w, _rv_amoadd_w,
-		_rv_amoxor_w, _rv_amoand_w, _rv_amoor_w, _rv_amomin_w,
-		_rv_amomax_w, _rv_amominu_w, _rv_amomaxu_w,
-		_rv_scd, _rv_amoswap_d, _rv_amoadd_d,
-		_rv_amoxor_d, _rv_amoand_d, _rv_amoor_d, _rv_amomin_d,
-		_rv_amomax_d, _rv_amominu_d, _rv_amomaxu_d,
-		_rv_addw, _rv_subw, _rv_mulw, _rv_srlw,
-		_rv_sraw, _rv_divuw, _rv_sllw, _rv_divw,
-		_rv_remw, _rv_remuw, _rv_add, _rv_sub,
-		_rv_mul, _rv_sll, _rv_mulh, _rv_slt,
-		_rv_mulhsu, _rv_sltu, _rv_mulhu, _rv_xor,
-		_rv_div, _rv_srl, _rv_sra, _rv_divu,
-		_rv_or, _rv_rem, _rv_and, _rv_remu,
-
-		// STYPE
-		_rv_sb, _rv_sh, _rv_sw, _rv_sd,
-		_rv_fsw, _rv_fsd,
-
-		// BTYPE
-		_rv_beq, _rv_bne, _rv_blt, _rv_bge,
-		_rv_bltu, _rv_bgeu,
-
-		// UTYPE/JTYPE
-		_rv_lui, _rv_auipc, _rv_jal
-	};
-
-	struct OPCODE {
-		uint8_t mask;
-		typenum type;
-	};
-
-	DATA_SCN OPCODE encoding[] = {
-		{0b1010011, rtype}, {0b1000011, rtype}, {0b0110011, rtype}, {0b1000111, r4type}, {0b1001011, r4type}, {0b1001111, r4type},
-		{0b0000011, itype}, {0b0001111, itype}, {0b1100111, itype}, {0b0010011, itype}, {0b1110011, itype}, {0b0011011, itype},
-		{0b0100011, stype}, {0b0100111, stype}, {0b1100011, btype}, {0b0010111, utype}, {0b0110111, utype}, {0b1101111, jtype},
-	};
-
-	VMCALL VOID vm_decode (uint32_t opcode) {
-		uint8_t decoded = 0;
-		uint8_t opcode7 = opcode & 0x7F;
-
-		for (int idx = 0; idx < sizeof(encoding); idx++) {
-			if (encoding[idx].mask == opcode7) {
-				decoded = encoding[idx].type;
-				break;
-			}
+	for (int idx = 0; idx < sizeof(encoding); idx++) {
+		if (encoding[idx].mask == opcode7) {
+			decoded = encoding[idx].type;
+			break;
 		}
-		if (!decoded) {
-			CSR_SET_TRAP (vmcs->hdw->pc, illegal_instruction, 0, opcode, 1);
-		}
+	}
+	if (!decoded) {
+		CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, opcode, 1);
+	}
 
-		switch(decoded) {
-			case itype: 
+	switch(decoded) {
+		case itype: 
 			{
-				uint8_t func3 = (opcode >> 12) & 0x7;
-				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
-				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
+				UINT8 func3 = (opcode >> 12) & 0x7;
+				ScrWrite (UINT8, screnum::rd, (opcode >> 7) & 0x1F);
+				ScrWrite (UINT8, screnum::rs1, (opcode >> 15) & 0x1F);
 
 				switch(opcode7) {
 					case 0b1110011:
-					{
-						auto imm = imm_i(opcode);
-						switch (imm) {
-							case 0b000000000000: { unwrap_opcall(_rv_ecall); break; }
-							case 0b000000000001: { unwrap_opcall(_rv_ebreak); break; }
-							default: break;
+						{
+							auto imm = imm_i(opcode);
+							switch (imm) {
+								case 0b000000000000: { unwrap_opcall(_rv_ecall); break; }
+								case 0b000000000001: { unwrap_opcall(_rv_ebreak); break; }
+								default: break;
+							}
+							break;
 						}
-						break;
-					}
 					case 0b0010011: 
-					{
-						switch(func3) {
-							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_addi); break; }
-							case 0b010: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_slti); break; }
-							case 0b011: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_sltiu); break; }
-							case 0b100: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_xori); break; }
-							case 0b110: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_ori);  break; }
-							case 0b111: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_andi); break; }
-							case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slli); break; }
-							case 0b101: {
-								uint8_t func7 = (opcode >> 25) & 0x7F; // NOTE: "opcode >> 24" (?) Not sure 
-								switch(func7) {
-									case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srli); break; }
-									case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srai); break; }
-									default: break;
-								}
+						{
+							switch(func3) {
+								case 0b000: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_addi); break; }
+								case 0b010: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_slti); break; }
+								case 0b011: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_sltiu); break; }
+								case 0b100: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_xori); break; }
+								case 0b110: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_ori);  break; }
+								case 0b111: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_andi); break; }
+								case 0b001: { ScrWrite (INT32, imm, shamt_i(opcode)); unwrap_opcall(_rv_slli); break; }
+								case 0b101: {
+												UINT8 func7 = (opcode >> 25) & 0x7F; // NOTE: "opcode >> 24" (?) Not sure 
+												switch(func7) {
+													case 0b0000000: { ScrWrite (INT32, imm, shamt_i(opcode)); unwrap_opcall(_rv_srli); break; }
+													case 0b0100000: { ScrWrite (INT32, imm, shamt_i(opcode)); unwrap_opcall(_rv_srai); break; }
+													default: break;
+												}
+											}
+								default: break;
 							}
-							default: break;
+							break;
 						}
-						break;
-					}
 					case 0b0011011: 
-					{
-						switch(func3) {
-							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_addiw); break; }
-							case 0b001: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_slliw); break; }
-							case 0b101: 
-							{
-								uint8_t func7 = (opcode >> 25) & 0x7F;
-								switch(func7) {
-									case 0b0000000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_srliw); break; }
-									case 0b0100000: { scr_write(int32_t, imm, shamt_i(opcode)); unwrap_opcall(_rv_sraiw); break; }
-									default: break;
-								}
+						{
+							switch(func3) {
+								case 0b000: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_addiw); break; }
+								case 0b001: { ScrWrite (INT32, imm, shamt_i(opcode)); unwrap_opcall(_rv_slliw); break; }
+								case 0b101: 
+											{
+												UINT8 func7 = (opcode >> 25) & 0x7F;
+												switch(func7) {
+													case 0b0000000: { ScrWrite (INT32, imm, shamt_i(opcode)); unwrap_opcall(_rv_srliw); break; }
+													case 0b0100000: { ScrWrite (INT32, imm, shamt_i(opcode)); unwrap_opcall(_rv_sraiw); break; }
+													default: break;
+												}
+											}
+								default: break;
 							}
-							default: break;
+							break;
 						}
-						break;
-					}
 					case 0b0000011: 
-					{
-						switch(func3) {
-							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lb); break;  }
-							case 0b001: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lh); break;  }
-							case 0b010: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lw); break;  }
-							case 0b100: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lbu); break; }
-							case 0b101: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lhu); break; }
-							case 0b110: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_lwu); break; }
-							case 0b011: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_ld); break;  }
-							default: break;
+						{
+							switch(func3) {
+								case 0b000: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_lb); break;  }
+								case 0b001: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_lh); break;  }
+								case 0b010: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_lw); break;  }
+								case 0b100: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_lbu); break; }
+								case 0b101: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_lhu); break; }
+								case 0b110: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_lwu); break; }
+								case 0b011: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_ld); break;  }
+								default: break;
+							}
+							break;
 						}
-						break;
-					}
 					case 0b1100111:
-					{
-						switch(func3) {
-							case 0b000: { scr_write(int32_t, imm, imm_i(opcode)); unwrap_opcall(_rv_jalr); break; }
+						{
+							switch(func3) {
+								case 0b000: { ScrWrite (INT32, imm, imm_i(opcode)); unwrap_opcall(_rv_jalr); break; }
+							}
 						}
-					}
 					default: break;
 				}
 				break;
 			}
 
-			case rtype: 
+		case rtype: 
 			{
-				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
-				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
-				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
+				ScrWrite (UINT8, screnum::rd, (opcode >> 7) & 0x1F);
+				ScrWrite (UINT8, screnum::rs1, (opcode >> 15) & 0x1F);
+				ScrWrite (UINT8, screnum::rs2, (opcode >> 20) & 0x1F);
 
 				switch(opcode7) {
 					case 0b1010011: 
-					{
-						uint8_t func7 = (opcode >> 25) & 0x7F;
-						switch(func7) {
-							case 0b0000001: { unwrap_opcall(_rv_fadd_d); break; }
-							case 0b0000101: { unwrap_opcall(_rv_fsub_d); break; }
-							case 0b0001001: { unwrap_opcall(_rv_fmul_d); break; }
-							case 0b0001101: { unwrap_opcall(_rv_fdiv_d); break; }
-							case 0b1111001: { unwrap_opcall(_rv_fmv_d_x); break; }
-							case 0b0100000: 
-							{
-								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-								switch(fcvt_mask) {
-									case 0b00001: { unwrap_opcall(_rv_fcvt_s_d); break; }
-									default: break;
-								}
-								break;
+						{
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							switch(func7) {
+								case 0b0000001: { unwrap_opcall(_rv_fadd_d); break; }
+								case 0b0000101: { unwrap_opcall(_rv_fsub_d); break; }
+								case 0b0001001: { unwrap_opcall(_rv_fmul_d); break; }
+								case 0b0001101: { unwrap_opcall(_rv_fdiv_d); break; }
+								case 0b1111001: { unwrap_opcall(_rv_fmv_d_x); break; }
+								case 0b0100000: 
+												{
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
+														case 0b00001: { unwrap_opcall(_rv_fcvt_s_d); break; }
+														default: break;
+													}
+													break;
+												}
+								case 0b0100001: 
+												{
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
+														case 0b00000: { unwrap_opcall(_rv_fcvt_d_s); break; }
+														default: break;
+													}
+													break;
+												}
+								case 0b1100001: 
+												{
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
+														case 0b00000: { unwrap_opcall(_rv_fcvt_w_d); break; }
+														case 0b00001: { unwrap_opcall(_rv_fcvt_wu_d); break; }
+														default: break;
+													}
+													break;
+												}
+								case 0b1101001: 
+												{
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
+														case 0b00000: { unwrap_opcall(_rv_fcvt_d_w); break; }
+														case 0b00001: { unwrap_opcall(_rv_fcvt_d_wu); break; }
+														default: break;
+													}
+													break;
+												}
+								case 0b0010001: 
+												{
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b000: { unwrap_opcall(_rv_fsgnj_d); break; }
+														case 0b001: { unwrap_opcall(_rv_fsgnjn_d); break; }
+														case 0b010: { unwrap_opcall(_rv_fsgnjx_d); break; }
+														default: break;
+													}
+													break;
+												}
+								case 0b0010101: 
+												{
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b000: { unwrap_opcall(_rv_fmin_d); break; }
+														case 0b001: { unwrap_opcall(_rv_fmax_d); break; }
+														default: break;
+													}
+													break;
+												}
+								case 0b1010001: 
+												{
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b010: { unwrap_opcall(_rv_feq_d); break; }
+														case 0b001: { unwrap_opcall(_rv_flt_d); break; }
+														case 0b000: { unwrap_opcall(_rv_fle_d); break; }
+														default: break;
+													}
+													break;
+												}
+								case 0b1110001: 
+												{
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b001: { unwrap_opcall(_rv_fclass_d); break; }
+														default: break;
+													}
+													break;
+												}
+								default: break;
 							}
-							case 0b0100001: 
-							{
-								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-								switch(fcvt_mask) {
-									case 0b00000: { unwrap_opcall(_rv_fcvt_d_s); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b1100001: 
-							{
-								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-								switch(fcvt_mask) {
-									case 0b00000: { unwrap_opcall(_rv_fcvt_w_d); break; }
-									case 0b00001: { unwrap_opcall(_rv_fcvt_wu_d); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b1101001: 
-							{
-								uint8_t fcvt_mask = (opcode >> 20) & 0x1F;
-								switch(fcvt_mask) {
-									case 0b00000: { unwrap_opcall(_rv_fcvt_d_w); break; }
-									case 0b00001: { unwrap_opcall(_rv_fcvt_d_wu); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b0010001: 
-							{
-								uint8_t func3 = (opcode >> 12) & 0x7;
-								switch(func3) {
-									case 0b000: { unwrap_opcall(_rv_fsgnj_d); break; }
-									case 0b001: { unwrap_opcall(_rv_fsgnjn_d); break; }
-									case 0b010: { unwrap_opcall(_rv_fsgnjx_d); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b0010101: 
-							{
-								uint8_t func3 = (opcode >> 12) & 0x7;
-								switch(func3) {
-									case 0b000: { unwrap_opcall(_rv_fmin_d); break; }
-									case 0b001: { unwrap_opcall(_rv_fmax_d); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b1010001: 
-							{
-								uint8_t func3 = (opcode >> 12) & 0x7;
-								switch(func3) {
-									case 0b010: { unwrap_opcall(_rv_feq_d); break; }
-									case 0b001: { unwrap_opcall(_rv_flt_d); break; }
-									case 0b000: { unwrap_opcall(_rv_fle_d); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b1110001: 
-							{
-								uint8_t func3 = (opcode >> 12) & 0x7;
-								switch(func3) {
-									case 0b001: { unwrap_opcall(_rv_fclass_d); break; }
-									default: break;
-								}
-								break;
-							}
-							default: break;
+							break;
 						}
-						break;
-					}
 					case 0b0101111: 
-					{
-						uint8_t func7 = (opcode >> 25) & 0x7F;
-						uint8_t func5 = (func7 >> 2) & 0x1F;
-						uint8_t func3 = (opcode >> 12) & 0x7;
+						{
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							UINT8 func5 = (func7 >> 2) & 0x1F;
+							UINT8 func3 = (opcode >> 12) & 0x7;
 
-						switch(func3) {
-							case 0b010: 
-							{
-								switch(func5) {
-									case 0b00010: { unwrap_opcall(_rv_lrw); break; }
-									case 0b00011: { unwrap_opcall(_rv_scw); break; }
-									case 0b00001: { unwrap_opcall(_rv_amoswap_w); break; }
-									case 0b00000: { unwrap_opcall(_rv_amoadd_w); break; }
-									case 0b00100: { unwrap_opcall(_rv_amoxor_w); break; }
-									case 0b01100: { unwrap_opcall(_rv_amoand_w); break; }
-									case 0b01000: { unwrap_opcall(_rv_amoor_w); break; }
-									case 0b10000: { unwrap_opcall(_rv_amomin_w); break; }
-									case 0b10100: { unwrap_opcall(_rv_amomax_w); break; }
-									case 0b11000: { unwrap_opcall(_rv_amominu_w); break; }
-									case 0b11100: { unwrap_opcall(_rv_amomaxu_w); break; }
-									default: break;
-								}
-								break;
+							switch(func3) {
+								case 0b010: 
+									{
+										switch(func5) {
+											case 0b00010: { unwrap_opcall(_rv_lrw); break; }
+											case 0b00011: { unwrap_opcall(_rv_scw); break; }
+											case 0b00001: { unwrap_opcall(_rv_amoswap_w); break; }
+											case 0b00000: { unwrap_opcall(_rv_amoadd_w); break; }
+											case 0b00100: { unwrap_opcall(_rv_amoxor_w); break; }
+											case 0b01100: { unwrap_opcall(_rv_amoand_w); break; }
+											case 0b01000: { unwrap_opcall(_rv_amoor_w); break; }
+											case 0b10000: { unwrap_opcall(_rv_amomin_w); break; }
+											case 0b10100: { unwrap_opcall(_rv_amomax_w); break; }
+											case 0b11000: { unwrap_opcall(_rv_amominu_w); break; }
+											case 0b11100: { unwrap_opcall(_rv_amomaxu_w); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b011: 
+									{
+										switch(func5) {
+											case 0b00010: { unwrap_opcall(_rv_lrd); break; }
+											case 0b00011: { unwrap_opcall(_rv_scd); break; }
+											case 0b00001: { unwrap_opcall(_rv_amoswap_d); break; }
+											case 0b00000: { unwrap_opcall(_rv_amoadd_d); break; }
+											case 0b00100: { unwrap_opcall(_rv_amoxor_d); break; }
+											case 0b01100: { unwrap_opcall(_rv_amoand_d); break; }
+											case 0b01000: { unwrap_opcall(_rv_amoor_d); break; }
+											case 0b10000: { unwrap_opcall(_rv_amomin_d); break; }
+											case 0b10100: { unwrap_opcall(_rv_amomax_d); break; }
+											case 0b11000: { unwrap_opcall(_rv_amominu_d); break; }
+											case 0b11100: { unwrap_opcall(_rv_amomaxu_d); break; }
+											default: break;
+										}
+										break;
+									}
+								default: break;
 							}
-							case 0b011: 
-							{
-								switch(func5) {
-									case 0b00010: { unwrap_opcall(_rv_lrd); break; }
-									case 0b00011: { unwrap_opcall(_rv_scd); break; }
-									case 0b00001: { unwrap_opcall(_rv_amoswap_d); break; }
-									case 0b00000: { unwrap_opcall(_rv_amoadd_d); break; }
-									case 0b00100: { unwrap_opcall(_rv_amoxor_d); break; }
-									case 0b01100: { unwrap_opcall(_rv_amoand_d); break; }
-									case 0b01000: { unwrap_opcall(_rv_amoor_d); break; }
-									case 0b10000: { unwrap_opcall(_rv_amomin_d); break; }
-									case 0b10100: { unwrap_opcall(_rv_amomax_d); break; }
-									case 0b11000: { unwrap_opcall(_rv_amominu_d); break; }
-									case 0b11100: { unwrap_opcall(_rv_amomaxu_d); break; }
-									default: break;
-								}
-								break;
-							}
-							default: break;
+							break;
 						}
-						break;
-					}
 					case 0b0111011: 
-					{
-						uint8_t func7 = (opcode >> 25) & 0x7F;
-						uint8_t func3 = (opcode >> 12) & 0x7;
+						{
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							UINT8 func3 = (opcode >> 12) & 0x7;
 
-						switch(func3) {
-							case 0b000: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_addw); break; }
-									case 0b0100000: { unwrap_opcall(_rv_subw); break; }
-									case 0b0000001: { unwrap_opcall(_rv_mulw); break; }
-									default: break;
-								}
-								break;
+							switch(func3) {
+								case 0b000: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_addw); break; }
+											case 0b0100000: { unwrap_opcall(_rv_subw); break; }
+											case 0b0000001: { unwrap_opcall(_rv_mulw); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b101: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_srlw); break; }
+											case 0b0100000: { unwrap_opcall(_rv_sraw); break; }
+											case 0b0000001: { unwrap_opcall(_rv_divuw); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b001: { unwrap_opcall(_rv_sllw); break; }
+								case 0b100: { unwrap_opcall(_rv_divw); break; }
+								case 0b110: { unwrap_opcall(_rv_remw); break; }
+								case 0b111: { unwrap_opcall(_rv_remuw); break; }
+								default: break;
 							}
-							case 0b101: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_srlw); break; }
-									case 0b0100000: { unwrap_opcall(_rv_sraw); break; }
-									case 0b0000001: { unwrap_opcall(_rv_divuw); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b001: { unwrap_opcall(_rv_sllw); break; }
-							case 0b100: { unwrap_opcall(_rv_divw); break; }
-							case 0b110: { unwrap_opcall(_rv_remw); break; }
-							case 0b111: { unwrap_opcall(_rv_remuw); break; }
-							default: break;
+							break;
 						}
-						break;
-					}
 					case 0b0110011: 
-					{
-						uint8_t func7 = (opcode >> 25) & 0x7F;
-						uint8_t func3 = (opcode >> 12) & 0x7;
+						{
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							UINT8 func3 = (opcode >> 12) & 0x7;
 
-						switch(func3) {
-							case 0b000: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_add); break; }
-									case 0b0100000: { unwrap_opcall(_rv_sub); break; }
-									case 0b0000001: { unwrap_opcall(_rv_mul); break; }
-									default: break;
-								}
-								break;
+							switch(func3) {
+								case 0b000: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_add); break; }
+											case 0b0100000: { unwrap_opcall(_rv_sub); break; }
+											case 0b0000001: { unwrap_opcall(_rv_mul); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b001: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_sll); break; }
+											case 0b0000001: { unwrap_opcall(_rv_mulh); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b010: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_slt); break; }
+											case 0b0000001: { unwrap_opcall(_rv_mulhsu); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b011: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_sltu); break; }
+											case 0b0000001: { unwrap_opcall(_rv_mulhu); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b100: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_xor); break; }
+											case 0b0000001: { unwrap_opcall(_rv_div); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b101: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_srl); break; }
+											case 0b0100000: { unwrap_opcall(_rv_sra); break; }
+											case 0b0000001: { unwrap_opcall(_rv_divu); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b110: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_or); break; }
+											case 0b0000001: { unwrap_opcall(_rv_rem); break; }
+											default: break;
+										}
+										break;
+									}
+								case 0b111: 
+									{
+										switch(func7) {
+											case 0b0000000: { unwrap_opcall(_rv_and); break; }
+											case 0b0000001: { unwrap_opcall(_rv_remu); break; }
+											default: break;
+										}
+										break;
+									}
+								default: break;
 							}
-							case 0b001: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_sll); break; }
-									case 0b0000001: { unwrap_opcall(_rv_mulh); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b010: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_slt); break; }
-									case 0b0000001: { unwrap_opcall(_rv_mulhsu); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b011: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_sltu); break; }
-									case 0b0000001: { unwrap_opcall(_rv_mulhu); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b100: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_xor); break; }
-									case 0b0000001: { unwrap_opcall(_rv_div); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b101: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_srl); break; }
-									case 0b0100000: { unwrap_opcall(_rv_sra); break; }
-									case 0b0000001: { unwrap_opcall(_rv_divu); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b110: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_or); break; }
-									case 0b0000001: { unwrap_opcall(_rv_rem); break; }
-									default: break;
-								}
-								break;
-							}
-							case 0b111: 
-							{
-								switch(func7) {
-									case 0b0000000: { unwrap_opcall(_rv_and); break; }
-									case 0b0000001: { unwrap_opcall(_rv_remu); break; }
-									default: break;
-								}
-								break;
-							}
-							default: break;
+							break;
 						}
-						break;
-					}
 					default: break;
 				}
 				break;
 			}
 
-			case stype: 
+		case stype: 
 			{
-				uint8_t func3 = (opcode >> 12) & 0x7;
+				UINT8 func3 = (opcode >> 12) & 0x7;
 
-				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
-				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
-				scr_write(int32_t, imm, imm_s(opcode));
+				ScrWrite (UINT8, screnum::rs2, (opcode >> 20) & 0x1F);
+				ScrWrite (UINT8, screnum::rs1, (opcode >> 15) & 0x1F);
+				ScrWrite (INT32, imm, imm_s(opcode));
 
 				switch(opcode7) {
 					case 0b0100011: 
-					{
-						switch(func3) {
-							case 0b000: { unwrap_opcall(_rv_sb); break; }
-							case 0b001: { unwrap_opcall(_rv_sh); break; }
-							case 0b010: { unwrap_opcall(_rv_sw); break; }
-							case 0b011: { unwrap_opcall(_rv_sd); break; }
-							default: break;
+						{
+							switch(func3) {
+								case 0b000: { unwrap_opcall(_rv_sb); break; }
+								case 0b001: { unwrap_opcall(_rv_sh); break; }
+								case 0b010: { unwrap_opcall(_rv_sw); break; }
+								case 0b011: { unwrap_opcall(_rv_sd); break; }
+								default: break;
+							}
+							break;
 						}
-						break;
-					}
 					case 0b0100111: {
-						switch(func3) {
-							case 0b010: { unwrap_opcall(_rv_fsw); break; }
-							case 0b011: { unwrap_opcall(_rv_fsd); break; }
-							default: break;
-						}
-						break;
-					}
+										switch(func3) {
+											case 0b010: { unwrap_opcall(_rv_fsw); break; }
+											case 0b011: { unwrap_opcall(_rv_fsd); break; }
+											default: break;
+										}
+										break;
+									}
 					default: break;
 				}
 				break;
 			}
 
-			case btype: 
+		case btype: 
 			{
-				uint8_t func3 = (opcode >> 12) & 0x7;
+				UINT8 func3 = (opcode >> 12) & 0x7;
 
-				scr_write(uint8_t, screnum::rs2, (opcode >> 20) & 0x1F);
-				scr_write(uint8_t, screnum::rs1, (opcode >> 15) & 0x1F);
-				scr_write(int32_t, imm, imm_b(opcode));
+				ScrWrite (UINT8, screnum::rs2, (opcode >> 20) & 0x1F);
+				ScrWrite (UINT8, screnum::rs1, (opcode >> 15) & 0x1F);
+				ScrWrite (INT32, imm, imm_b(opcode));
 
 				switch(func3) {
 					case 0b000: { unwrap_opcall(_rv_beq); break; }
@@ -486,10 +431,10 @@ namespace rvm64::decoder {
 				break;
 			}
 
-			case utype: 
+		case utype: 
 			{
-				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
-				scr_write(int32_t, screnum::imm, imm_u(opcode));
+				ScrWrite (UINT8, screnum::rd, (opcode >> 7) & 0x1F);
+				ScrWrite (INT32, screnum::imm, imm_u(opcode));
 
 				switch(opcode7) {
 					case 0b0110111: { unwrap_opcall(_rv_lui); break; }
@@ -499,10 +444,10 @@ namespace rvm64::decoder {
 				break;
 			}
 
-			case jtype:
+		case jtype:
 			{
-				scr_write(uint8_t, screnum::rd, (opcode >> 7) & 0x1F);
-				scr_write(int32_t, screnum::imm, imm_j(opcode));
+				ScrWrite (UINT8, screnum::rd, (opcode >> 7) & 0x1F);
+				ScrWrite (INT32, screnum::imm, imm_j(opcode));
 
 				switch(opcode7) {
 					case 0b1101111: { unwrap_opcall(_rv_jal); break; }
@@ -511,468 +456,466 @@ namespace rvm64::decoder {
 				break;
 			}
 
-			default: {
-				CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, opcode, 1);
-				break;
-			}
-		}
+		default: {
+					 CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, opcode, 1);
+					 break;
+				 }
 	}
-};
+}
 
-namespace rvm64::operations {
 	union {
 		double d;
-		uint64_t u;
+		UINT64 u;
 	} converter;
 
-	_vmcall bool is_nan(double x) {
+	VMCALL bool is_nan(double x) {
 		converter.d = x;
 
-		uint64_t exponent = (converter.u & EXPONENT_MASK) >> 52;
-		uint64_t fraction = converter.u & FRACTION_MASK;
+		UINT64 exponent = (converter.u & EXPONENT_MASK) >> 52;
+		UINT64 fraction = converter.u & FRACTION_MASK;
 
 		return (exponent == 0x7FF) && (fraction != 0);
 	}
 
 	namespace itype {
-		_vmcall void rv_lrw() {
-			uint8_t _rd = 0, _rs1 = 0; uintptr_t address = 0; int32_t value = 0;
+		VMCALL void rv_lrw() {
+			UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT32 value = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(uintptr_t, address, _rs1);
+			RegRead (UINT_PTR, address, _rs1);
 
-			mem_read(int32_t, value, address);
-			reg_write(int32_t, _rd, value);
+			MemRead (INT32, value, address);
+			RegWrite (INT32, _rd, value);
 		}
 
-		_vmcall void rv_lrd() {
-			uint8_t _rd = 0, _rs1 = 0; uintptr_t address = 0; int64_t value = 0;
+		VMCALL void rv_lrd() {
+			UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT64 value = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(uintptr_t, address, _rs1);
+			RegRead (UINT_PTR, address, _rs1);
 
-			mem_read(int64_t, value, address);
-			reg_write(int64_t, _rd, value);
+			MemRead (INT64, value, address);
+			RegWrite (INT64, _rd, value);
 		}
 
-		_vmcall void rv_fmv_d_x() {
-			uint8_t _rd = 0, _rs1 = 0; int64_t v1 = 0;
+		VMCALL void rv_fmv_d_x() {
+			UINT8 _rd = 0, _rs1 = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_write(int64_t, _rd, v1);
+			RegRead (INT64, v1, _rs1);
+			RegWrite (INT64, _rd, v1);
 		}
 
-		_vmcall void rv_fcvt_s_d() {
-			uint8_t _rd = 0, _rs1 = 0; float v1 = 0;
+		VMCALL void rv_fcvt_s_d() {
+			UINT8 _rd = 0, _rs1 = 0; float v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(double, v1, _rs1);
-			reg_write(float, _rd, v1);
+			RegRead (double, v1, _rs1);
+			RegWrite (float, _rd, v1);
 		}
 
-		_vmcall void rv_fcvt_d_s() {
-			uint8_t _rd = 0, _rs1 = 0; double v1 = 0;
+		VMCALL void rv_fcvt_d_s() {
+			UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(float, v1, _rs1);
-			reg_write(double, _rd, v1);
+			RegRead (float, v1, _rs1);
+			RegWrite (double, _rd, v1);
 		}
 
-		_vmcall void rv_fcvt_w_d() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t v1 = 0;
+		VMCALL void rv_fcvt_w_d() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(double, v1, _rs1);
-			reg_write(int32_t, _rd, v1);
+			RegRead (double, v1, _rs1);
+			RegWrite (INT32, _rd, v1);
 		}
 
-		_vmcall void rv_fcvt_wu_d() {
-			uint8_t _rd = 0, _rs1 = 0; uint32_t v1 = 0;
+		VMCALL void rv_fcvt_wu_d() {
+			UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(double, v1, _rs1);
-			reg_write(uint32_t, _rd, v1);
+			RegRead (double, v1, _rs1);
+			RegWrite (UINT32, _rd, v1);
 		}
 
-		_vmcall void rv_fcvt_d_w() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t v1 = 0;
+		VMCALL void rv_fcvt_d_w() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(double, _rd, v1);
+			RegRead (INT32, v1, _rs1);
+			RegWrite (double, _rd, v1);
 		}
 
-		_vmcall void rv_fcvt_d_wu() {
-			uint8_t _rd = 0, _rs1 = 0; uint32_t v1 = 0;
+		VMCALL void rv_fcvt_d_wu() {
+			UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(uint32_t, v1, _rs1);
-			reg_write(double, _rd, v1);
+			RegRead (UINT32, v1, _rs1);
+			RegWrite (double, _rd, v1);
 		}
 
 		// NOTE: maybe not even real...
-		_vmcall void rv_fclass_d() {
-			uint8_t _rd = 0, _rs1 = 0; double v1 = 0;
+		VMCALL void rv_fclass_d() {
+			UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
 
-			reg_read(double, v1, _rs1);
+			RegRead (double, v1, _rs1);
 			converter.d = v1;
 
-			const uint64_t exponent = (converter.u >> 52) & 0x7FF;
-			const uint64_t fraction = converter.u & 0xFFFFFFFFFFFFF;
-			const uint64_t sign = converter.u >> 63;
+			const UINT64 exponent = (converter.u >> 52) & 0x7FF;
+			const UINT64 fraction = converter.u & 0xFFFFFFFFFFFFF;
+			const UINT64 sign = converter.u >> 63;
 
 			if (exponent == 0x7FF) {
 				if (fraction == 0) {
 					if (sign == 0) {
-						reg_write(int, _rd, 0x7); // +inf
+						RegWrite (int, _rd, 0x7); // +inf
 					} else {
-						reg_write(int, _rd, 0x0); // -inf
+						RegWrite (int, _rd, 0x0); // -inf
 					}
 				} else {
 					if (fraction & (1LL << 51)) {
-						reg_write(int, _rd, 0x8); // quiet NaN
+						RegWrite (int, _rd, 0x8); // quiet NaN
 					} else {
-						reg_write(int, _rd, 0x9); // signaling NaN
+						RegWrite (int, _rd, 0x9); // signaling NaN
 					}
 				}
 			} else if (exponent == 0) {
 				if (fraction == 0) {
 					if (sign == 0) {
-						reg_write(int, _rd, 0x4); // +0
+						RegWrite (int, _rd, 0x4); // +0
 					} else {
-						reg_write(int, _rd, 0x3); // -0
+						RegWrite (int, _rd, 0x3); // -0
 					}
 				} else {
 					if (sign == 0) {
-						reg_write(int, _rd, 0x5); // +subnormal
+						RegWrite (int, _rd, 0x5); // +subnormal
 					} else {
-						reg_write(int, _rd, 0x2); // -subnormal
+						RegWrite (int, _rd, 0x2); // -subnormal
 					}
 				}
 			} else {
 				if (sign == 0) {
-					reg_write(int, _rd, 0x6); // +normal
+					RegWrite (int, _rd, 0x6); // +normal
 				} else {
-					reg_write(int, _rd, 0x1); // -normal
+					RegWrite (int, _rd, 0x1); // -normal
 				}
 			}
 		}
 
 		// NOTE: immediates are always signed unless there's a bitwise operation
-		_vmcall void rv_addi() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
+		VMCALL void rv_addi() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_write(int64_t, _rd, (v1 + _imm));
+			RegRead (INT64, v1, _rs1);
+			RegWrite (INT64, _rd, (v1 + _imm));
 		}
 
-		_vmcall void rv_slti() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
+		VMCALL void rv_slti() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_write(int64_t, _rd, ((v1 < _imm) ? 1 : 0));
+			RegRead (INT64, v1, _rs1);
+			RegWrite (INT64, _rd, ((v1 < _imm) ? 1 : 0));
 		}
 
-		_vmcall void rv_sltiu() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uint64_t v1 = 0;
+		VMCALL void rv_sltiu() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uint64_t, v1, _rs1);
-			reg_write(uint64_t, _rd, ((v1 < (uint32_t)_imm) ? 1 : 0));
+			RegRead (UINT64, v1, _rs1);
+			RegWrite (UINT64, _rd, ((v1 < (UINT32)_imm) ? 1 : 0));
 		}
 
-		_vmcall void rv_xori() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
+		VMCALL void rv_xori() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_write(int64_t, _rd, (v1 ^ _imm));
+			RegRead (INT64, v1, _rs1);
+			RegWrite (INT64, _rd, (v1 ^ _imm));
 		}
 
-		_vmcall void rv_ori() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
+		VMCALL void rv_ori() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_write(int64_t, _rd, (v1 | _imm));
+			RegRead (INT64, v1, _rs1);
+			RegWrite (INT64, _rd, (v1 | _imm));
 		}
 
-		_vmcall void rv_andi() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; int64_t v1 = 0;
+		VMCALL void rv_andi() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(int32_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (INT32, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_write(int64_t, _rd, (v1 & _imm));
+			RegRead (INT64, v1, _rs1);
+			RegWrite (INT64, _rd, (v1 & _imm));
 		}
 
-		_vmcall void rv_slli() {
-			uint8_t _rd = 0, _rs1 = 0; uint32_t _shamt = 0; int64_t v1 = 0;
+		VMCALL void rv_slli() {
+			UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint32_t, _shamt, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (UINT32, _shamt, imm);
 
-			reg_read(uint64_t, v1, _rs1);
-			reg_write(uint64_t, _rd, (v1 << (_shamt & 0x1F)));
+			RegRead (UINT64, v1, _rs1);
+			RegWrite (UINT64, _rd, (v1 << (_shamt & 0x1F)));
 		}
 
-		_vmcall void rv_srli() {
-			uint8_t _rd = 0, _rs1 = 0; uint32_t _shamt = 0; uint64_t v1 = 0; 
+		VMCALL void rv_srli() {
+			UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; UINT64 v1 = 0; 
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint32_t, _shamt, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (UINT32, _shamt, imm);
 
-			reg_read(uint64_t, v1, _rs1);
-			reg_write(uint64_t, _rd, v1 >> (_shamt & 0x1F));
+			RegRead (UINT64, v1, _rs1);
+			RegWrite (UINT64, _rd, v1 >> (_shamt & 0x1F));
 		}
 
-		_vmcall void rv_srai() {
-			uint8_t _rd = 0, _rs1 = 0; uint32_t _shamt = 0; uint64_t v1 = 0; 
+		VMCALL void rv_srai() {
+			UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; UINT64 v1 = 0; 
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint32_t, _shamt, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (UINT32, _shamt, imm);
 
-			reg_read(uint64_t, v1, _rs1);
-			reg_write(uint64_t, _rd, v1 >> (_shamt & 0x1F));
+			RegRead (UINT64, v1, _rs1);
+			RegWrite (UINT64, _rd, v1 >> (_shamt & 0x1F));
 		}
 
-		_vmcall void rv_addiw() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t v1 = 0; int32_t _imm = 0;
+		VMCALL void rv_addiw() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; INT32 _imm = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_write(int32_t, _rd, v1 + _imm);
+			RegRead (INT32, v1, _rs1);
+			RegWrite (INT32, _rd, v1 + _imm);
 		}
 
-		_vmcall void rv_slliw() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t v1 = 0; uint32_t _shamt = 0;
+		VMCALL void rv_slliw() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; UINT32 _shamt = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint32_t, _shamt, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (UINT32, _shamt, imm);
 
-			reg_read(int32_t, v1, _rs1);
+			RegRead (INT32, v1, _rs1);
 
 			if ((_shamt >> 5) != 0) {
-				CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, (uint64_t)vmcs->hdw->vscratch, 1);
+				CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
 			}
 
-			reg_write(int32_t, _rd, v1 << (_shamt & 0x1F));
+			RegWrite (INT32, _rd, v1 << (_shamt & 0x1F));
 		}
 
-		_vmcall void rv_srliw() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t v1 = 0; uint32_t _shamt = 0;
+		VMCALL void rv_srliw() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; UINT32 _shamt = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint32_t, _shamt, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (UINT32, _shamt, imm);
 
-			reg_read(int32_t, v1, _rs1);
+			RegRead (INT32, v1, _rs1);
 
 			if ((_shamt >> 5) != 0) {
-				CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, (uint64_t)vmcs->hdw->vscratch, 1);
+				CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
 			}
 
-			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
 		}
 
-		_vmcall void rv_sraiw() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t v1 = 0; uint32_t _shamt = 0;
+		VMCALL void rv_sraiw() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; UINT32 _shamt = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint32_t, _shamt, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (UINT32, _shamt, imm);
 
-			reg_read(int32_t, v1, _rs1);
+			RegRead (INT32, v1, _rs1);
 
 			if ((_shamt >> 5) != 0) {
-				CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, (uint64_t)vmcs->hdw->vscratch, 1);
+				CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
 			}
 			// TODO: this may be wrong to mask
-			reg_write(int32_t, _rd, v1 >> (_shamt & 0x1F));
+			RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
 		}
 
-		_vmcall void rv_lb() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0; int8_t v1 = 0;
+		VMCALL void rv_lb() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT8 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
 
-			mem_read(int8_t, v1, address);
-			reg_write(int8_t, _rd, v1);
+			MemRead (INT8, v1, address);
+			RegWrite (INT8, _rd, v1);
 		}
 
-		_vmcall void rv_lh() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0; int16_t v1 = 0;
+		VMCALL void rv_lh() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT16 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
 
-			mem_read(int16_t, v1, address);
-			reg_write(int16_t, _rd, v1);
+			MemRead (INT16, v1, address);
+			RegWrite (INT16, _rd, v1);
 		}
 
-		_vmcall void rv_lw() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0; int32_t v1 = 0;
+		VMCALL void rv_lw() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT32 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
 
-			mem_read(int32_t, v1, address);
-			reg_write(int32_t, _rd, v1);
+			MemRead (INT32, v1, address);
+			RegWrite (INT32, _rd, v1);
 		}
 
-		_vmcall void rv_lbu() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0; uint8_t v1 = 0;
+		VMCALL void rv_lbu() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT8 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
 
-			mem_read(uint8_t, v1, address);
-			reg_write(uint8_t, _rd, v1);
+			MemRead (UINT8, v1, address);
+			RegWrite (UINT8, _rd, v1);
 		}
 
-		_vmcall void rv_lhu() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0; uint16_t v1 = 0;
+		VMCALL void rv_lhu() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT16 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
 
-			mem_read(uint16_t, v1, address);
-			reg_write(uint16_t, _rd, v1);
+			MemRead (UINT16, v1, address);
+			RegWrite (UINT16, _rd, v1);
 		}
 
-		_vmcall void rv_lwu() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0; uint32_t v1 = 0;
+		VMCALL void rv_lwu() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT32 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
 
-			mem_read(uint32_t, v1, address);
-			reg_write(uint32_t, _rd, v1);
+			MemRead (UINT32, v1, address);
+			RegWrite (UINT32, _rd, v1);
 		}
 
-		_vmcall void rv_ld() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0; int64_t v1 = 0;
+		VMCALL void rv_ld() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT64 v1 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
 
-			mem_read(int64_t, v1, address);
-			reg_write(int64_t, _rd, v1);
+			MemRead (INT64, v1, address);
+			RegWrite (INT64, _rd, v1);
 		}
 
-		_vmcall void rv_jalr() {
-			uint8_t _rd = 0, _rs1 = 0; int32_t _imm = 0; uintptr_t address = 0;
+		VMCALL void rv_jalr() {
+			UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(int32_t, _imm, imm);
+			ScrRead (UINT8, _rd, rd);
+			ScrRead (UINT8, _rs1, rs1);
+			ScrRead (INT32, _imm, imm);
 
-			reg_read(uintptr_t, address, _rs1);
-			address += (intptr_t)_imm;
-			address &= ~((intptr_t)1);
+			RegRead (UINT_PTR, address, _rs1);
+			address += (INT_PTR)_imm;
+			address &= ~((INT_PTR)1);
 
-			reg_write(uintptr_t, _rd, vmcs->hdw->pc);
-			vmcs->hdw->pc = address;
+			RegWrite (UINT_PTR, _rd, Vmcs->Gpr->Pc);
+			Vmcs->Gpr->Pc = address;
 
-			if (auto host_mem = rvm64::mmu::memory_check(vmcs->hdw->pc)) {
-				vmcs->hdw->pc = (uintptr_t)host_mem;
-				CSR_SET_TRAP(vmcs->hdw->pc, environment_execute, 0, 0, 0);
+			if (auto HostMem = MemoryCheck (Vmcs->Gpr->Pc)) {
+				Vmcs->Gpr->Pc = (UINT_PTR)HostMem;
+				CSR_SET_TRAP (Vmcs->Gpr->Pc, environment_execute, 0, 0, 0);
 			}
-			if (!PROCESS_MEMORY_IN_BOUNDS(vmcs->hdw->pc)) {
-				CSR_SET_TRAP(vmcs->hdw->pc, environment_call_native, 0, 0, 0);
+			if (!PROCESS_MEMORY_IN_BOUNDS(Vmcs->Gpr->Pc)) {
+				CSR_SET_TRAP (Vmcs->Gpr->Pc, environment_call_native, 0, 0, 0);
 			}
 		}
 
-		_vmcall void rv_flq() {
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+		VMCALL void rv_flq() {
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_fence() {
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+		VMCALL void rv_fence() {
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_fence_i() {
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+		VMCALL void rv_fence_i() {
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_ecall() {
+		VMCALL void rv_ecall() {
 			/*
 			   Description
 			   Make a request to the supporting execution environment.
@@ -983,10 +926,10 @@ namespace rvm64::operations {
 			   RaiseException(EnvironmentCall)
 
 			   */
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_ebreak() {
+		VMCALL void rv_ebreak() {
 			/*
 			   Description
 			   Used by debuggers to cause control to be transferred back to a debugging environment.
@@ -999,7 +942,7 @@ namespace rvm64::operations {
 		}
 
 		// NOTE: csr operations aren't needed rn.
-		_vmcall void rv_csrrw() {
+		VMCALL void rv_csrrw() {
 			/*
 			   Description
 			   Atomically swaps values in the CSRs and integer registers.
@@ -1010,10 +953,10 @@ namespace rvm64::operations {
 			   Implementation
 			   t = CSRs[csr]; CSRs[csr] = x[_rs1]; x[_rd] = t
 			   */
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_csrrs() {
+		VMCALL void rv_csrrs() {
 			/*
 			   Description
 			   Reads the value of the CSR, zero-extends the value to XLEN bits, and writes it to integer register _rd.
@@ -1024,10 +967,10 @@ namespace rvm64::operations {
 			   Implementation
 			   t = CSRs[csr]; CSRs[csr] = t | x[_rs1]; x[_rd] = t
 			   */
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_csrrc() {
+		VMCALL void rv_csrrc() {
 			/*
 			   Description
 			   Reads the value of the CSR, zero-extends the value to XLEN bits, and writes it to integer register _rd.
@@ -1038,10 +981,10 @@ namespace rvm64::operations {
 			   Implementation
 			   t = CSRs[csr]; CSRs[csr] = t &~x[_rs1]; x[_rd] = t
 			   */
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_csrrwi() {
+		VMCALL void rv_csrrwi() {
 			/*
 			   Description
 			   Update the CSR using an XLEN-bit value obtained by zero-extending a 5-bit unsigned immediate (uimm[4:0]) field encoded in the _rs1 field.
@@ -1049,10 +992,10 @@ namespace rvm64::operations {
 			   Implementation
 			   x[_rd] = CSRs[csr]; CSRs[csr] = zimm
 			   */
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_csrrsi() {
+		VMCALL void rv_csrrsi() {
 			/*
 			   Description
 			   Set CSR bit using an XLEN-bit value obtained by zero-extending a 5-bit unsigned immediate (uimm[4:0]) field encoded in the _rs1 field.
@@ -1060,10 +1003,10 @@ namespace rvm64::operations {
 			   Implementation
 			   t = CSRs[csr]; CSRs[csr] = t | zimm; x[_rd] = t
 			   */
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 
-		_vmcall void rv_csrrci() {
+		VMCALL void rv_csrrci() {
 			/*
 			   Description
 			   Clear CSR bit using an XLEN-bit value obtained by zero-extending a 5-bit unsigned immediate (uimm[4:0]) field encoded in the _rs1 field.
@@ -1071,1176 +1014,1175 @@ namespace rvm64::operations {
 			   Implementation
 			   t = CSRs[csr]; CSRs[csr] = t &~zimm; x[_rd] = t
 			   */
-			CSR_SET_TRAP(vmcs->hdw->pc, illegal_instruction, 0, 0, 1);
+			CSR_SET_TRAP (Vmcs->Gpr->Pc, illegal_instruction, 0, 0, 1);
 		}
 	}
 
-	namespace rtype {
-		_vmcall void rv_scw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t value = 0;
+namespace rtype {
+	VMCALL void rv_scw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 value = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			mem_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, value, _rs2);
+		MemRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, value, _rs2);
 
-			if (rvm64::memory::vm_check_load_rsv(0, address)) {
-				rvm64::memory::vm_set_load_rsv(0, address);
+		if (rvm64::memory::vm_check_load_rsv(0, address)) {
+			rvm64::memory::vm_set_load_rsv(0, address);
 
-				mem_write(int32_t, address, value);
-				reg_write(int32_t, _rd, 0);
+			MemWrite (INT32, address, value);
+			RegWrite (INT32, _rd, 0);
 
-				rvm64::memory::vm_clear_load_rsv(0);
-			} else {
-				reg_write(int32_t, _rd, 1);
-			}
+			rvm64::memory::vm_clear_load_rsv(0);
+		} else {
+			RegWrite (INT32, _rd, 1);
+		}
+	}
+
+	VMCALL void rv_scd() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 value = 0; UINT_PTR address = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT64, value, _rs2);
+
+		if (!rvm64::memory::vm_check_load_rsv(0, address)) {
+			rvm64::memory::vm_set_load_rsv(0, address);
+
+			MemWrite (INT64, address, value);
+			RegWrite (INT64, _rd, 0);
+
+			rvm64::memory::vm_clear_load_rsv(0);
+
+		} else {
+			RegWrite (INT64, _rd, 1);
+		}
+	}
+
+	VMCALL void rv_fadd_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (float, v1, _rs1);
+		RegRead (float, v2, _rs2);
+
+		RegWrite (float, _rd, (v1 + v2));
+	}
+
+	VMCALL void rv_fsub_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (float, v1, _rs1);
+		RegRead (float, v2, _rs2);
+
+		RegWrite (float, _rd, (v1 - v2));
+	}
+
+	VMCALL void rv_fmul_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (float, v1, _rs1);
+		RegRead (float, v2, _rs2);
+
+		RegWrite (float, _rd, (v1 * v2));
+	}
+
+	VMCALL void rv_fdiv_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (float, v1, _rs1);
+		RegRead (float, v2, _rs2);
+
+		RegWrite (float, _rd, (v1 / v2));
+	}
+
+	VMCALL void rv_fsgnj_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (INT64, v1, _rs1);
+		RegRead (INT64, v2, _rs2);
+
+		INT64 s2 = (v2 >> 63) & 1;
+
+		v1 &= ~(1LL << 63);
+		v1 |= (s2 << 63);
+
+		RegWrite (INT64, _rd, v1);
+	}
+
+	VMCALL void rv_fsgnjn_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (INT64, v1, _rs1);
+		RegRead (INT64, v2, _rs2);
+
+		INT64 s2 = ((v2 >> 63) & 1) ^ 1;
+
+		v1 &= ~(1LL << 63);
+		v1 |= (s2 << 63);
+
+		RegWrite (INT64, _rd, v1);
+	}
+
+	VMCALL void rv_fsgnjx_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (INT64, v1, _rs1);
+		RegRead (INT64, v2, _rs2);
+
+		INT64 s1 = (v1 >> 63) & 1;
+		INT64 s2 = (v2 >> 63) & 1;
+
+		v1 &= ~(1LL << 63);
+		v1 |= ((s1 ^ s2) << 63);
+
+		RegWrite (INT64, _rd, v1);
+	}
+
+	VMCALL void rv_fmin_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (double, v1, _rs1);
+		RegRead (double, v2, _rs2);
+
+		if (is_nan(v1)) {
+			RegWrite (double, _rd, v2);
+		} else if (is_nan(v2)) {
+			RegWrite (double, _rd, v1);
+		} else {
+			RegWrite (double, _rd, (v1 > v2) ? v2 : v1);
+		}
+	}
+
+	VMCALL void rv_fmax_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (double, v1, _rs1);
+		RegRead (double, v2, _rs2);
+
+		if (is_nan(v1)) {
+			RegWrite (double, _rd, v2);
+		} else if (is_nan(v2)) {
+			RegWrite (double, _rd, v1);
+		} else {
+			RegWrite (double, _rd, (v1 > v2) ? v1 : v2);
+		}
+	}
+
+	VMCALL void rv_feq_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (double, v1, _rs1);
+		RegRead (double, v2, _rs2);
+
+		if (is_nan(v1) || is_nan(v2)) {
+			RegWrite (bool, _rd, false);
+			return;
 		}
 
-		_vmcall void rv_scd() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int64_t value = 0; uintptr_t address = 0;
+		RegWrite (bool, _rd, (v1 == v2));
+	}
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+	VMCALL void rv_flt_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
 
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int64_t, value, _rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			if (!rvm64::memory::vm_check_load_rsv(0, address)) {
-				rvm64::memory::vm_set_load_rsv(0, address);
+		RegRead (double, v1, _rs1);
+		RegRead (double, v2, _rs2);
 
-				mem_write(int64_t, address, value);
-				reg_write(int64_t, _rd, 0);
-
-				rvm64::memory::vm_clear_load_rsv(0);
-
-			} else {
-				reg_write(int64_t, _rd, 1);
-			}
+		if (is_nan(v1) || is_nan(v2)) {
+			RegWrite (bool, _rd, false);
+			return;
 		}
 
-		_vmcall void rv_fadd_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+		RegWrite (bool, _rd, (v1 < v2));
+	}
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+	VMCALL void rv_fle_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
 
-			reg_read(float, v1, _rs1);
-			reg_read(float, v2, _rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_write(float, _rd, (v1 + v2));
+		RegRead (double, v1, _rs1);
+		RegRead (double, v2, _rs2);
+
+		if (is_nan(v1) || is_nan(v2)) {
+			RegWrite (bool, _rd, false);
+			return;
 		}
 
-		_vmcall void rv_fsub_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+		RegWrite (bool, _rd, (v1 <= v2));
+	}
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+	VMCALL void rv_addw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			reg_read(float, v1, _rs1);
-			reg_read(float, v2, _rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_write(float, _rd, (v1 - v2));
-		}
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-		_vmcall void rv_fmul_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+		RegWrite (INT64, _rd, (INT64)(v1 + v2));
+	}
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+	VMCALL void rv_subw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			reg_read(float, v1, _rs1);
-			reg_read(float, v2, _rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_write(float, _rd, (v1 * v2));
-		}
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-		_vmcall void rv_fdiv_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
+		RegWrite (INT64, _rd, (INT64)(v1 - v2));
+	}
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+	VMCALL void rv_mulw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			reg_read(float, v1, _rs1);
-			reg_read(float, v2, _rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_write(float, _rd, (v1 / v2));
-		}
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
+		RegWrite (INT64, _rd, (INT64)(v1 * v2));
+	}
 
-		_vmcall void rv_fsgnj_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int64_t v1 = 0, v2 = 0;
+	VMCALL void rv_srlw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_read(int64_t, v2, _rs2);
+		RegRead (INT32, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
 
-			int64_t s2 = (v2 >> 63) & 1;
+		RegWrite (INT32, _rd, (v1 >> (v2 & 0x1F)));
+	}
 
-			v1 &= ~(1LL << 63);
-			v1 |= (s2 << 63);
+	VMCALL void rv_sraw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-			reg_write(int64_t, _rd, v1);
-		}
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-		_vmcall void rv_fsgnjn_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int64_t v1 = 0, v2 = 0;
+		RegRead (INT32, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		RegWrite (INT32, _rd, (v1 >> (v2 & 0x1F)));
+	}
 
-			reg_read(int64_t, v1, _rs1);
-			reg_read(int64_t, v2, _rs2);
+	VMCALL void rv_divuw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0;
 
-			int64_t s2 = ((v2 >> 63) & 1) ^ 1;
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			v1 &= ~(1LL << 63);
-			v1 |= (s2 << 63);
+		RegRead (UINT32, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
 
-			reg_write(int64_t, _rd, v1);
-		}
+		RegWrite (UINT32, _rd, (v1 / v2));
+	}
 
-		_vmcall void rv_fsgnjx_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int64_t v1 = 0, v2 = 0;
+	VMCALL void rv_sllw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(int64_t, v1, _rs1);
-			reg_read(int64_t, v2, _rs2);
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-			int64_t s1 = (v1 >> 63) & 1;
-			int64_t s2 = (v2 >> 63) & 1;
+		RegWrite (INT32, _rd, (v1 << (v2 & 0x1F)));
+	}
 
-			v1 &= ~(1LL << 63);
-			v1 |= ((s1 ^ s2) << 63);
+	VMCALL void rv_divw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			reg_write(int64_t, _rd, v1);
-		}
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-		_vmcall void rv_fmin_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		RegWrite (INT32, _rd, (v1 / v2));
+	}
 
-			reg_read(double, v1, _rs1);
-			reg_read(double, v2, _rs2);
+	VMCALL void rv_remw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			if (is_nan(v1)) {
-				reg_write(double, _rd, v2);
-			} else if (is_nan(v2)) {
-				reg_write(double, _rd, v1);
-			} else {
-				reg_write(double, _rd, (v1 > v2) ? v2 : v1);
-			}
-		}
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-		_vmcall void rv_fmax_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		RegWrite (INT32, _rd, (v1 % v2));
+	}
 
-			reg_read(double, v1, _rs1);
-			reg_read(double, v2, _rs2);
+	VMCALL void rv_remuw() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0;
 
-			if (is_nan(v1)) {
-				reg_write(double, _rd, v2);
-			} else if (is_nan(v2)) {
-				reg_write(double, _rd, v1);
-			} else {
-				reg_write(double, _rd, (v1 > v2) ? v1 : v2);
-			}
-		}
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-		_vmcall void rv_feq_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+		RegRead (UINT32, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		RegWrite (UINT32, _rd, (v1 % v2));
+	}
 
-			reg_read(double, v1, _rs1);
-			reg_read(double, v2, _rs2);
+	VMCALL void rv_add() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			if (is_nan(v1) || is_nan(v2)) {
-				reg_write(bool, _rd, false);
-				return;
-			}
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_write(bool, _rd, (v1 == v2));
-		}
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-		_vmcall void rv_flt_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+		RegWrite (INT32, _rd, (v1 + v2));
+	}
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+	VMCALL void rv_sub() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			reg_read(double, v1, _rs1);
-			reg_read(double, v2, _rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			if (is_nan(v1) || is_nan(v2)) {
-				reg_write(bool, _rd, false);
-				return;
-			}
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-			reg_write(bool, _rd, (v1 < v2));
-		}
+		RegWrite (INT32, _rd, (v1 - v2));
+	}
 
-		_vmcall void rv_fle_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
+	VMCALL void rv_mul() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(double, v1, _rs1);
-			reg_read(double, v2, _rs2);
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
 
-			if (is_nan(v1) || is_nan(v2)) {
-				reg_write(bool, _rd, false);
-				return;
-			}
+		RegWrite (INT32, _rd, (v1 * v2));
+	}
 
-			reg_write(bool, _rd, (v1 <= v2));
-		}
+	VMCALL void rv_sll() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
-		_vmcall void rv_addw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		RegRead (INT32, _rs1, v1);
+		RegRead (INT32, _rs2, v2);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
+		RegWrite (INT32, _rd, (v1 << (v2 & 0x1F)));
+	}
 
-			reg_write(int64_t, _rd, (int64_t)(v1 + v2));
-		}
+	VMCALL void rv_mulh() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
-		_vmcall void rv_subw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int64_t, _rd, (int64_t)(v1 - v2));
-		}
-
-		_vmcall void rv_mulw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int64_t, _rd, (int64_t)(v1 * v2));
-		}
-
-		_vmcall void rv_srlw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0; uint32_t v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
-		}
-
-		_vmcall void rv_sraw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0; uint32_t v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 >> (v2 & 0x1F)));
-		}
-
-		_vmcall void rv_divuw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uint32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uint32_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-			reg_write(uint32_t, _rd, (v1 / v2));
-		}
-
-		_vmcall void rv_sllw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0; uint32_t v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
-		}
-
-		_vmcall void rv_divw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 / v2));
-		}
-
-		_vmcall void rv_remw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 % v2));
-		}
-
-		_vmcall void rv_remuw() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uint32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uint32_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-			reg_write(uint32_t, _rd, (v1 % v2));
-		}
-
-		_vmcall void rv_add() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 + v2));
-		}
-
-		_vmcall void rv_sub() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 - v2));
-		}
-
-		_vmcall void rv_mul() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			reg_write(int32_t, _rd, (v1 * v2));
-		}
-
-		_vmcall void rv_sll() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; int32_t v1 = 0; uint32_t v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(int32_t, _rs1, v1);
-			reg_read(int32_t, _rs2, v2);
-
-			reg_write(int32_t, _rd, (v1 << (v2 & 0x1F)));
-		}
-
-		_vmcall void rv_mulh() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; intptr_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(intptr_t, v1, _rs1);
-			reg_read(intptr_t, v2, _rs2);
+		RegRead (INT_PTR, v1, _rs1);
+		RegRead (INT_PTR, v2, _rs2);
 
 #if UINTPTR_MAX == 0xFFFFFFFF
-			int64_t result = (int64_t)v1 * (int64_t)v2;
-			reg_write(int32_t, _rd, (result >> 32));
+		INT64 result = (INT64)v1 * (INT64)v2;
+		RegWrite (INT32, _rd, (result >> 32));
 
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
-			__int128 result = (__int128)v1 * (__int128)v2;
-			reg_write(int64_t, _rd, (result >> 64));
+		__int128 result = (__int128)v1 * (__int128)v2;
+		RegWrite (INT64, _rd, (result >> 64));
 
 #endif
-		}
+	}
 
-		_vmcall void rv_slt() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; intptr_t v1 = 0, v2 = 0;
+	VMCALL void rv_slt() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(intptr_t, v1, _rs1);
-			reg_read(intptr_t, v2, _rs2);
+		RegRead (INT_PTR, v1, _rs1);
+		RegRead (INT_PTR, v2, _rs2);
 
-			reg_write(intptr_t, _rd, ((v1 < v2) ? 1 : 0));
-		}
+		RegWrite (INT_PTR, _rd, ((v1 < v2) ? 1 : 0));
+	}
 
-		_vmcall void rv_mulhsu() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; intptr_t v1 = 0; uintptr_t v2 = 0;
+	VMCALL void rv_mulhsu() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0; UINT_PTR v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(intptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
+		RegRead (INT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
 
 #if UINTPTR_MAX == 0xFFFFFFFF
-			int64_t result = (int64_t)(int32_t)v1 * (uint64_t)(uint32_t)v2;
-			reg_write(int32_t, _rd, (result >> 32));
+		INT64 result = (INT64)(INT32)v1 * (UINT64)(UINT32)v2;
+		RegWrite (INT32, _rd, (result >> 32));
 
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
-			__int128 result = (__int128) (int64_t) v1 * (__uint128_t) (uint64_t) v2;
-			reg_write(int64_t, _rd, (result >> 64));
+		__int128 result = (__int128) (INT64) v1 * (__uint128_t) (UINT64) v2;
+		RegWrite (INT64, _rd, (result >> 64));
 #endif
-		}
+	}
 
-		_vmcall void rv_sltu() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0, v2 = 0;
+	VMCALL void rv_sltu() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
 
-			reg_write(uintptr_t, _rd, ((v1 < v2) ? 1 : 0));
-		}
+		RegWrite (UINT_PTR, _rd, ((v1 < v2) ? 1 : 0));
+	}
 
-		_vmcall void rv_mulhu() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0, v2 = 0;
+	VMCALL void rv_mulhu() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
 
-			uintptr_t result = v1 * v2;
+		UINT_PTR result = v1 * v2;
 
 #if UINTPTR_MAX == 0xFFFFFFFF
-			reg_write(uintptr_t, _rd, (result >> 16));
+		RegWrite (UINT_PTR, _rd, (result >> 16));
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
-			reg_write(uintptr_t, _rd, (result >> 32));
+		RegWrite (UINT_PTR, _rd, (result >> 32));
 #endif
-		}
+	}
 
-		_vmcall void rv_xor() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0, v2 = 0;
+	VMCALL void rv_xor() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
 
-			reg_write(uintptr_t, _rd, (v1 ^ v2));
-		}
+		RegWrite (UINT_PTR, _rd, (v1 ^ v2));
+	}
 
-		_vmcall void rv_div() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0, v2 = 0;
+	VMCALL void rv_div() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
 
-			reg_write(uintptr_t, _rd, (v1 / v2));
-		}
+		RegWrite (UINT_PTR, _rd, (v1 / v2));
+	}
 
-		_vmcall void rv_srl() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0; uint32_t v2 = 0;
+	VMCALL void rv_srl() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0; UINT32 v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
 
-			reg_write(uintptr_t, _rd, (v1 >> (v2 & 0x1F)));
-		}
+		RegWrite (UINT_PTR, _rd, (v1 >> (v2 & 0x1F)));
+	}
 
-		_vmcall void rv_sra() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; intptr_t v1 = 0; uint32_t v2 = 0;
+	VMCALL void rv_sra() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0; UINT32 v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(intptr_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
+		RegRead (INT_PTR, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
 
-			reg_write(intptr_t, _rd, (v1 >> (v2 & 0x1F)));
-		}
+		RegWrite (INT_PTR, _rd, (v1 >> (v2 & 0x1F)));
+	}
 
-		_vmcall void rv_divu() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0, v2 = 0;
+	VMCALL void rv_divu() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
 
-			if (v2 == 0) {
-				reg_write(uintptr_t, _rd, 0);
-			} else {
-				reg_write(uintptr_t, _rd, (v1 / v2));
-			}
-		}
-
-		_vmcall void rv_or() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; intptr_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(intptr_t, _rs1, v1);
-			reg_read(intptr_t, _rs2, v2);
-
-			reg_write(intptr_t, _rd, (v1 | v2));
-		}
-
-		_vmcall void rv_rem() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; intptr_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(intptr_t, v1, _rs1);
-			reg_read(intptr_t, v2, _rs2);
-
-			if (v2 == 0) {
-				reg_write(intptr_t, _rd, 0);
-			} else {
-				reg_write(intptr_t, _rd, (v1 % v2));
-			}
-		}
-
-		_vmcall void rv_and() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
-
-			reg_write(uintptr_t, _rd, (v1 & v2));
-		}
-
-		_vmcall void rv_remu() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, v1, _rs1);
-			reg_read(uintptr_t, v2, _rs2);
-
-			if (v2 == 0) {
-				reg_write(uintptr_t, _rd, 0);
-			} else {
-				reg_write(uintptr_t, _rd, (v1 % v2));
-			}
-		}
-
-		_vmcall void rv_amoswap_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int64_t, v2, _rs2);
-
-
-			mem_read(int64_t, v1, address);
-			mem_write(int64_t, address, v2);
-			reg_write(int64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amoadd_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int64_t, v2, _rs2);
-
-
-			mem_read(int64_t, v1, address);
-			mem_write(int64_t, address, (v1 + v2));
-			reg_write(int64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amoxor_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int64_t, v2, _rs2);
-
-
-			mem_read(int64_t, v1, address);
-			mem_write(int64_t, address, (v1 ^ v2));
-			reg_write(int64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amoand_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int64_t, v2, _rs2);
-
-
-			mem_read(int64_t, v1, address);
-			mem_write(int64_t, address, (v1 & v2));
-			reg_write(int64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amoor_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int64_t, v2, _rs2);
-
-
-			mem_read(int64_t, v1, address);
-			mem_write(int64_t, address, (v1 | v2));
-			reg_write(int64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amomin_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint64_t, v2, _rs2);
-
-
-			mem_read(int64_t, v1, address);
-			mem_write(int64_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(uint64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amomax_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int64_t, v2, _rs2);
-
-
-			mem_read(int64_t, v1, address);
-			mem_write(int64_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(int64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amominu_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; uint64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, _rs1, address);
-			reg_read(uint64_t, _rs2, v2);
-
-
-			mem_read(uint64_t, v1, address);
-			mem_write(uint64_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(uint64_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amomaxu_d() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; uint64_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint64_t, v2, _rs2);
-
-			mem_read(uint64_t, v1, address);
-
-			mem_write(uint64_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(uint64_t, _rd, v1);
-		}
-
-		_vmcall void rv_amoswap_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			mem_read(int32_t, v1, address);
-
-			mem_write(int32_t, address, v2);
-			reg_write(int32_t, _rd, v1);
-		}
-
-		_vmcall void rv_amoadd_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			mem_read(int32_t, v1, address);
-			mem_write(int32_t, address, (v1 + v2));
-
-			reg_write(int32_t, _rd, v1);
-		}
-
-		_vmcall void rv_amoxor_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			mem_read(int32_t, v1, address);
-			mem_write(int32_t, address, (v1 ^ v2));
-
-			reg_write(int32_t, _rd, v1);
-		}
-
-		_vmcall void rv_amoand_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-
-			mem_read(int32_t, v1, address);
-			mem_write(int32_t, address, (v1 & v2));
-			reg_write(int32_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amoor_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-
-			mem_read(int32_t, v1, address);
-			mem_write(int32_t, address, (v1 | v2));
-			reg_write(int32_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amomin_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-
-			mem_read(int32_t, v1, address);
-			mem_write(int32_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(int32_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amomax_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; int32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-
-			mem_read(int32_t, v1, address);
-			mem_write(int32_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(int32_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amominu_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; uint32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-
-			mem_read(uint32_t, v1, address);
-			mem_write(uint32_t, address, (v1 < v2 ? v1 : v2));
-			reg_write(uint32_t, _rd, v1);
-
-		}
-
-		_vmcall void rv_amomaxu_w() {
-			uint8_t _rd = 0, _rs1 = 0, _rs2 = 0; uintptr_t address = 0; uint32_t v1 = 0, v2 = 0;
-
-			scr_read(uint8_t, _rd, rd);
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-
-			mem_read(uint32_t, v1, address);
-			mem_write(uint32_t, address, (v1 < v2 ? v2 : v1));
-			reg_write(uint32_t, _rd, v1);
-
+		if (v2 == 0) {
+			RegWrite (UINT_PTR, _rd, 0);
+		} else {
+			RegWrite (UINT_PTR, _rd, (v1 / v2));
 		}
 	}
 
-	namespace utype {
-		_vmcall void rv_lui() {
-			uint8_t _rd = 0; int32_t _imm = 0;
+	VMCALL void rv_or() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint32_t, _rd, rd);
-			scr_read(int32_t, _imm, imm);
-			reg_write(int32_t, _rd, _imm);
-		}
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-		_vmcall void rv_auipc() {
-			uint8_t _rd = 0; int32_t _imm = 0;
+		RegRead (INT_PTR, _rs1, v1);
+		RegRead (INT_PTR, _rs2, v2);
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(int32_t, _imm, imm);
-			reg_write(int64_t, _rd, (int64_t)vmcs->hdw->pc + _imm);
+		RegWrite (INT_PTR, _rd, (v1 | v2));
+	}
+
+	VMCALL void rv_rem() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (INT_PTR, v1, _rs1);
+		RegRead (INT_PTR, v2, _rs2);
+
+		if (v2 == 0) {
+			RegWrite (INT_PTR, _rd, 0);
+		} else {
+			RegWrite (INT_PTR, _rd, (v1 % v2));
 		}
 	}
 
-	namespace jtype {
-		_vmcall void rv_jal() {
-			uint8_t _rd = 0; intptr_t offset = 0;
+	VMCALL void rv_and() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rd, rd);
-			scr_read(intptr_t, offset, imm);
-			reg_write(uintptr_t, _rd, vmcs->hdw->pc + 4);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			vmcs->hdw->pc += offset;
-			CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
+
+		RegWrite (UINT_PTR, _rd, (v1 & v2));
+	}
+
+	VMCALL void rv_remu() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, v1, _rs1);
+		RegRead (UINT_PTR, v2, _rs2);
+
+		if (v2 == 0) {
+			RegWrite (UINT_PTR, _rd, 0);
+		} else {
+			RegWrite (UINT_PTR, _rd, (v1 % v2));
 		}
 	}
 
-	namespace btype {
-		_vmcall void rv_beq() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0; intptr_t offset = 0;
+	VMCALL void rv_amoswap_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(intptr_t, offset, imm);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT64, v2, _rs2);
 
-			if (v1 == v2) {
-				vmcs->hdw->pc += offset;
-				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
-			}
-		}
+		MemRead (INT64, v1, address);
+		MemWrite (INT64, address, v2);
+		RegWrite (INT64, _rd, v1);
 
-		_vmcall void rv_bne() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0; intptr_t offset = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(intptr_t, offset, imm);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			if (v1 != v2) {
-				vmcs->hdw->pc += offset;
-				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
-			}
-		}
-
-		_vmcall void rv_blt() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0; intptr_t offset = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(intptr_t, offset, imm);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			if (v1 < v2) {
-				vmcs->hdw->pc += offset;
-				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
-			}
-		}
-
-		_vmcall void rv_bge() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t v1 = 0, v2 = 0; intptr_t offset = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(intptr_t, offset, imm);
-
-			reg_read(int32_t, v1, _rs1);
-			reg_read(int32_t, v2, _rs2);
-
-			if (v1 >= v2) {
-				vmcs->hdw->pc += offset;
-				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
-			}
-		}
-
-		_vmcall void rv_bltu() {
-			uint8_t _rs1 = 0, _rs2 = 0; uint32_t v1 = 0, v2 = 0; intptr_t offset = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(intptr_t, offset, imm);
-
-			reg_read(uint32_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-			if (v1 < v2) {
-				vmcs->hdw->pc += offset;
-				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
-			}
-		}
-
-		_vmcall void rv_bgeu() {
-			uint8_t _rs1 = 0, _rs2 = 0; uint32_t v1 = 0, v2 = 0; intptr_t offset = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(intptr_t, offset, imm);
-
-			reg_read(uint32_t, v1, _rs1);
-			reg_read(uint32_t, v2, _rs2);
-
-			if (v1 >= v2) {
-				vmcs->hdw->pc += offset;
-				CSR_SET_TRAP(nullptr, environment_branch, 0, 0, 0);
-			}
-		}
 	}
 
-	namespace stype {
-		_vmcall void rv_sb() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t _imm = 0; uintptr_t address = 0; uint8_t v1 = 0;
+	VMCALL void rv_amoadd_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(int32_t, _imm, imm);
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
 
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(int8_t, v1, _rs2);
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT64, v2, _rs2);
 
-			address += (intptr_t)_imm;
-			mem_write(uint8_t, address, v1);
-		}
 
-		_vmcall void rv_sh() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t _imm = 0; uintptr_t address = 0; uint16_t v1 = 0;
+		MemRead (INT64, v1, address);
+		MemWrite (INT64, address, (v1 + v2));
+		RegWrite (INT64, _rd, v1);
 
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(int32_t, _imm, imm);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint16_t, v1, _rs2);
-
-			address += (intptr_t)_imm;
-			mem_write(uint16_t, address, v1);
-		}
-
-		_vmcall void rv_sw() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t _imm = 0; uintptr_t address = 0; uint32_t v1 = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(int32_t, _imm, imm);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint32_t, v1, _rs2);
-
-			address += (intptr_t)_imm;
-			mem_write(uint32_t, address, v1);
-		}
-
-		_vmcall void rv_sd() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t _imm = 0; uintptr_t address = 0; uint64_t v1 = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(int32_t, _imm, imm);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint64_t, v1, _rs2);
-
-			address += (intptr_t)_imm;
-			mem_write(uint64_t, address, v1);
-		}
-
-		_vmcall void rv_fsw() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t _imm = 0; uintptr_t address = 0; float v1 = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(int32_t, _imm, imm);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(float, v1, _rs2);
-
-			address += (intptr_t)_imm;
-			mem_write(float, address, v1);
-		}
-
-		_vmcall void rv_fsd() {
-			uint8_t _rs1 = 0, _rs2 = 0; int32_t _imm = 0; uintptr_t address = 0; double v1 = 0;
-
-			scr_read(uint8_t, _rs1, rs1);
-			scr_read(uint8_t, _rs2, rs2);
-			scr_read(int32_t, _imm, imm);
-
-			reg_read(uintptr_t, address, _rs1);
-			reg_read(uint64_t, v1, _rs2);
-
-			address += (intptr_t)_imm;
-			mem_write(double, address, v1);
-		}
 	}
 
-	namespace r4type {};
+	VMCALL void rv_amoxor_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT64, v2, _rs2);
+
+
+		MemRead (INT64, v1, address);
+		MemWrite (INT64, address, (v1 ^ v2));
+		RegWrite (INT64, _rd, v1);
+
+	}
+
+	VMCALL void rv_amoand_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT64, v2, _rs2);
+
+
+		MemRead (INT64, v1, address);
+		MemWrite (INT64, address, (v1 & v2));
+		RegWrite (INT64, _rd, v1);
+
+	}
+
+	VMCALL void rv_amoor_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT64, v2, _rs2);
+
+
+		MemRead (INT64, v1, address);
+		MemWrite (INT64, address, (v1 | v2));
+		RegWrite (INT64, _rd, v1);
+
+	}
+
+	VMCALL void rv_amomin_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT64, v2, _rs2);
+
+
+		MemRead (INT64, v1, address);
+		MemWrite (INT64, address, (v1 < v2 ? v1 : v2));
+		RegWrite (UINT64, _rd, v1);
+
+	}
+
+	VMCALL void rv_amomax_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT64, v2, _rs2);
+
+
+		MemRead (INT64, v1, address);
+		MemWrite (INT64, address, (v1 < v2 ? v2 : v1));
+		RegWrite (INT64, _rd, v1);
+
+	}
+
+	VMCALL void rv_amominu_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, _rs1, address);
+		RegRead (UINT64, _rs2, v2);
+
+
+		MemRead (UINT64, v1, address);
+		MemWrite (UINT64, address, (v1 < v2 ? v1 : v2));
+		RegWrite (UINT64, _rd, v1);
+
+	}
+
+	VMCALL void rv_amomaxu_d() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT64 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT64, v2, _rs2);
+
+		MemRead (UINT64, v1, address);
+
+		MemWrite (UINT64, address, (v1 < v2 ? v2 : v1));
+		RegWrite (UINT64, _rd, v1);
+	}
+
+	VMCALL void rv_amoswap_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+		MemRead (INT32, v1, address);
+
+		MemWrite (INT32, address, v2);
+		RegWrite (INT32, _rd, v1);
+	}
+
+	VMCALL void rv_amoadd_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+		MemRead (INT32, v1, address);
+		MemWrite (INT32, address, (v1 + v2));
+
+		RegWrite (INT32, _rd, v1);
+	}
+
+	VMCALL void rv_amoxor_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+		MemRead (INT32, v1, address);
+		MemWrite (INT32, address, (v1 ^ v2));
+
+		RegWrite (INT32, _rd, v1);
+	}
+
+	VMCALL void rv_amoand_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+
+		MemRead (INT32, v1, address);
+		MemWrite (INT32, address, (v1 & v2));
+		RegWrite (INT32, _rd, v1);
+
+	}
+
+	VMCALL void rv_amoor_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+
+		MemRead (INT32, v1, address);
+		MemWrite (INT32, address, (v1 | v2));
+		RegWrite (INT32, _rd, v1);
+
+	}
+
+	VMCALL void rv_amomin_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+
+		MemRead (INT32, v1, address);
+		MemWrite (INT32, address, (v1 < v2 ? v1 : v2));
+		RegWrite (INT32, _rd, v1);
+
+	}
+
+	VMCALL void rv_amomax_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+
+		MemRead (INT32, v1, address);
+		MemWrite (INT32, address, (v1 < v2 ? v2 : v1));
+		RegWrite (INT32, _rd, v1);
+
+	}
+
+	VMCALL void rv_amominu_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT32, v2, _rs2);
+
+
+		MemRead (UINT32, v1, address);
+		MemWrite (UINT32, address, (v1 < v2 ? v1 : v2));
+		RegWrite (UINT32, _rd, v1);
+
+	}
+
+	VMCALL void rv_amomaxu_w() {
+		UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT32 v1 = 0, v2 = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT32, v2, _rs2);
+
+
+		MemRead (UINT32, v1, address);
+		MemWrite (UINT32, address, (v1 < v2 ? v2 : v1));
+		RegWrite (UINT32, _rd, v1);
+
+	}
 };
 
-_rdata const uintptr_t dispatch_table[256] = {
-#define ENCRYPT(op) rvm64::crypt::encrypt_ptr((uintptr_t)(op), (uintptr_t)0)
+namespace utype {
+	VMCALL void rv_lui() {
+		UINT8 _rd = 0; INT32 _imm = 0;
+
+		ScrRead (UINT32, _rd, rd);
+		ScrRead (INT32, _imm, imm);
+		RegWrite (INT32, _rd, _imm);
+	}
+
+	VMCALL void rv_auipc() {
+		UINT8 _rd = 0; INT32 _imm = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (INT32, _imm, imm);
+		RegWrite (INT64, _rd, (INT64)Vmcs->Gpr->Pc + _imm);
+	}
+}
+
+namespace jtype {
+	VMCALL void rv_jal() {
+		UINT8 _rd = 0; INT_PTR offset = 0;
+
+		ScrRead (UINT8, _rd, rd);
+		ScrRead (INT_PTR, offset, imm);
+		RegWrite (UINT_PTR, _rd, Vmcs->Gpr->Pc + 4);
+
+		Vmcs->Gpr->Pc += offset;
+		CSR_SET_TRAP (nullptr, environment_branch, 0, 0, 0);
+	}
+}
+
+namespace btype {
+	VMCALL void rv_beq() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT_PTR, offset, imm);
+
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+		if (v1 == v2) {
+			Vmcs->Gpr->Pc += offset;
+			CSR_SET_TRAP (nullptr, environment_branch, 0, 0, 0);
+		}
+	}
+
+	VMCALL void rv_bne() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT_PTR, offset, imm);
+
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+		if (v1 != v2) {
+			Vmcs->Gpr->Pc += offset;
+			CSR_SET_TRAP (nullptr, environment_branch, 0, 0, 0);
+		}
+	}
+
+	VMCALL void rv_blt() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT_PTR, offset, imm);
+
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+		if (v1 < v2) {
+			Vmcs->Gpr->Pc += offset;
+			CSR_SET_TRAP (nullptr, environment_branch, 0, 0, 0);
+		}
+	}
+
+	VMCALL void rv_bge() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT_PTR, offset, imm);
+
+		RegRead (INT32, v1, _rs1);
+		RegRead (INT32, v2, _rs2);
+
+		if (v1 >= v2) {
+			Vmcs->Gpr->Pc += offset;
+			CSR_SET_TRAP (nullptr, environment_branch, 0, 0, 0);
+		}
+	}
+
+	VMCALL void rv_bltu() {
+		UINT8 _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT_PTR, offset, imm);
+
+		RegRead (UINT32, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
+
+		if (v1 < v2) {
+			Vmcs->Gpr->Pc += offset;
+			CSR_SET_TRAP (nullptr, environment_branch, 0, 0, 0);
+		}
+	}
+
+	VMCALL void rv_bgeu() {
+		UINT8 _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT_PTR, offset, imm);
+
+		RegRead (UINT32, v1, _rs1);
+		RegRead (UINT32, v2, _rs2);
+
+		if (v1 >= v2) {
+			Vmcs->Gpr->Pc += offset;
+			CSR_SET_TRAP (nullptr, environment_branch, 0, 0, 0);
+		}
+	}
+}
+
+namespace stype {
+	VMCALL void rv_sb() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT8 v1 = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT32, _imm, imm);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (INT8, v1, _rs2);
+
+		address += (INT_PTR)_imm;
+		MemWrite (UINT8, address, v1);
+	}
+
+	VMCALL void rv_sh() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT16 v1 = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT32, _imm, imm);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT16, v1, _rs2);
+
+		address += (INT_PTR)_imm;
+		MemWrite (UINT16, address, v1);
+	}
+
+	VMCALL void rv_sw() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT32 v1 = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT32, _imm, imm);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT32, v1, _rs2);
+
+		address += (INT_PTR)_imm;
+		MemWrite (UINT32, address, v1);
+	}
+
+	VMCALL void rv_sd() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT64 v1 = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT32, _imm, imm);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT64, v1, _rs2);
+
+		address += (INT_PTR)_imm;
+		MemWrite (UINT64, address, v1);
+	}
+
+	VMCALL void rv_fsw() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; float v1 = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT32, _imm, imm);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (float, v1, _rs2);
+
+		address += (INT_PTR)_imm;
+		MemWrite (float, address, v1);
+	}
+
+	VMCALL void rv_fsd() {
+		UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; double v1 = 0;
+
+		ScrRead (UINT8, _rs1, rs1);
+		ScrRead (UINT8, _rs2, rs2);
+		ScrRead (INT32, _imm, imm);
+
+		RegRead (UINT_PTR, address, _rs1);
+		RegRead (UINT64, v1, _rs2);
+
+		address += (INT_PTR)_imm;
+		MemWrite (double, address, v1);
+	}
+}
+
+namespace r4type {
+
+};
+
+VM_DATA const UINT_PTR DispatchTable [256] = {
+#define ENCRYPT(op) EncryptPtr ((UINT_PTR)(op), (UINT_PTR)0)
 
     // ITYPE
     ENCRYPT(rvm64::operations::itype::rv_addi), ENCRYPT(rvm64::operations::itype::rv_slti),
@@ -2312,5 +2254,4 @@ _rdata const uintptr_t dispatch_table[256] = {
     ENCRYPT(rvm64::operations::jtype::rv_jal)
 
 #undef ENCRYPT
-};
 #endif // VMCODE_H

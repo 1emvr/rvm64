@@ -6,7 +6,6 @@
 #include "../include/vmmem.hpp"
 
 #include "rvni.hpp"
-#define LONGJMP(addr, b) longjmp(addr, b); VM_UNREACHABLE()
 
 LONG CALLBACK InteruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
@@ -22,18 +21,18 @@ LONG CALLBACK InteruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 		longjmp (Vmcs->ExitHandler, true);
 	}
 
-	switch (Vmcs->Csr.m_cause) {
-		case EnvExit: 	longjmp (Vmcs->ExitHandler, true);
-		case EnvBranch: longjmp (Vmcs->TrapHandler, true);
-		case EnvExecute:
+	switch (Vmcs->Csr.Cause) {
+		case ENV_EXIT: 		longjmp (Vmcs->ExitHandler, true);
+		case ENV_BRANCH: 	longjmp (Vmcs->TrapHandler, true);
+		case ENV_EXECUTE:
 		{
 			VOID (WINAPI *Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Gpr->Pc;
-			Memory();
+			Memory ();
 			break;
 		}
-		case EnvNative: 
+		case ENV_NATIVE: 
 		{
-			VmNativeCall ();
+			NativeCall ();
 			break;
 		}
 		default: 
@@ -42,7 +41,5 @@ LONG CALLBACK InteruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 
 	RegRead (UINT_PTR, Vmcs->Gpr.Pc, Regenum::Ra); 
 	longjmp (Vmcs->TrapHandler, true); 
-	
-	return 0;
 }
 #endif //VMVEH_H
