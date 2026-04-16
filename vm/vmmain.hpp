@@ -24,13 +24,6 @@
 #define FRACTION_MASK           0x000FFFFFFFFFFFFFULL
 #define RV64_RET                0x00008067
 
-#define CSR_SET_TRAP(epc, cause, stat, val, hlt) 	\
-    Vmcs->Csr->Epc 		= (UINT_PTR)(epc);			\
-    vmcs->Csr->Cause 	= (cause);                 	\
-    vmcs->Csr->Status 	= (stat);                 	\
-    vmcs->Csr->Tval 	= (val);                    \
-    vmcs->halt 			= (hlt);                    \
-    RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
 
 // Safe MIN/MAX that work on both compilers
 #define MIN (a, b) ([] (auto _a, auto _b) { return _a < _b ? _a : _b; } ((a),(b)))
@@ -204,6 +197,7 @@ typedef struct {
 	struct {
 		UINT64 			Memory;
 		UINT64 			MemorySize;
+		UINT64			ImageBase;
 		volatile UINT64 Ready;   
 	} Proc;
 } VMCS;

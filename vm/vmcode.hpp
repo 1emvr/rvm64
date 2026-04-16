@@ -109,7 +109,7 @@ VMCALL VOID Decode (_In_ const UINT32 Opcode) {
 		}
 	}
 	if (! Decoded) {
-		CSR_SET_TRAP (Vmcs->Gpr->Pc, IllegalInstruction, 0, opcode, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, opcode, 1);
 	}
 
 	switch(Decoded) {
@@ -546,7 +546,7 @@ VMCALL VOID Decode (_In_ const UINT32 Opcode) {
 			}
 
 		default: {
-					 CSR_SET_TRAP (Vmcs->Gpr->Pc, IllegalInstruction, 0, Opcode, 1);
+					 SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Opcode, 1);
 					 break;
 				 }
 	}
@@ -818,7 +818,7 @@ VMCALL void slliw () {
 	RegRead (INT32, v1, _rs1);
 
 	if ((_shamt >> 5) != 0) {
-		CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
 	}
 
 	RegWrite (INT32, _rd, v1 << (_shamt & 0x1F));
@@ -834,7 +834,7 @@ VMCALL void srliw () {
 	RegRead (INT32, v1, _rs1);
 
 	if ((_shamt >> 5) != 0) {
-		CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
 	}
 
 	RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
@@ -850,7 +850,7 @@ VMCALL void sraiw () {
 	RegRead (INT32, v1, _rs1);
 
 	if ((_shamt >> 5) != 0) {
-		CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Gpr->Scratch, 1);
 	}
 	// TODO: this may be wrong to mask
 	RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
@@ -965,28 +965,28 @@ VMCALL void jalr () {
 	address += (INT_PTR)_imm;
 	address &= ~((INT_PTR)1);
 
-	RegWrite (UINT_PTR, _rd, Vmcs->Gpr->Pc);
-	Vmcs->Gpr->Pc = address;
+	RegWrite (UINT_PTR, _rd, Vmcs->Hdw.Pc);
+	Vmcs->Hdw.Pc = address;
 
-	if (auto HostMem = MemoryCheck (Vmcs->Gpr->Pc)) {
-		Vmcs->Gpr->Pc = (UINT_PTR)HostMem;
-		CSR_SET_TRAP (Vmcs->Gpr->Pc, EnvExecute, 0, 0, 0);
+	if (auto HostMem = MemoryCheck (Vmcs->Hdw.Pc)) {
+		Vmcs->Hdw.Pc = (UINT_PTR)HostMem;
+		SetCsrTrap (Vmcs->Hdw.Pc, EnvExecute, 0, 0, 0);
 	}
-	if (!PROCESS_MEMORY_IN_BOUNDS(Vmcs->Gpr->Pc)) {
-		CSR_SET_TRAP (Vmcs->Gpr->Pc, NativeCall, 0, 0, 0);
+	if (!PROCESS_MEMORY_IN_BOUNDS(Vmcs->Hdw.Pc)) {
+		SetCsrTrap (Vmcs->Hdw.Pc, NativeCall, 0, 0, 0);
 	}
 }
 
 VMCALL void flq () {
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void fence () {
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void fence_i () {
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void ecall () {
@@ -1000,7 +1000,7 @@ VMCALL void ecall () {
 	   RaiseException(EnvironmentCall)
 
 */
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void ebreak () {
@@ -1027,7 +1027,7 @@ VMCALL void csrrw () {
 	   Implementation
 	   t = CSRs[csr]; CSRs[csr] = x[_rs1]; x[_rd] = t
 	   */
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void csrrs () {
@@ -1041,7 +1041,7 @@ VMCALL void csrrs () {
 	   Implementation
 	   t = CSRs[csr]; CSRs[csr] = t | x[_rs1]; x[_rd] = t
 	   */
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void csrrc () {
@@ -1055,7 +1055,7 @@ VMCALL void csrrc () {
 	   Implementation
 	   t = CSRs[csr]; CSRs[csr] = t &~x[_rs1]; x[_rd] = t
 	   */
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void csrrwi () {
@@ -1066,7 +1066,7 @@ VMCALL void csrrwi () {
 	   Implementation
 	   x[_rd] = CSRs[csr]; CSRs[csr] = zimm
 	   */
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void csrrsi () {
@@ -1077,7 +1077,7 @@ VMCALL void csrrsi () {
 	   Implementation
 	   t = CSRs[csr]; CSRs[csr] = t | zimm; x[_rd] = t
 	   */
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void csrrci () {
@@ -1088,7 +1088,7 @@ VMCALL void csrrci () {
 	   Implementation
 	   t = CSRs[csr]; CSRs[csr] = t &~zimm; x[_rd] = t
 	   */
-	CSR_SET_TRAP (Vmcs->Gpr->Pc, InstructionIllegal, 0, 0, 1);
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
 VMCALL void scw () {
@@ -2046,7 +2046,7 @@ VMCALL void auipc () {
 
 	ScrRead (UINT8, _rd, rd);
 	ScrRead (INT32, _imm, imm);
-	RegWrite (INT64, _rd, (INT64)Vmcs->Gpr->Pc + _imm);
+	RegWrite (INT64, _rd, (INT64)Vmcs->Hdw.Pc + _imm);
 }
 
 VMCALL void jal () {
@@ -2054,10 +2054,10 @@ VMCALL void jal () {
 
 	ScrRead (UINT8, _rd, rd);
 	ScrRead (INT_PTR, offset, imm);
-	RegWrite (UINT_PTR, _rd, Vmcs->Gpr->Pc + 4);
+	RegWrite (UINT_PTR, _rd, Vmcs->Hdw.Pc + 4);
 
-	Vmcs->Gpr->Pc += offset;
-	CSR_SET_TRAP (nullptr, EnvBranch, 0, 0, 0);
+	Vmcs->Hdw.Pc += offset;
+	SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 }
 
 VMCALL void beq () {
@@ -2071,8 +2071,8 @@ VMCALL void beq () {
 	RegRead (INT32, v2, _rs2);
 
 	if (v1 == v2) {
-		Vmcs->Gpr->Pc += offset;
-		CSR_SET_TRAP (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc += offset;
+		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 	}
 }
 
@@ -2087,8 +2087,8 @@ VMCALL void bne () {
 	RegRead (INT32, v2, _rs2);
 
 	if (v1 != v2) {
-		Vmcs->Gpr->Pc += offset;
-		CSR_SET_TRAP (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc += offset;
+		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 	}
 }
 
@@ -2103,8 +2103,8 @@ VMCALL void blt () {
 	RegRead (INT32, v2, _rs2);
 
 	if (v1 < v2) {
-		Vmcs->Gpr->Pc += offset;
-		CSR_SET_TRAP (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc += offset;
+		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 	}
 }
 
@@ -2119,8 +2119,8 @@ VMCALL void bge () {
 	RegRead (INT32, v2, _rs2);
 
 	if (v1 >= v2) {
-		Vmcs->Gpr->Pc += offset;
-		CSR_SET_TRAP (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc += offset;
+		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 	}
 }
 
@@ -2135,8 +2135,8 @@ VMCALL void bltu () {
 	RegRead (UINT32, v2, _rs2);
 
 	if (v1 < v2) {
-		Vmcs->Gpr->Pc += offset;
-		CSR_SET_TRAP (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc += offset;
+		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 	}
 }
 
@@ -2151,8 +2151,8 @@ VMCALL void bgeu () {
 	RegRead (UINT32, v2, _rs2);
 
 	if (v1 >= v2) {
-		Vmcs->Gpr->Pc += offset;
-		CSR_SET_TRAP (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc += offset;
+		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 	}
 }
 
@@ -2329,6 +2329,4 @@ VOID Opcall (_In_ const UINT32 hdl_idx) {
 	void (*fn)() = (void (*)())(b);											
 	fn ();													
 }
-
-
 #endif // VMCODE_H
