@@ -44,24 +44,26 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Opcode7 = Opcode & 0x7F;
 	
 	// NOTE: Instant return/exception.
-	if (Opcode == RV64_RET) { 
-		if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { 
-			SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
-		}
+	{
+		if (Opcode == RV64_RET) { 
+			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { 
+				SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
+			}
 
-		Vmcs->Hdw.Pc = Vmcs->Hdw.Regs [RA];
-		Vmcs->Hdw.Pc -= 4;
-		return;
-	} 
+			Vmcs->Hdw.Pc = Vmcs->Hdw.Regs [RA];
+			Vmcs->Hdw.Pc -= 4;
+			return;
+		} 
 
-	for (int idx = 0; idx < sizeof (OPCODE); idx++) {
-		if (EncodingTable [idx].Mask == Opcode7) {
-			Decoded = EncodingTable [idx].Type;
-			break;
+		for (int idx = 0; idx < sizeof (OPCODE); idx++) {
+			if (EncodingTable [idx].Mask == Opcode7) {
+				Decoded = EncodingTable [idx].Type;
+				break;
+			}
 		}
-	}
-	if (! Decoded) {
-		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, opcode, 1);
+		if (! Decoded) {
+			SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, opcode, 1);
+		}
 	}
 
 	switch(Decoded) {
