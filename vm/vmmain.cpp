@@ -14,10 +14,11 @@ NATIVE_CALL VOID VmMain () {
 		LoadImage (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
 		PatchAndExecute (Vmcs->Proc.Memory); 		
 
-		MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 		if (setjmp (Vmcs->Context->Shutdown)) { 
 			goto defer;	
 		}
+
+		MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 	} while (true);
 
 defer:
