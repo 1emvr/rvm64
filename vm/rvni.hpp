@@ -174,7 +174,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (INT, Flags, A1);
 				RegRead (INT, Mode, A2);
 
-				INT Result = Api.Typecaster.open (Pathname, Flags, Mode);
+				INT Result = (Api.Typecaster.open) Api.Address (Pathname, Flags, Mode);
 				RegWrite (INT, A0, Result);
 
 				break;
@@ -189,7 +189,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Buf, A1);
 				RegRead (UINT, Count, A2);
 
-				INT Result = Api.Typecaster.read (Fd, Buf, Count);
+				INT Result = (Api.Typecaster.read) Api.Address (Fd, Buf, Count);
 				RegWrite (INT, A0, Result);
 
 				break;
@@ -204,7 +204,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Buf, A1);
 				RegRead (UINT, Count, A2);
 
-				INT Result = Api.Typecaster.write (Fd, Buf, Count);
+				INT Result = (Api.Typecaster.write) Api.Address (Fd, Buf, Count);
 				RegWrite (INT, A0, Result);
 
 				break;
@@ -214,7 +214,7 @@ VM_CALL VOID NativeCall () {
 				INT Fd = 0;
 				RegRead (INT, Fd, A0);
 
-				INT Result = Api.Typecaster.close (Fd);
+				INT Result = (Api.Typecaster.close) Api.Address (Fd);
 				RegWrite (INT, A0, Result);
 
 				break;
@@ -229,7 +229,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LONG, Offset, A1);
 				RegRead (INT, Whence, A2);
 
-				LONG Result = Api.Typecaster.lseek (Fd, Offset, Whence);
+				LONG Result = (Api.Typecaster.lseek) Api.Address (Fd, Offset, Whence);
 				RegWrite (LONG, A0, Result);
 
 				break;
@@ -242,7 +242,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (const CHAR*, Pathname, a0);
 				RegRead (LPVOID, Statbuf, A1);
 
-				INT Result = Api.Typecaster.stat64 (Pathname, Statbuf);
+				INT Result = (Api.Typecaster.stat64) Api.Address (Pathname, Statbuf);
 				RegWrite (INT, A0, Result);
 
 				break;
@@ -252,7 +252,7 @@ VM_CALL VOID NativeCall () {
 				SIZE_T Size = 0;
 				RegRead (SIZE_T, Size, A0);
 
-				LPVOID Result = Api.Typecaster.malloc (SIZE);
+				LPVOID Result = (Api.Typecaster.malloc) Api.Address (SIZE);
 				RegWrite (UINT_PTR, A0, Result);
 
 				break;
@@ -262,7 +262,7 @@ VM_CALL VOID NativeCall () {
 				LPVOID Ptr = 0;
 				RegRead (LPVOID, Ptr, A0);
 
-				Api.Typecaster.free (Ptr);
+				(Api.Typecaster.free) Api.Address (Ptr);
 				RegWrite (UINT_PTR, A0, 0);
 
 				break;
@@ -276,7 +276,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Src, A1);
 				RegRead (SIZE_T, n, A2);
 
-				LPVOID Result = Api.Typecaster.memcpy (Dest, Src, n);
+				LPVOID Result = (Api.Typecaster.memcpy) Api.Address (Dest, Src, n);
 				RegWrite (UINT_PTR, A0, Result);
 
 				break;
@@ -291,7 +291,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (INT, Value, A1);
 				RegRead (SIZE_T, n, A2);
 
-				LPVOID Result = Api.Typecaster.memset (Dest, Value, n);
+				LPVOID Result = (Api.Typecaster.memset) Api.Address (Dest, Value, n);
 				RegWrite(UINT64, A0, Result);
 
 				break;
@@ -301,7 +301,7 @@ VM_CALL VOID NativeCall () {
 				CHAR *s = 0;
 				RegRead (CHAR*, s, A0);
 
-				SIZE_T Result = Api.Typecaster.strlen (s);
+				SIZE_T Result = (Api.Typecaster.strlen) Api.Address (s);
 				RegWrite (SIZE_T, A0, Result);
 
 				break;
@@ -313,7 +313,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (CHAR*, Dest, A0);
 				RegRead (CHAR*, Src, A1);
 
-				CHAR *Result = Api.Typecaster.strcpy (Dest, Src);
+				CHAR *Result = (Api.Typecaster.strcpy) Api.Address (Dest, Src);
 				RegWrite (UINT_PTR, A0, Result);
 
 				break;
@@ -329,7 +329,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (DWORD, Prot, A2);
 				RegRead (DWORD, Flags, A3);
 
-				LPVOID HostMem = Api.Typecaster.mmap (
+				LPVOID HostMem = (Api.Typecaster.mmap) Api.Address (
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
 
 				if (! MemoryUnregister ((UINT_PTR*)&Addr, HostMem, Len)) {
@@ -351,7 +351,7 @@ VM_CALL VOID NativeCall () {
 				LPVOID HostMem 	= MemoryCheck (GuestMem);
 				BOOL Unregister = MemoryUnregister (GuestMem);
 
-				INT Result = Api.Typecaster.munmap (HostMem, Len, MEM_RELEASE);
+				INT Result = (Api.Typecaster.munmap) Api.Address (HostMem, Len, MEM_RELEASE);
 				RegWrite (INT, A0, ((Result && Unregister) ? 0 : -1));
 
 				break;
@@ -366,7 +366,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (SIZE_T, Len, A1);
 				RegRead (DWORD, Prot, A2);
 
-				auto Func = Api.Typecaster.mprotect (Addr, Len, Prot, &Old);
+				auto Func = (Api.Typecaster.mprotect) Api.Address (Addr, Len, Prot, &Old);
 				RegWrite (INT, A0, Func ? 0 : -1);
 
 				break;
