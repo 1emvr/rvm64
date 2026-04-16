@@ -319,8 +319,8 @@ NATIVE_CALL VOID LoadImage (
 
 
 static VOID ApplyRelativeOffsets (
-		_In_ const UINT8* Memory,
-		_In_ const SIZE_T MemorySize) 
+		_In_ const UINT_PTR Memory,
+		_In_ const SIZE_T 	MemorySize) 
 {
 	auto* Ehdr = (ELF64_EHDR*)Memory;
 	auto* Phdr = (ELF64_PHDR*)(Memory + Ehdr->e_phoff);
@@ -588,40 +588,23 @@ static VOID PatchPLT (
 
 NATIVE_CALL VOID PatchAndExecute (
 		_In_ const UINT_PTR Memory, 
-		_In_ const UINT_PTR MemorySize) 
+		_In_ const SIZE_T 	MemorySize) 
 {
 	if (! Memory || ! MemorySize) {
 		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
 
-	UINT8 *Img 			= (UINT8*)Memory;
-	ELF64_EHDR *Ehdr 	= (ELF64_EHDR*)Img;
+	ELF64_EHDR *Ehdr 	= (ELF64_EHDR*)(UINT8*)Memory;
 
-	if (
-			Ehdr->e_type != ET_EXEC && 
-			Ehdr->e_type != ET_DYN) 
-	{
-		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
-	}
+	ApplyRelativeOffsets (Memory, MemorySize);
+	PatchPLT (Memory);
 
-	if (
-			Ehdr->e_ident [0] != 0x7F || 
-			Ehdr->e_ident [1] != 'E' || 
-			Ehdr->e_ident [2] != 'L' || 
-			Ehdr->e_ident [3] != 'F') 
-	{
-		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
-	}
-
-	ApplyRelativeOffsets (Img);
-	PatchPLT (Img);
-
-	const UINT_PTR Entry = FindEntry (Img);
-	const UINT_PTR PcOff = Entry - Vmcs->Proc.ImageBase; // NOTE: where tf is Base??
-
+	const UINT_PTR Entry = FindEntry (Memory);
 	if (! Entry) {
 		SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)"no entry", 1);
 	}
+
+	const UINT_PTR PcOff = Entry - Vmcs->Proc.ImageBase; 
 	if (! InImage (PcOff, 4, MemorySize)) {
 		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
