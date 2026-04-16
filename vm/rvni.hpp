@@ -93,15 +93,11 @@ VM_DATA UCRT_ALIAS AliasTable [] = {
 
 
 NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName) {
-	static HMODULE Ucrt = LoadLibraryA ("ucrtbase.dll");
-	static HMODULE Kern32 = LoadLibraryA ("kernel32.dll");
-
-	if (! Ucrt || ! Kern32) {
+	if (! Vmcs->Module.Kernel32 || ! Vmcs->Module.Ucrt) {
 		CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
 	}
 
 	const CHAR *AliasName = SymName;
-
 	for (auto& i : AliasTable) {
 		if (strcmp (SymName, i.Original) == 0) {
 			AliasName = (const CHAR*) i.Alias;
@@ -109,10 +105,9 @@ NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName) {
 		}
 	}
 
-	LPVOID Native = (LPVOID) GetProcAddress (Ucrt, AliasName);
-
+	LPVOID Native = (LPVOID) GetProcAddress (Vmcs->Module.Ucrt, AliasName);
 	if (! Native) {
-		Native = (LPVOID) GetProcAddress (Kern32, AliasName);
+		Native = (LPVOID) GetProcAddress (Vmcs->Module.Kernel32, AliasName);
 
 		if (! Native) {
 			CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, 1);
@@ -167,12 +162,12 @@ VMCALL VOID NativeCall () {
 				CHAR *Pathname = 0;
 				INT Flags = 0, mode = 0;
 
-				RegRead (CHAR*, Pathname, Regenum::a0);
-				RegRead (INT, Flags, Regenum::a1);
-				RegRead (INT, Mode, Regenum::a2);
+				RegRead (CHAR*, Pathname, A0);
+				RegRead (INT, Flags, A1);
+				RegRead (INT, Mode, A2);
 
 				INT Result = Api->Typecaster.open (Pathname, Flags, Mode);
-				RegWrite (int, Regenum::a0, Result);
+				RegWrite (int, A0, Result);
 
 				break;
 			}
@@ -182,12 +177,12 @@ VMCALL VOID NativeCall () {
 				LPVOID Buf 	= 0;
 				UINT count 	= 0;
 
-				RegRead (INT, Fd, Regenum::a0);
-				RegRead (LPVOID, Buf, Regenum::a1);
-				RegRead (UINT, Count, Regenum::a2);
+				RegRead (INT, Fd, A0);
+				RegRead (LPVOID, Buf, A1);
+				RegRead (UINT, Count, A2);
 
 				INT Result = Api->Typecaster.read (Fd, Buf, Count);
-				RegWrite (INT, Regenum::a0, Result);
+				RegWrite (INT, A0, Result);
 
 				break;
 			}
@@ -197,22 +192,22 @@ VMCALL VOID NativeCall () {
 				LPVOID Buf 	= 0;
 				UINT Count 	= 0;
 
-				RegRead (INT, Fd, Regenum::a0);
-				RegRead (LPVOID, Buf, Regenum::a1);
-				RegRead (UINT, Count, Regenum::a2);
+				RegRead (INT, Fd, A0);
+				RegRead (LPVOID, Buf, A1);
+				RegRead (UINT, Count, A2);
 
 				INT Result = Api->Typecaster.write (Fd, Buf, Count);
-				RegWrite (INT, Regenum::a0, Result);
+				RegWrite (INT, A0, Result);
 
 				break;
 			}
 		case UCRT_FUNCTION::CLOSE: 
 			{
 				INT Fd = 0;
-				RegRead (INT, Fd, Regenum::a0);
+				RegRead (INT, Fd, A0);
 
 				INT Result = Api->Typecaster.close (Fd);
-				RegWrite (INT, Regenum::a0, Result);
+				RegWrite (INT, A0, Result);
 
 				break;
 			}
@@ -222,12 +217,12 @@ VMCALL VOID NativeCall () {
 				LONG Offset = 0;
 				INT Whence 	= 0;
 
-				RegRead (INT, Fd, Regenum::a0);
-				RegRead (LONG, Offset, Regenum::a1);
-				RegRead (INT, Whence, Regenum::a2);
+				RegRead (INT, Fd, A0);
+				RegRead (LONG, Offset, A1);
+				RegRead (INT, Whence, A2);
 
 				LONG Result = Api->Typecaster.lseek (Fd, Offset, Whence);
-				RegWrite (LONG, Regenum::a0, Result);
+				RegWrite (LONG, A0, Result);
 
 				break;
 			}
@@ -236,31 +231,31 @@ VMCALL VOID NativeCall () {
 				const CHAR *Pathname 	= 0;
 				LPVOID Statbuf 			= 0;
 
-				RegRead (const CHAR*, Pathname, Regenum::a0);
-				RegRead (LPVOID, Statbuf, Regenum::a1);
+				RegRead (const CHAR*, Pathname, a0);
+				RegRead (LPVOID, Statbuf, A1);
 
 				INT Result = Api->Typecaster.stat64 (Pathname, Statbuf);
-				RegWrite (INT, Regenum::a0, Result);
+				RegWrite (INT, A0, Result);
 
 				break;
 			}
 		case UCRT_FUNCTION::MALLOC: 
 			{
 				SIZE_T Size = 0;
-				RegRead (SIZE_T, Size, Regenum::a0);
+				RegRead (SIZE_T, Size, A0);
 
 				LPVOID Result = Api->Typecaster.malloc (SIZE);
-				RegWrite (UINT_PTR, Regenum::a0, Result);
+				RegWrite (UINT_PTR, A0, Result);
 
 				break;
 			}
 		case UCRT_FUNCTION::FREE: 
 			{
 				LPVOID Ptr = 0;
-				RegRead (LPVOID, Ptr, Regenum::a0);
+				RegRead (LPVOID, Ptr, a0);
 
 				Api->Typecaster.free (Ptr);
-				RegWrite (UINT_PTR, Regenum::a0, 0);
+				RegWrite (UINT_PTR, A0, 0);
 
 				break;
 			}
@@ -269,12 +264,12 @@ VMCALL VOID NativeCall () {
 				LPVOID Dest = 0, *Src = 0;
 				SIZE_T n = 0;
 
-				RegRead (LPVOID, Dest, Regenum::a0);
-				RegRead (LPVOID, Src, Regenum::a1);
-				RegRead (SIZE_T, n, Regenum::a2);
+				RegRead (LPVOID, Dest, A0);
+				RegRead (LPVOID, Src, A1);
+				RegRead (SIZE_T, n, A2);
 
 				LPVOID Result = Api->Typecaster.memcpy (Dest, Src, n);
-				RegWrite (UINT_PTR, Regenum::a0, Result);
+				RegWrite (UINT_PTR, A0, Result);
 
 				break;
 			}
@@ -284,22 +279,22 @@ VMCALL VOID NativeCall () {
 				INT Value 	= 0;
 				SIZE_T n  	= 0;
 
-				RegRead (LPVOID, Dest, Regenum::a0);
-				RegRead (INT, Value, Regenum::a1);
-				RegRead (SIZE_T, n, Regenum::a2);
+				RegRead (LPVOID, Dest, A0);
+				RegRead (INT, Value, A1);
+				RegRead (SIZE_T, n, A2);
 
 				LPVOID Result = Api->Typecaster.memset (Dest, Value, n);
-				RegWrite(UINT64, Regenum::a0, Result);
+				RegWrite(UINT64, A0, Result);
 
 				break;
 			}
 		case ucrt_function::STRLEN: 
 			{
 				CHAR *s = 0;
-				RegRead (CHAR*, s, Regenum::a0);
+				RegRead (CHAR*, s, A0);
 
 				SIZE_T Result = Api->Typecaster.strlen (s);
-				RegWrite (SIZE_T, Regenum::a0, Result);
+				RegWrite (SIZE_T, A0, Result);
 
 				break;
 			}
@@ -307,11 +302,11 @@ VMCALL VOID NativeCall () {
 			{
 				CHAR *Dest = 0, *Src = 0;
 
-				RegRead (CHAR*, Dest, Regenum::a0);
-				RegRead (CHAR*, Src, Regenum::a1);
+				RegRead (CHAR*, Dest, A0);
+				RegRead (CHAR*, Src, A1);
 
 				CHAR *Result = Api->Typecaster.strcpy (Dest, Src);
-				RegWrite (UINT_PTR, Regenum::a0, Result);
+				RegWrite (UINT_PTR, A0, Result);
 
 				break;
 			}
@@ -321,10 +316,10 @@ VMCALL VOID NativeCall () {
 				SIZE_T Len 	= 0;
 				DWORD prot 	= 0, Flags = 0;
 
-				RegRead (LPVOID, Addr, Regenum::a0);
-				RegRead (SIZE_T, Len, Regenum::a1);
-				RegRead (DWORD, Prot, Regenum::a2);
-				RegRead (DWORD, Flags, Regenum::a3);
+				RegRead (LPVOID, Addr, A0);
+				RegRead (SIZE_T, Len, A1);
+				RegRead (DWORD, Prot, A2);
+				RegRead (DWORD, Flags, A3);
 
 				LPVOID HostMem = Api->Typecaster.mmap (
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
@@ -333,7 +328,7 @@ VMCALL VOID NativeCall () {
 					CSR_SET_TRAP (Vmcs->Gpr->Pc, OutOfMemory, 0, (UINT_PTR)Addr, 1);
 				}
 
-				RegWrite(UINT_PTR, Regenum::a0, Addr);
+				RegWrite(UINT_PTR, A0, Addr);
 				break;
 			}
 		case UCRT_FUNCTION::MUNMAP: 
@@ -341,15 +336,15 @@ VMCALL VOID NativeCall () {
 				LPVOID Addr = 0;
 				SIZE_T Len 	= 0;
 
-				RegRead (LPVOID, Addr, Regenum::a0);
-				RegRead (SIZE_T, Len, Regenum::a1);
+				RegRead (LPVOID, Addr, A0);
+				RegRead (SIZE_T, Len, A1);
 
 				auto GuestMem 	= (UINT_PTR)Addr;
 				LPVOID HostMem 	= MemoryCheck (GuestMem);
 				BOOL Unregister = MemoryUnregister (GuestMem);
 
 				INT Result = Api->Typecaster.munmap (HostMem, Len, MEM_RELEASE);
-				RegWrite (INT, Regenum::a0, ((Result && Unregister) ? 0 : -1));
+				RegWrite (INT, A0, ((Result && Unregister) ? 0 : -1));
 
 				break;
 			}
@@ -359,12 +354,12 @@ VMCALL VOID NativeCall () {
 				SIZE_T Len 	= 0;
 				DWORD Prot 	= 0, Old = 0;
 
-				RegRead (LPVOID, Addr, Regenum::a0);
-				RegRead (SIZE_T, Len, Regenum::a1);
-				RegRead (DWORD, Prot, Regenum::a2);
+				RegRead (LPVOID, Addr, A0);
+				RegRead (SIZE_T, Len, A1);
+				RegRead (DWORD, Prot, A2);
 
 				auto Func = Api->Typecaster.mprotect (Addr, Len, Prot, &Old);
-				RegWrite (INT, Regenum::a0, Func ? 0 : -1);
+				RegWrite (INT, A0, Func ? 0 : -1);
 
 				break;
 			}

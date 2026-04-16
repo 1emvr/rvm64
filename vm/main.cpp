@@ -8,7 +8,7 @@
 NATIVE_CALL INT32 VmMain (_In_ const UINT64 Magic1, _In_ const UINT64 Magic2) {
 	SaveHostContext ();
 
-	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
+	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: init memory, modules.
 	LoadImage 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize);
 	PatchAndSetEntry ();
 
@@ -28,6 +28,6 @@ int main () {
 	Vmcs = &instance;
 
 	// TODO: incoming packets/supervisor will assign random magics
-    return VmMain (Magic1, Magic2);
+    return VmMain (MAGIC_1, MAGIC_2);
 }
 
