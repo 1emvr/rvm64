@@ -920,8 +920,8 @@ VMCALL void jalr () {
 		Vmcs->Hdw.Pc = (UINT_PTR)HostMem;
 		SetCsrTrap (Vmcs->Hdw.Pc, EnvExecute, 0, 0, 0);
 	}
-	if (!PROCESS_MEMORY_IN_BOUNDS(Vmcs->Hdw.Pc)) {
-		SetCsrTrap (Vmcs->Hdw.Pc, NativeCall, 0, 0, 0);
+	if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Pc)) {
+		SetCsrTrap (Vmcs->Hdw.Pc, EnvNative, 0, 0, 0);
 	}
 }
 

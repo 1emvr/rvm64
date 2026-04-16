@@ -126,7 +126,7 @@ enum Causenum {
     InstructionPageFault    = 0xb012,
     LoadPageFault           = 0xb013,
     StoreAmoPageFault       = 0xb015,
-    NativeCall       		= 0xb024,
+    EnvNative				= 0xb024,
     ImageBadSymbol          = 0xb025,
     ImageBadLoad            = 0xb026,
     ImageBadType            = 0xb027,

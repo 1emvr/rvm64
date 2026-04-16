@@ -168,14 +168,14 @@ VM_CALL VOID NativeCall () {
 		case UCRT_FUNCTION::OPEN: 
 			{
 				CHAR *Pathname = 0;
-				INT Flags = 0, mode = 0;
+				INT Flags = 0, Mode = 0;
 
 				RegRead (CHAR*, Pathname, A0);
 				RegRead (INT, Flags, A1);
 				RegRead (INT, Mode, A2);
 
 				INT Result = Api->Typecaster.open (Pathname, Flags, Mode);
-				RegWrite (int, A0, Result);
+				RegWrite (INT, A0, Result);
 
 				break;
 			}
@@ -183,7 +183,7 @@ VM_CALL VOID NativeCall () {
 			{
 				INT Fd 		= 0;
 				LPVOID Buf 	= 0;
-				UINT count 	= 0;
+				UINT Count 	= 0;
 
 				RegRead (INT, Fd, A0);
 				RegRead (LPVOID, Buf, A1);
@@ -260,7 +260,7 @@ VM_CALL VOID NativeCall () {
 		case UCRT_FUNCTION::FREE: 
 			{
 				LPVOID Ptr = 0;
-				RegRead (LPVOID, Ptr, a0);
+				RegRead (LPVOID, Ptr, A0);
 
 				Api->Typecaster.free (Ptr);
 				RegWrite (UINT_PTR, A0, 0);
