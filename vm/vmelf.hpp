@@ -360,7 +360,7 @@ static VOID ApplyRelativeOffsets (
 		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
 	}
 
-	UINT_PTR RelOff = RelVa - ElfBase;
+	UINT_PTR RelOff = RelVa - Memory;
 	SIZE_T n = (SIZE_T)(RelSz / RelEnt);
 
 	for (SIZE_T i = 0; i < n; ++i) {
@@ -373,7 +373,7 @@ static VOID ApplyRelativeOffsets (
 		const UINT32 Rtype 		= ELF64_REL_TYPE (Rela->r_info);
 
 		if (Rtype == R_RISCV_RELATIVE) {
-			UINT_PTR Where = Rela->r_offset - Memory;
+			UINT_PTR Where = Rela->r_offset - (UINT_PTR)Memory;
 
 			if (! InImage (Where, 8, MemorySize)) {
 				continue;
