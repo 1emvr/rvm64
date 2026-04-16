@@ -48,7 +48,6 @@ typedef struct {
 
 typedef struct _ucrt_function {
 	const CHAR*	Name;
-	LPVOID 		Address;
 
 	enum {
 		OPEN, READ, WRITE, CLOSE, LSEEK, STAT64, MALLOC, FREE,
@@ -127,21 +126,21 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 			f.Address = Native;
 
 			switch (f.Typenum) {
-				case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; f.Address 	= Native; break;
-				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; f.Address 	= Native; break;
+				case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native;
+				case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; 
+				case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; 
+				case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; 
+				case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; 
+				case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; 
+				case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; 
+				case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; 
+				case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; 
+				case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; 
+				case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; 
+				case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; 
+				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; 
+				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; 
+				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; 
 				default:  SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
 			}
 			break;
@@ -174,7 +173,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (INT, Flags, A1);
 				RegRead (INT, Mode, A2);
 
-				INT Result = (Api.Typecaster.open) Api.Address (Pathname, Flags, Mode);
+				INT Result = Api.Typecaster.open (Pathname, Flags, Mode);
 
 				RegWrite (INT, A0, Result);
 				break;
@@ -189,7 +188,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Buf, A1);
 				RegRead (UINT, Count, A2);
 
-				INT Result = (Api.Typecaster.read) Api.Address (Fd, Buf, Count);
+				INT Result = Api.Typecaster.read (Fd, Buf, Count);
 
 				RegWrite (INT, A0, Result);
 				break;
@@ -204,7 +203,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Buf, A1);
 				RegRead (UINT, Count, A2);
 
-				INT Result = (Api.Typecaster.write) Api.Address (Fd, Buf, Count);
+				INT Result = Api.Typecaster.write (Fd, Buf, Count);
 
 				RegWrite (INT, A0, Result);
 				break;
@@ -214,7 +213,7 @@ VM_CALL VOID NativeCall () {
 				INT Fd = 0;
 				RegRead (INT, Fd, A0);
 
-				INT Result = (Api.Typecaster.close) Api.Address (Fd);
+				INT Result = Api.Typecaster.close (Fd);
 
 				RegWrite (INT, A0, Result);
 				break;
@@ -229,7 +228,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LONG, Offset, A1);
 				RegRead (INT, Whence, A2);
 
-				LONG Result = (Api.Typecaster.lseek) Api.Address (Fd, Offset, Whence);
+				LONG Result = Api.Typecaster.lseek (Fd, Offset, Whence);
 
 				RegWrite (LONG, A0, Result);
 				break;
@@ -242,7 +241,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (const CHAR*, Pathname, a0);
 				RegRead (LPVOID, Statbuf, A1);
 
-				INT Result = (Api.Typecaster.stat64) Api.Address (Pathname, Statbuf);
+				INT Result = Api.Typecaster.stat64 (Pathname, Statbuf);
 
 				RegWrite (INT, A0, Result);
 				break;
@@ -252,7 +251,7 @@ VM_CALL VOID NativeCall () {
 				SIZE_T Size = 0;
 				RegRead (SIZE_T, Size, A0);
 
-				LPVOID Result = (Api.Typecaster.malloc) Api.Address (SIZE);
+				LPVOID Result = Api.Typecaster.malloc (SIZE);
 
 				RegWrite (UINT_PTR, A0, Result);
 				break;
@@ -262,7 +261,7 @@ VM_CALL VOID NativeCall () {
 				LPVOID Ptr = 0;
 				RegRead (LPVOID, Ptr, A0);
 
-				(Api.Typecaster.free) Api.Address (Ptr);
+				Api.Typecaster.free (Ptr);
 
 				RegWrite (UINT_PTR, A0, 0);
 				break;
@@ -276,7 +275,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Src, A1);
 				RegRead (SIZE_T, n, A2);
 
-				LPVOID Result = (Api.Typecaster.memcpy) Api.Address (Dest, Src, n);
+				LPVOID Result = Api.Typecaster.memcpy (Dest, Src, n);
 
 				RegWrite (UINT_PTR, A0, Result);
 				break;
@@ -291,7 +290,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (INT, Value, A1);
 				RegRead (SIZE_T, n, A2);
 
-				LPVOID Result = (Api.Typecaster.memset) Api.Address (Dest, Value, n);
+				LPVOID Result = Api.Typecaster.memset (Dest, Value, n);
 
 				RegWrite(UINT64, A0, Result);
 				break;
@@ -301,7 +300,7 @@ VM_CALL VOID NativeCall () {
 				CHAR *s = 0;
 				RegRead (CHAR*, s, A0);
 
-				SIZE_T Result = (Api.Typecaster.strlen) Api.Address (s);
+				SIZE_T Result = Api.Typecaster.strlen (s);
 
 				RegWrite (SIZE_T, A0, Result);
 				break;
@@ -313,7 +312,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (CHAR*, Dest, A0);
 				RegRead (CHAR*, Src, A1);
 
-				CHAR *Result = (Api.Typecaster.strcpy) Api.Address (Dest, Src);
+				CHAR *Result = Api.Typecaster.strcpy (Dest, Src);
 
 				RegWrite (UINT_PTR, A0, Result);
 				break;
@@ -329,7 +328,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (DWORD, Prot, A2);
 				RegRead (DWORD, Flags, A3);
 
-				LPVOID HostMem = (Api.Typecaster.mmap) Api.Address (
+				LPVOID HostMem = Api.Typecaster.mmap (
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
 
 				if (! MemoryRegister ((UINT_PTR*)&Addr, HostMem, Len)) {
@@ -351,7 +350,7 @@ VM_CALL VOID NativeCall () {
 				LPVOID HostMem 	= MemoryCheck (GuestMem);
 				BOOL Unregister = MemoryUnregister (GuestMem);
 
-				INT Result = (Api.Typecaster.munmap) Api.Address (HostMem, Len, MEM_RELEASE);
+				INT Result = Api.Typecaster.munmap (HostMem, Len, MEM_RELEASE);
 
 				if (! MemoryUnregister ((UINT_PTR)Addr)) {
 					SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
@@ -370,7 +369,7 @@ VM_CALL VOID NativeCall () {
 				RegRead (SIZE_T, Len, A1);
 				RegRead (DWORD, Prot, A2);
 
-				auto Func = (Api.Typecaster.mprotect) Api.Address (Addr, Len, Prot, &Old);
+				auto Func = Api.Typecaster.mprotect (Addr, Len, Prot, &Old);
 
 				RegWrite (INT, A0, Func ? 0 : -1);
 				break;
