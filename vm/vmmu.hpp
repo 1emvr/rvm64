@@ -18,7 +18,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	if (Code == STATUS_SINGLE_STEP) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
-	if (Code != RVM_TRAP_EXCEPTION) {
+	if (Code != RVM_TRAP_EXCEPTION) { // NOTE: If we violate something on the host, do we shutdown or halt?
 		longjmp (Vmcs->Context->Shutdown, true);
 	}
 
