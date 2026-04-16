@@ -239,35 +239,37 @@ NATIVE_CALL VOID LoadImage (
 	}
 
 	SIZE_T VirtualSize = (SIZE_T)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
+	{
+		if (VirtualSize > *MemorySize) {
+			VirtualFree (*Memory, 0, MEM_RELEASE);
+			*Memory = (UINT8*) VirtualAlloc (nullptr, VirtualSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-	if (VirtualSize > *MemorySize) {
-		VirtualFree (*Memory, 0, MEM_RELEASE);
-		*Memory = (UINT8*) VirtualAlloc (nullptr, VirtualSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+			if (! *Memory) {
+				SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
+			}
 
-		if (! *Memory) {
-			SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
+			*MemorySize = AlignNeed;
+
+			File 	= *Memory;
+			Ehdr 	= (ELF64_EHDR*)File;
+			Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 		}
-
-		*MemorySize = AlignNeed;
-
-		File 	= *Memory;
-		Ehdr 	= (ELF64_EHDR*)File;
-		Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 	}
 
 	ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
+	UINT_PTR End 	= UINT64_MAX;
+	{
+		for (INT i = 0; i < Ehdr->e_phnum; ++i) {
+			const auto& Ph = Fph [i];
 
-	UINT_PTR End = UINT64_MAX;
-	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
-		const auto& Ph = Fph [i];
-
-		if (Ph.p_type == PT_LOAD) {
-			Vmcs->Proc.ImageBase = MIN (Vmcs->Proc.ImageBase, Ph.p_vaddr); 
-			End  = MAX (End,  Ph.p_vaddr + Ph.p_memsz);
+			if (Ph.p_type == PT_LOAD) {
+				Vmcs->Proc.ImageBase = MIN (Vmcs->Proc.ImageBase, Ph.p_vaddr); 
+				End  = MAX (End,  Ph.p_vaddr + Ph.p_memsz);
+			}
 		}
-	}
-	if (Vmcs->Proc.ImageBase == UINT64_MAX) {
-		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
+		if (Vmcs->Proc.ImageBase == UINT64_MAX) {
+			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
+		}
 	}
 
 	UINT_PTR HeaderSpan = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
@@ -278,51 +280,55 @@ NATIVE_CALL VOID LoadImage (
 
 	SIZE_T Need 		= MAX (HeaderSpan, End - Vmcs->Proc.ImageBase); 
 	SIZE_T AlignNeed 	= AlignUp (Need, 0x1000);
+	{
+		if (AlignNeed > *MemorySize) {
+			VirtualFree (*Memory, 0, MEM_RELEASE);
+			*Memory = (UINT8*) VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-	if (AlignNeed > *MemorySize) {
-		VirtualFree (*Memory, 0, MEM_RELEASE);
-		*Memory = (UINT8*) VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+			if (! *Memory) {
+				SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
+			}
 
-		if (! *Memory) {
-			SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
+			*MemorySize = AlignNeed;
+
+			File 	= *Memory;
+			Ehdr 	= (ELF64_EHDR*)File;
+			Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 		}
-
-		*MemorySize = AlignNeed;
-
-		File 	= *Memory;
-		Ehdr 	= (ELF64_EHDR*)File;
-		Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 	}
 
 	UINT8* Buffer = (UINT8*)VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); 
-	if (! Buffer) {
-		SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
+	{
+		if (! Buffer) {
+			SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
+		}
+
+		MemSet (Buffer, 0, AlignNeed);
+		MemCpy (Buffer, File, HeaderSpan);
+
+		for (INT i = 0; i < Ehdr->e_phnum; ++i) {
+			const auto& Ph = Fph [i];
+
+			if (Ph.p_type != PT_LOAD) {
+				continue;
+			}
+
+			if ((SIZE_T)Ph.p_offset + Ph.p_filesz > *MemorySize) {
+				SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
+			}
+
+			UINT_PTR Offset = Ph.p_vaddr - Vmcs->Proc.ImageBase;
+
+			if (! InImage (Offset, Ph.p_memsz, AlignNeed)) {
+				SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
+			}
+			if (Ph.p_filesz) {
+				MemCpy (Buffer + Offset, File + Ph.p_offset, Ph.p_filesz);
+			}
+		}
 	}
 
-	MemSet (Buffer, 0, AlignNeed);
-	MemCpy (Buffer, File, HeaderSpan);
- 
-	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
-		const auto& Ph = Fph [i];
-
-		if (Ph.p_type != PT_LOAD) {
-			continue;
-		}
-		if ((UINT_PTR)Ph.p_offset + Ph.p_filesz > *MemorySize) {
-			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
-		}
-
-		UINT_PTR Offset = Ph.p_vaddr - Vmcs->Proc.ImageBase;
-
-		if (! InImage (Offset, Ph.p_memsz, AlignNeed)) {
-			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
-		}
-		if (Ph.p_filesz) {
-			MemCpy (Buffer + Offset, File + Ph.p_offset, Ph.p_filesz);
-		}
-	}
-
-	MemCpy ((LPVOID) *Memory, Buffer, *AlignNeed);
+	MemCpy ((LPVOID) *Memory, Buffer, AlignNeed);
 	VirtualFree (Buffer, 0, MEM_RELEASE);
 }
 
