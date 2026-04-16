@@ -60,6 +60,12 @@ NATIVE_CALL BOOL process_packets (
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
 		SIZE_T img_size  = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
+		
+		// TODO: Each program that is PT_LOAD needs to have space reserved for itself within the arena.
+		// They cannot be stacked end to end. Find a way to make this work.
+		// 
+		// We need to calculate EOF + MoveMemory to account for PT_LOAD space
+		
 		{
 			for (int i = 0; i < ehdr->e_phnum; i++) {
 				ELF64_PHDR *phdr 	= (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
@@ -74,8 +80,6 @@ NATIVE_CALL BOOL process_packets (
 			}
 		}
 
-		// TODO: Each program that is PT_LOAD needs to have space reserved for itself within the arena.
-		// They cannot be stacked end to end. Find a way to make this work.
 		total 		+= img_size; 
 		image_base 	+= img_size;
 
