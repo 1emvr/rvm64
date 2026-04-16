@@ -45,7 +45,7 @@ DATA_SCN OPCODE EncodingTable [] = {
 };
 
 
-// TODO: Opcode randomization for the entire decoding process.  Opcode-7 + Func-3 values can be randomized.
+// TODO: Opcode randomization for the entire decoding process.  Opcode-7 + Func-3 values can be randomized. Register values could be randomized (carefully).
 
 VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Decoded = 0;
