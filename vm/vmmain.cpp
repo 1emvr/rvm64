@@ -22,7 +22,7 @@ NATIVE_CALL VOID VmMain () {
 
 defer:
 	MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-	LoadRegisterCtx (&Vmcs->Context->HostContext);
+	LoadRegisters (&Vmcs->Context->HostContext);
 }
 
 
@@ -37,7 +37,7 @@ NATIVE_CALL VOID VmStart (
 	Vmcs->Magic2 = Magic2;
 
 	ContextInit (&Vmcs->Context);
-	SaveRegisterCtx (&Vmcs->Context->HostContext);
+	SaveRegisters (&Vmcs->Context->HostContext);
 
 	VmMain ();
 	ContextRelease (&Vmcs->Context);

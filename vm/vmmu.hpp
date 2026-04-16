@@ -76,9 +76,8 @@ VM_CALL VOID ContextInit (_Inout_ VM_CONTEXT** Context) {
 	}
 
 	(*Context)->InterHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
-	(*Context)->Halt 			= 0;
+	(*Context)->Halt 			= 1;
 	(*Context)->Ready			= 0;
-
 }
 
 
@@ -179,17 +178,6 @@ BOOL VmReadProcessMemory (
 	BOOL Result = ReadProcessMemory (Handle, (LPCVOID)Address, (LPVOID)ReadBytes, Length, &Read);
 
 	return Result && Read == Length;
-}
-
-
-// TODO:
-_native void cache_data(uintptr_t data, size_t size) {
-	return;
-}
-
-
-_native void destroy_data(uintptr_t data, size_t size) {
-	return;
 }
 
 

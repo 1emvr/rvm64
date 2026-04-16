@@ -2,8 +2,8 @@
 #include "vmctx.inc"
 
 .text
-.global SaveRegisterCtx
-SaveRegisterCtx:
+.global SaveRegisters
+SaveRegisters:
     mov     rcx + OFFSET_RAX, rax
 	mov		rax, [rsp]
 	mov		[rcx + OFFSET_RIP], rax
@@ -22,8 +22,8 @@ SaveRegisterCtx:
     ret
 
 
-.global LoadRegisterCtx
-LoadRegisterCtx:
+.global LoadRegisters
+LoadRegisters:
     mov     rax, [rcx + OFFSET_RAX]
     mov     rbx, [rcx + OFFSET_RBX]
     mov     rsi, [rcx + OFFSET_RSI]
