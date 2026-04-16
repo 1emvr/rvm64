@@ -54,33 +54,40 @@ constexpr const char *C_MPROTECT = "mprotect";
 	};
 
 	VM_DATA UCRT_FUNCTION FunctionTable[] = {
-		{ .Address = 0, .name = C_OPEN, 	.typenum = UCRT_FUNCTION::OPEN		}, 
-		{ .Address = 0, .name = C_READ, 	.typenum = UCRT_FUNCTION::READ		}, 
-		{ .Address = 0, .name = C_WRITE, 	.typenum = UCRT_FUNCTION::WRITE 	}, 
-		{ .Address = 0, .name = C_CLOSE, 	.typenum = UCRT_FUNCTION::CLOSE 	},
-		{ .Address = 0, .name = C_LSEEK, 	.typenum = UCRT_FUNCTION::LSEEK 	}, 
-		{ .Address = 0, .name = C_STAT64, 	.typenum = UCRT_FUNCTION::STAT64 	}, 
-		{ .Address = 0, .name = C_MALLOC, 	.typenum = UCRT_FUNCTION::MALLOC 	}, 
-		{ .Address = 0, .name = C_FREE, 	.typenum = UCRT_FUNCTION::FREE 		},
-		{ .Address = 0, .name = C_MEMCPY, 	.typenum = UCRT_FUNCTION::MEMCPY 	}, 
-		{ .Address = 0, .name = C_MEMSET, 	.typenum = UCRT_FUNCTION::MEMSET 	}, 
-		{ .Address = 0, .name = C_STRLEN, 	.typenum = UCRT_FUNCTION::STRLEN 	}, 
-		{ .Address = 0, .name = C_STRCPY, 	.typenum = UCRT_FUNCTION::STRCPY 	},
-		{ .Address = 0, .name = C_MMAP, 	.typenum = UCRT_FUNCTION::MMAP 		}, 
-		{ .Address = 0, .name = C_MUNMAP, 	.typenum = UCRT_FUNCTION::MUNMAP 	}, 
-		{ .Address = 0, .name = C_MPROTECT, .typenum = UCRT_FUNCTION::MPROTECT 	},
+		{ .Address = 0, .Name = C_OPEN, 	.Typenum = UCRT_FUNCTION::OPEN		}, 
+		{ .Address = 0, .Name = C_READ, 	.Typenum = UCRT_FUNCTION::READ		}, 
+		{ .Address = 0, .Name = C_WRITE, 	.Typenum = UCRT_FUNCTION::WRITE 	}, 
+		{ .Address = 0, .Name = C_CLOSE, 	.Typenum = UCRT_FUNCTION::CLOSE 	},
+		{ .Address = 0, .Name = C_LSEEK, 	.Typenum = UCRT_FUNCTION::LSEEK 	}, 
+		{ .Address = 0, .Name = C_STAT64, 	.Typenum = UCRT_FUNCTION::STAT64 	}, 
+		{ .Address = 0, .Name = C_MALLOC, 	.Typenum = UCRT_FUNCTION::MALLOC 	}, 
+		{ .Address = 0, .Name = C_FREE, 	.Typenum = UCRT_FUNCTION::FREE 		},
+		{ .Address = 0, .Name = C_MEMCPY, 	.Typenum = UCRT_FUNCTION::MEMCPY 	}, 
+		{ .Address = 0, .Name = C_MEMSET, 	.Typenum = UCRT_FUNCTION::MEMSET 	}, 
+		{ .Address = 0, .Name = C_STRLEN, 	.Typenum = UCRT_FUNCTION::STRLEN 	}, 
+		{ .Address = 0, .Name = C_STRCPY, 	.Typenum = UCRT_FUNCTION::STRCPY 	},
+		{ .Address = 0, .Name = C_MMAP, 	.Typenum = UCRT_FUNCTION::MMAP 		}, 
+		{ .Address = 0, .Name = C_MUNMAP, 	.Typenum = UCRT_FUNCTION::MUNMAP 	}, 
+		{ .Address = 0, .Name = C_MPROTECT, .Typenum = UCRT_FUNCTION::MPROTECT 	},
 	};
 
-	struct UCRT_ALIAS {
+	typedef struct {
 		const CHAR *Original;
 		const CHAR *Alias;
-	};
+	} UCRT_ALIAS;
+
 	VM_DATA UCRT_ALIAS AliasTable [] = {
-		{ "open",  "_open"  }, { "read",  "_read"  }, { "write", "_write" }, { "close", "_close" }, { "exit",  "_exit"  }, 
-		{ "mmap", "VirtualAlloc" }, { "munmap", "VirtualFree" }, { "mprotect", "VirtualProtect" }, 
+		{ "open",  "_open"  }, 
+		{ "read",  "_read"  }, 
+		{ "write", "_write" }, 
+		{ "close", "_close" }, 
+		{ "exit",  "_exit"  }, 
+		{ "mmap", "VirtualAlloc" }, 
+		{ "munmap", "VirtualFree" }, 
+		{ "mprotect", "VirtualProtect" }, 
 	};
 
-	Native_CALL LPVOID ResolveRvniImport (const CHAR *SymName) {
+	NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName) {
 		static HMODULE Ucrt = LoadLibraryA ("ucrtbase.dll");
 		static HMODULE Kern32 = LoadLibraryA ("kernel32.dll");
 
@@ -112,22 +119,22 @@ constexpr const char *C_MPROTECT = "mprotect";
 				f.Address = Native;
 				 
 				switch (f.Typenum) {
-					case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))Native; break;
-					case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))Native; break;
-					case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))Native; break;
-					case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))Native; break;
-					case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))Native; break;
-					case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))Native; break;
-					case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))Native; break;
-					case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))Native; break;
-					case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))Native; break;
-					case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))Native; break;
-					case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))Native; break;
-					case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))Native; break;
-					case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))Native; break;
-					case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))Native; break;
-					case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))Native; break;
-					default:  CSR_SET_TRAP(nullptr, image_bad_symbol, 0, 0, 1);
+					case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native; break;
+					case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; break;
+					case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; break;
+					case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; break;
+					case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; break;
+					case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; break;
+					case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; break;
+					case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; break;
+					case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; break;
+					case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; break;
+					case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; break;
+					case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; break;
+					case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; break;
+					case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; break;
+					case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; break;
+					default:  CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
 				}
 				break;
 			}

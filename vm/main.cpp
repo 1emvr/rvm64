@@ -5,7 +5,7 @@
 
 #include "vmentry.hpp"
 
-NATIVE_CALL INT32 VmMain (_In_ const UINT64 magic1, _In_ const UINT64 magic2) {
+NATIVE_CALL INT32 VmMain (_In_ const UINT64 Magic1, _In_ const UINT64 Magic2) {
 	SaveHostContext ();
 
 	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
@@ -28,6 +28,6 @@ int main () {
 	Vmcs = &instance;
 
 	// TODO: incoming packets/supervisor will assign random magics
-    return VmMain (VM_MAGIC1, VM_MAGIC2);
+    return VmMain (Magic1, Magic2);
 }
 
