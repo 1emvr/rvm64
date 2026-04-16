@@ -45,21 +45,26 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 
-VM_CALL VOID VmInit () {
-	Vmcs->Self 				= (UINT64) Vmcs;
-	Vmcs->Proc.MemorySize 	= (UINT64) DEFAULT_PROC_SIZE;
-	vmcs->Proc.Memory 		= (UINT64) VirtualAlloc (nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+VM_CALL VOID VmInit (
+		_Out_ UINT_PTR* Memory, 
+		_Out_ UINT_PTR* MemorySize) 
+{
+	Vmcs->Self 		= (UINT64) Vmcs;
+	*MemorySize 	= (UINT64) DEFAULT_PROC_SIZE;
+	*Memory 		= (UINT64) VirtualAlloc (nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-	if (!Vmcs->Proc.Memory) {
-		SetCsrTrap(Vmcs->Hdw.Pc, GetLastError (), 0, 0, 1);
+	if (! *Memory) {
+		SetCsrTrap (Vmcs->Hdw.Pc, GetLastError (), 0, 0, 1);
 		return;
 	}
 
 	Vmcs->Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-	if (!Vmcs->Context) {
+	if (! Vmcs->Context) {
 		SetCsrTrap (0, OutOfMemory, 0, 0, 1);
 	}
+
+	Vmcs->Module.Kernel32 = GetModuleHandle ("kernel32.dll");
+	Vmcs->Module.Ucrtbase = GetModuleHandle ("ucrtbase.dll");
 
 	Vmcs->Context->VehHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
 	Vmcs->Context->Halt 		= 0;

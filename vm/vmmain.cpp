@@ -13,7 +13,7 @@ NATIVE_CALL INT32 VmMain (
 	Vmcs->Magic2 = Magic2;
 	{
 		SaveHostRegisterContext ();
-		VmInit (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // init memory/modules.
+		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); // init memory/modules.
 														   
 		Vmcs->Context->Ready = 1;
 		while (Vmcs->Context.Halt) {

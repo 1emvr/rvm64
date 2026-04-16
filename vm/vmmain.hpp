@@ -176,7 +176,7 @@ typedef struct {
 	VM_CONTEXT* Context;
 
 	struct {
-		HMODULE Ucrt;
+		HMODULE Ucrtbase;
 		HMODULE Kernel32;
 	} Module;
 
