@@ -232,7 +232,9 @@ VM_CALL VOID SetCsrTrap (
 #ifdef __cplusplus
 extern "C" {
 #endif
-	VOID SaveRegisters ();
+	VOID SaveRegisters (VM_CONTEXT* Context);
+	VOID LoadRegisters (VM_CONTEXT* Context);
+
 	DATA_SCN VMCS* Vmcs = 0;
 
 #ifdef __cplusplus
