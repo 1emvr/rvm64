@@ -156,8 +156,8 @@ struct {
 	jmp_buf TrapHandler;
 	jmp_buf ExitHandler;
 
-	HANDLE 	VehHandle;
-	HANDLE 	RWMutex;
+	HANDLE 	InterHandle;
+	HANDLE 	MutexRW;
 
 	UINT64 	LoadRsvAddr;
 	UINT64 	LoadRsvValid;

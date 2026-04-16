@@ -66,7 +66,7 @@ VM_CALL VOID VmInit (
 	Vmcs->Module.Kernel32 = GetModuleHandle ("kernel32.dll");
 	Vmcs->Module.Ucrtbase = GetModuleHandle ("ucrtbase.dll");
 
-	Vmcs->Context->VehHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
+	Vmcs->Context->InterHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
 	Vmcs->Context->Halt 		= 0;
 	Vmcs->Context->Ready		= 0;
 
@@ -75,8 +75,8 @@ VM_CALL VOID VmInit (
 
 
 VM_CALL VOID VmRelease (_In_ const UINT_PTR* Memory, _In_ const UINT_PTR* MemorySize) {
-	RemoveVectoredExceptionHandler (Vmcs->Context->VehHandle);
-	Vmcs->Context->VehHandle = 0;
+	RemoveVectoredExceptionHandler (Vmcs->Context->InterHandle);
+	Vmcs->Context->InterHandle = 0;
 
 	if (*Memory) {
 		MemSet (*Memory, 0, MemorySize);
