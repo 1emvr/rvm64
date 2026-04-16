@@ -45,6 +45,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 			}
 		case EnvShutdown: 	
 			longjmp (Vmcs->Context->Shutdown, true);
+
 		default:  			
 			longjmp (Vmcs->Context->Interrupt, true); 
 	}
