@@ -276,7 +276,7 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 											case 0b00001: { Opcall (_AMOSWAP_D); break; }
 											case 0b00000: { Opcall (_AMOADD_D); break; }
 											case 0b00100: { Opcall (_AMOXOR_D); break; }
-											case 0b01100: { Opcenvironment_call_nativeall (_AMOAND_D); break; }
+											case 0b01100: { Opcall (_AMOAND_D); break; }
 											case 0b01000: { Opcall (_AMOOR_D); break; }
 											case 0b10000: { Opcall (_AMOMIN_D); break; }
 											case 0b10100: { Opcall (_AMOMAX_D); break; }
