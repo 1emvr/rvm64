@@ -47,12 +47,12 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 
-VM_CALL VOID MemoryInit ( // NOTE: What happens when there's not enough memory. Maybe superv should allocate.
+VM_CALL VOID MemoryInit ( 
 		_Out_ UINT_PTR* Memory, 
 		_Out_ UINT_PTR* MemorySize) 
 {
 	Vmcs->Self 		= (UINT64) &Vmcs;
-	*MemorySize 	= (UINT64) DEFAULT_PROC_SIZE;
+	*MemorySize 	= (UINT64) DEFAULT_PROC_SIZE; // NOTE: What happens when there's not enough memory. Maybe superv should allocate.
 	*Memory 		= (UINT64) VirtualAlloc (nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 	if (! *Memory) {
