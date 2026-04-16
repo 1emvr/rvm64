@@ -8,32 +8,28 @@
 
 #define NATIVE_CALL   	//__attribute__((section(".text$B")))
 #define VM_CALL   		//__attribute__((section(".text$B"))) __attribute__((calling_convention("custom")))
-#define NAKED    		__attribute__((naked))
-#define EXPORT   		__attribute__((visibility("default")))
 #define VM_RDATA    	__attribute__((section(".rdata")))
 #define DATA_SCN     	__attribute__((section(".data")))
 
 #define NtCurrentProcess()      ((HANDLE)(LONG_PTR)-1)
 #define NtCurrentThread()       ((HANDLE)(LONG_PTR)-2)
 
-#define VSTACK_MAX_CAPACITY     (sizeof(uint64_t) * 32)
 #define RVM_TRAP_EXCEPTION      0xE0424242
-
-#define PROCESS_BUFFER_SIZE     0x10000
-#define VM_MAGIC1               0x524d5636345f4949ULL  // "RMV64_II"
-#define VM_MAGIC2               0x5f424541434f4e00ULL  // "_BEACON"
+#define DEFAULT_PROC_SIZE     	0x10000
+#define INTERNAL_MAGIC1         0x524d5636345f4949ULL  // "RMV64_II"
+#define INTERNAL_MAGIC2         0x5f424541434f4e00ULL  // "_BEACON"
 #define VM_BEACON_VER           1
 
 #define EXPONENT_MASK           0x7FF0000000000000ULL
 #define FRACTION_MASK           0x000FFFFFFFFFFFFFULL
 #define RV64_RET                0x00008067
 
-#define CSR_SET_TRAP(epc, cause, stat, val, hlt) 		\
-    Vmcs->Csr->Epc = (uintptr_t)(epc);          		\
-    vmcs->Csr->Cause = (cause);                 		\
-    vmcs->Csr->Status = (stat);                 		\
-    vmcs->Csr->Tval = (val);                    		\
-    vmcs->halt = (hlt);                          		\
+#define CSR_SET_TRAP(epc, cause, stat, val, hlt) 	\
+    Vmcs->Csr->Epc 		= (UINT_PTR)(epc);			\
+    vmcs->Csr->Cause 	= (cause);                 	\
+    vmcs->Csr->Status 	= (stat);                 	\
+    vmcs->Csr->Tval 	= (val);                    \
+    vmcs->halt 			= (hlt);                    \
     RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
 
 // Safe MIN/MAX that work on both compilers

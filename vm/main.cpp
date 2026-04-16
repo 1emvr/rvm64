@@ -10,6 +10,9 @@ VM_CALL VOID VmExecute () {
 	volatile LPVOID Pad0 = 0; // Used to align the function ? Added when making the debugger.
 	
 	if (setjmp (Vmcs->Context->TrapHandler)) { } 
+	while (Vmcs->Context.Halt) {
+		Sleep (10);
+	}
 
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;

@@ -18,15 +18,15 @@ VM_CALL VOID MemoryInit () {
 	}
 
 	Vmcs->Proc.MemorySize   = DEFAULT_PROC_SIZE;
-	Vmcs->Proc.Ready 		= (UINT64)0;
-
 	Vmcs->Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 	if (!Vmcs->Context) {
-		CSR_SET_TRAP(0, OutOfMemory, 0, 0, 1);
+		CSR_SET_TRAP (0, OutOfMemory, 0, 0, 1);
 	}
 
-	Vmcs->Context->VehHandle = AddVectoredExceptionHandler (1, ExceptionHandler);
+	Vmcs->Context->VehHandle 	= AddVectoredExceptionHandler (1, ExceptionHandler);
+	Vmcs->Context->Halt 		= 0;
+
 	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw->Stack + sizeof (Vmcs->Hdw.Stack));
 }
 
