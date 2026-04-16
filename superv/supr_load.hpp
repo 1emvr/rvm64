@@ -42,11 +42,11 @@ typedef struct _THREAD_BASIC_INFORMATION {
 
 typedef LONG NTSTATUS;
 typedef NTSTATUS (NTAPI *NtQueryInformationThread_t)(
-		_In_ HANDLE ThreadHandle,
-		_In_ THREADINFOCLASS ThreadInformationClass,
-		_Out_writes_bytes_(ThreadInformationLength) PVOID ThreadInformation,
-		_In_ ULONG ThreadInformationLength,
-		_Out_opt_ PULONG ReturnLength
+		_In_ 		HANDLE 			ThreadHandle,
+		_In_ 		THREADINFOCLASS ThreadInformationClass,
+		_Out_ 		PVOID 			ThreadInformation,
+		_In_ 		ULONG 			ThreadInformationLength,
+		_Out_opt_ 	PULONG 			ReturnLength
 		);
 
 namespace superv::loader {
@@ -122,9 +122,9 @@ namespace superv::loader {
 					break;
 				}
 
-				uint8_t *region_base = (uint8_t*)MAX((uintptr_t)mbi.BaseAddress, (uintptr_t)stacklo);
-				uint8_t *region_end = (uint8_t*)MIN((uintptr_t)mbi.BaseAddress + mbi.RegionSize, (uintptr_t)stackhi);
-				size_t region_size = (size_t)(region_end - region_base);
+				uint8_t *region_base 	= (uint8_t*)MAX((uintptr_t)mbi.BaseAddress, (uintptr_t)stacklo);
+				uint8_t *region_end 	= (uint8_t*)MIN((uintptr_t)mbi.BaseAddress + mbi.RegionSize, (uintptr_t)stackhi);
+				size_t region_size 		= (size_t)(region_end - region_base);
 
 				const bool scan = 
 					(mbi.State == MEM_COMMIT) && (mbi.Type == MEM_PRIVATE) && 
@@ -208,7 +208,7 @@ namespace superv::loader {
 		return nullptr;
 	}
 
-	bool remote_write_file(HANDLE hprocess, vmcs_t* vmcs, const char* filepath) {
+	BOOL remote_write_file(HANDLE hprocess, vmcs_t* vmcs, const char* filepath) {
 		LARGE_INTEGER li = {};
 
 		printf("[INF] reading target ELF file.\n");

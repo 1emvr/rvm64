@@ -12,7 +12,7 @@
 #include "vmveh.hpp"
 
 namespace rvm64::entry {
-	_vmcall void vm_init() {
+	_vmcall void VmMemoryInit() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 																	
 		vmcs->self = (uint64_t)vmcs;
@@ -27,7 +27,7 @@ namespace rvm64::entry {
 		vmcs->proc.write_size 		= (uint64_t)0;
 		vmcs->proc.ready 			= (uint64_t)0;
 
-		vmcs->size_ptr 		= (uint64_t)&vmcs->proc.size;
+		vmcs->size_ptr 			= (uint64_t)&vmcs->proc.size;
 		vmcs->write_size_ptr 	= (uint64_t)&vmcs->proc.write_size;
 		vmcs->ready_ptr 		= (uint64_t)&vmcs->proc.ready;
 
@@ -45,7 +45,7 @@ namespace rvm64::entry {
 		}
 	}
 
-	_vmcall void vm_exit() {
+	_vmcall void VmMemoryFree() {
 		RemoveVectoredExceptionHandler(veh_handle);
 		veh_handle = 0;
 
@@ -70,7 +70,7 @@ namespace rvm64::entry {
 		vmcs->magic2 = 0;
 	}
 
-	_vmcall void vm_entry() {
+	_vmcall void VmEntry() {
 		volatile void *_pad0 = 0;
 		if (setjmp(vmcs->hdw->trap_handler)) {}
 

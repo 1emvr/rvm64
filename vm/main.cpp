@@ -6,37 +6,36 @@
 #include "vmentry.hpp"
 
 namespace rvm64 {
-	_native int32_t vm_main(uint64_t magic1, uint64_t magic2) {
-		save_host_context();
-		rvm64::entry::vm_init(); 
+	NATIVE INT32 VmMain (UINT64 magic1, UINT64 magic2) {
+		SaveHostContext ();
+		VmMemoryInit(); 
 
-		while (*(volatile uint64_t*)&vmcs->proc.ready != 1ULL) {
-			Sleep(10);
+		while (*(volatile UINT_PTR*) &vmcs->Proc.Ready != (INT32)1) {
+			Sleep (10);
 		}
-		*(volatile uint64_t*)&vmcs->proc.ready = 0ULL;
 
-		rvm64::elf::load_elf_image(vmcs->proc.buffer, vmcs->proc.write_size);
-		rvm64::elf::patch_elf_plt_and_set_entry();
+		*(volatile UINT_PTR*) &vmcs->Proc.Ready = (INT32)0;
 
-		if (setjmp(vmcs->hdw->exit_handler)) {
+		LoadImage (vmcs->Proc.Buffer, vmcs->Proc.WriteSize);
+		PatchAndSetEntry ();
+
+		if (setjmp(vmcs->Hdw->ExitHandler)) {
 			goto defer;	
 		}
 
-		rvm64::entry::vm_entry(); // patch here before starting the vm -> hook for supervisor
 defer:
-		// TODO: implant_callback();
-		rvm64::entry::vm_exit();
-		restore_host_context();
+		VmMemoryFree ();
+		RestoreHostContext ();
 
-		return vmcs->hdw->csr.m_cause;
+		return vmcs->Hdw->Csr.MCause;
 	}
 };
 
-int main() {
-	vmcs_t instance = { };
+int main () {
+	VMCS instance = { };
 	vmcs = &instance;
 
 	// TODO: incoming packets/supervisor will assign random magics
-    return rvm64::vm_main(VM_MAGIC1, VM_MAGIC2);
+    return VmMain (VM_MAGIC1, VM_MAGIC2);
 }
 
