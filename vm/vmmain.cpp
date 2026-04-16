@@ -25,7 +25,7 @@ NATIVE_CALL BOOL process_packets (
 // Process our packed ELF files and their param_base for thread creation. 
 // PLT_GOT will be dynamically resolved / addresses relocated in the arena. 
 		_Inout_ 	UINT_PTR* 		data,
-		_Inout_ 	UINT_PTR* 		data_size,
+		_Inout_ 	UINT_PTR* 		data_sz,
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
 	UINT_PTR image_base = *data;
@@ -59,7 +59,7 @@ NATIVE_CALL BOOL process_packets (
 		}
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
-		SIZE_T img_size  = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
+		SIZE_T img_sz  = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
 		
 		// TODO: Each program that is PT_LOAD needs to have space reserved for itself within the arena.
 		// They cannot be stacked end to end. Find a way to make this work.
@@ -67,24 +67,28 @@ NATIVE_CALL BOOL process_packets (
 		// We need to calculate EOF + MoveMemory to account for PT_LOAD space
 		{
 			for (int i = 0; i < ehdr->e_phnum; i++) {
-				ELF64_PHDR *phdr 	= (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
-				UINT_PTR sg_end 	= phdr->v_addr + phdr->p_memsz;
-
+				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
 				if (phdr->p_type != PT_LOAD) {
 					continue;
 				}
-				if (sg_end > img_size) {
-					img_size = sg_end;
+
+				UINT_PTR sg_end = phdr->v_addr + phdr->p_memsz;
+				if (sg_end > img_sz) {
+					img_sz = sg_end;
+
+					SIZE_T file_sz = image_base + phdr->file_sz; // how does total account for this resize? where do we bounds-check?
+					MoveMemory (image_base + img_sz, file_sz, *data_sz - total);
 					// from here start relocating image data to expand for in-memory code size
+					// everything from sg_end to (*data + *data_sz) gets moved "down" by (image_base + sg_end)
 				}
 			}
 		}
 
-		total 		+= img_size; 
-		image_base 	+= img_size;
+		total 		+= img_sz; 
+		image_base 	+= img_sz;
 
-		if (total > *data_size) {	// since programs can expand in memory we need to check to make sure we have enough.
-			arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
+		if (total > *data_sz) {	// since programs can expand in memory we need to check to make sure we have enough.
+			arena_realloc (data, data_sz, *(data_sz) + DEFAULT_ARENA_SIZE);
 			image_base = *data + total;
 		}
 		new_vms->count += 1;
@@ -95,12 +99,12 @@ NATIVE_CALL BOOL process_packets (
 
 NATIVE_CALL VOID rvm64_main (
 		_In_ const UINT_PTR* data, 	// data points to a pre-made arena
-		_In_ const UINT_PTR* data_size) 
+		_In_ const UINT_PTR* data_sz) 
 {
 	HANDLE threads [MAX_VM_THREADS] = { };		
 	PACKET_SEG new_vms = { };
 
-	if (!process_packets (data, data_size, &new_vms)) { // track param_base / elf data offsets 
+	if (!process_packets (data, data_sz, &new_vms)) { // track param_base / elf data offsets 
 		goto defer;
 	}
 	if (new_vms.count == 0) {
@@ -128,7 +132,7 @@ defer:
 
 NATIVE_CALL VOID rvm64_start (
 		_In_ const UINT_PTR* data,
-		_In_ const UINT_PTR* data_size) // should rvm64_start handle the arena, or leave it to another module?
+		_In_ const UINT_PTR* data_sz) // should rvm64_start handle the arena, or leave it to another module?
 {
 	VMCS instance = { };
 	vmcs = &instance; // a global vmcs instance to track everything (?)
@@ -136,7 +140,7 @@ NATIVE_CALL VOID rvm64_start (
 	rvm64_init (&vmcs->ctx); 
 	rvm64_save_reg (&vmcs->ctx->host_ctx);
 
-	rvm64_main (data, data_size); // TODO: arena_allocate () 
+	rvm64_main (data, data_sz); // TODO: arena_allocate () 
 
 	rvm64_load_reg (&vmcs->ctx->host_ctx);
 	rvm64_release (&vmcs->ctx); // release context
