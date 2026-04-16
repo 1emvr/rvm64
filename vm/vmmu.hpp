@@ -97,8 +97,8 @@ VM_CALL VOID MemoryRelease (
 
 		*Memory = 0;
 	}
-
 	*MemorySize = 0;
+
 	Vmcs->Magic1 = 0;
 	Vmcs->Magic2 = 0;
 }
