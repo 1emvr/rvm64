@@ -55,7 +55,7 @@ VM_CALL VOID MemoryInit (
 		_Out_ UINT_PTR* Memory, 
 		_Out_ UINT_PTR* MemorySize) 
 {
-	Vmcs->Self 		= (UINT64) Vmcs;
+	Vmcs->Self 		= (UINT64) &Vmcs;
 	*MemorySize 	= (UINT64) DEFAULT_PROC_SIZE;
 	*Memory 		= (UINT64) VirtualAlloc (nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
