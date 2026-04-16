@@ -134,6 +134,7 @@ enum Causenum {
     OutOfMemory             = 0xb029,
     EnvBranch            	= 0xb030,
     EnvShutdown             = 0xb031,
+	EnvInter				= 0xb032,
     InvalidChannel          = 0xffff,
 };
 

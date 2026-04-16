@@ -393,7 +393,6 @@ VMCALL VOID Decode (_In_ const UINT32 Opcode) {
 											default: break;
 										}
 										break;
-};
 									}
 								case 0b111: 
 									{
@@ -514,6 +513,7 @@ VMCALL void lrw () {
 
 VMCALL void lrd () {
 	UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT64 value = 0;
+};
 
 	ScrRead (UINT8, _rd, rd);
 	ScrRead (UINT8, _rs1, rs1);

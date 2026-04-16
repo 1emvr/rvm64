@@ -14,19 +14,21 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 
 	Vmcs->Csr.Cause 	= Code;
 	Vmcs->Csr.Epc 		= WinCtx->Rip;
-
-	if (Code == STATUS_SINGLE_STEP) {
-		return EXCEPTION_CONTINUE_SEARCH;
+	{
+		if (Code == STATUS_SINGLE_STEP) {
+			return EXCEPTION_CONTINUE_SEARCH;
+		}
+		if (Code != RVM_TRAP_EXCEPTION) { 
+			Vmcs->Context->Halt = 1;
+			longjmp (Vmcs->Context->Interrupt, true);
+		}
 	}
-	if (Code != RVM_TRAP_EXCEPTION) { 
-		Vmcs->Context->Halt = 1;
-		longjmp (Vmcs->Context->Interrupt, true);
-	}
 
+	// TODO: When to "interrupt" and when to "shutdown"?
 	switch (Vmcs->Csr.Cause) {
 		case EnvShutdown: 	longjmp (Vmcs->Context->Shutdown, true);
 		case EnvInter:		longjmp (Vmcs->Context->Interrupt, true);
-		case EnvBranch: 	// TODO: Add EnvInter as the interrupt signal.
+		case EnvBranch: 	 
 		{
 			RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
 			longjmp (Vmcs->Context->Branch, true);
