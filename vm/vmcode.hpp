@@ -1556,7 +1556,7 @@ VMCALL void mulhsu () {
 
 	ScrRead (UINT8, _rd, rd);
 	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);
+	ScrRead (UINT8, _rs2, rs2);environment_call_native
 
 	RegRead (INT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
@@ -1628,7 +1628,7 @@ VMCALL void div () {
 
 	RegWrite (UINT_PTR, _rd, (v1 / v2));
 }
-
+environment_call_native
 VMCALL void srl () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0; UINT32 v2 = 0;
 
@@ -2244,8 +2244,14 @@ namespace r4type {
 
 };
 
-VM_DATA const UINT_PTR DispatchTable [256] = {
+
+#ifdef
 #define ENCRYPT (op) EncryptPtr ((UINT_PTR)(op), (UINT_PTR)0)
+#else
+#define ENCRYPT (op) 
+#endif
+
+DATA_SCN const UINT_PTR DispatchTable [256] = {
     // ITYPE
     ENCRYPT (addi), 		ENCRYPT (slti),
     ENCRYPT (sltiu), 		ENCRYPT (xori),
@@ -2315,5 +2321,14 @@ VM_DATA const UINT_PTR DispatchTable [256] = {
     ENCRYPT (lui), ENCRYPT (auipc),
     ENCRYPT (jal)
 
-#undef ENCRYPT
+
+
+VOID Opcall (_In_ const UINT32 hdl_idx) {
+	uintptr_t a = ((uintptr_t*)DispatchTable) [hdl_idx];					
+	uintptr_t b = DecryptPtr ((uintptr_t)a, (uintptr_t)0);	
+	void (*fn)() = (void (*)())(b);											
+	fn ();													
+}
+
+
 #endif // VMCODE_H
