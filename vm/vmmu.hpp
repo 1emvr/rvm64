@@ -27,22 +27,22 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	}
 
 	switch (Vmcs->Csr.Cause) {
-		case EnvBranch: 	 
-		{
-			RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
-			longjmp (Vmcs->Context->Branch, true);
-		}
-		case EnvExecute:
-		{
-			VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw.Pc;
-			Memory ();
-			break;
-		}
+		case EnvBranch: 
+			{
+				RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
+				longjmp (Vmcs->Context->Branch, true);
+			}
+		case EnvExecute: 
+			{
+				VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw.Pc;
+				Memory ();
+				break;
+			}
 		case EnvNative: 
-		{
-			NativeCall ();
-			break;
-		}
+			{
+				NativeCall ();
+				break;
+			}
 		case EnvShutdown: 	
 			longjmp (Vmcs->Context->Shutdown, true);
 		default:  			
