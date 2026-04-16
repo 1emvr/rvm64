@@ -69,16 +69,15 @@ NATIVE_CALL BOOL process_packets (
 					prg_size = sg_end;
 				}
 			}
-
-			total 		+= prg_size; 
-			image_base 	+= prg_size;
-
-			if (total > *data_size) {	// since programs can expand in memory we need to check to make sure we have enough.
-				arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
-				image_base = *data + total;
-			}
 		}
 
+		total 		+= prg_size; 
+		image_base 	+= prg_size;
+
+		if (total > *data_size) {	// since programs can expand in memory we need to check to make sure we have enough.
+			arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
+			image_base = *data + total;
+		}
 		new_vms->count += 1;
 	}
 	return true;
