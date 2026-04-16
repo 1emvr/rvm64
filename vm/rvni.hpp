@@ -76,6 +76,7 @@ typedef struct _ucrt_function {
 } UCRT_FUNCTION;
 
 
+// NOTE: Gets populated during ResolveRvniImport at init.
 DATA_SCN UCRT_FUNCTION FunctionTable [] = {
 	{ .Address = 0, .Name = C_OPEN, 	.Typenum = UCRT_FUNCTION::OPEN		}, 
 	{ .Address = 0, .Name = C_READ, 	.Typenum = UCRT_FUNCTION::READ		}, 
