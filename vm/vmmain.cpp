@@ -61,17 +61,17 @@ NATIVE_CALL BOOL process_packets (
 
 		UINT_PTR lo = (UINT_PTR)-1, hi = 0;
 		UINT_PTR file_sz = 0;	
-		{
+
+		file_sz = max (
+				file_sz, 
+				(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // figure out why there's 3 different ways to determine the file size
+
+		if (ehdr->e_shoff) {
 			file_sz = max (
 					file_sz, 
-					(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // figure out why there's 3 different ways to determine the file size
-
-			if (ehdr->e_shoff) {
-				file_sz = max (
-						file_sz, 
-						(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize);
-			}
-
+					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize);
+		}
+		{
 			for (int i = 0; i < ehdr->e_phnum; i++) { 
 				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
 				file_sz = max (
@@ -84,7 +84,7 @@ NATIVE_CALL BOOL process_packets (
 
 				UINT_PTR seg_lo = phdr->p_vaddr & ~(phdr->p_align - 1);
 				UINT_PTR seg_hi = phdr->p_vaddr + phdr->p_memsz;
-				
+
 				if (seg_lo < lo) { lo = seg_lo; }
 				if (seg_hi > hi) { hi = seg_hi; }
 			}
