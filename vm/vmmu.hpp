@@ -8,6 +8,8 @@
 #define PROT_SEM	0x8	
 
 
+// NOTE: Anything other than a branch, execute, native call, or shutdown will be treated as a violation.
+
 LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
 	CONTEXT *WinCtx = ExceptionInfo->ContextRecord;
@@ -24,9 +26,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 		}
 	}
 
-	// TODO: When to "interrupt" and when to "shutdown"?
 	switch (Vmcs->Csr.Cause) {
-		case EnvShutdown: 	longjmp (Vmcs->Context->Shutdown, true);
 		case EnvBranch: 	 
 		{
 			RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
@@ -43,8 +43,10 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 			NativeCall ();
 			break;
 		}
-		default: 
-			longjmp (Vmcs->Context->Interrupt, true); // NOTE: Anything other than a branch, execute, native call, or shutdown will be treated as a violation.
+		case EnvShutdown: 	
+			longjmp (Vmcs->Context->Shutdown, true);
+		default:  			
+			longjmp (Vmcs->Context->Interrupt, true); 
 	}
 }
 
