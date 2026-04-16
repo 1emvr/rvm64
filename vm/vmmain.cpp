@@ -2,7 +2,7 @@
 #include "vmmain.hpp"
 
 
-// TODO: CreateThread
+// TODO: CreateThread and interact where it lives.
 
 NATIVE_CALL VOID VmMain () {
 	if (setjmp (Vmcs->Context->Interrupt)) { } 
