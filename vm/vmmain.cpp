@@ -33,8 +33,8 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 			param_size += PARAM_HEADER_SIZE;
 			total_size += param_size;
 
-			if (total_size > *data_size) {
-				arena_realloc (data, data_size, *(data_size) * 2);
+			if (total_size > *data_size) { // find a way to make this easy. not too big or too small of a realloc
+				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
 			}
 			new_vms->params [i] = image_base;
 			image_base += param_size;
