@@ -26,7 +26,6 @@ NATIVE_CALL VOID VmMain () {
 	} while (true);
 
 defer:
-	MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 	LoadRegisters (&Vmcs->Context->HostContext);
 }
 
