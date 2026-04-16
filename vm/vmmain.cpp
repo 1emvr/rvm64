@@ -62,10 +62,10 @@ NATIVE_CALL BOOL process_packets (
 	UINT_PTR remaining 	= *data_sz;
 	UINT_PTR offset 	= 0;
 
-#define update_arena_space (sz) 	\
-	if (remaining - sz <= 0)  		\
-	offset 		+= sz; 				\
-	image_base 	+= sz; 				\
+#define update_arena_space (sz) 						\
+	if (remaining - sz <= 0) {/*idk do something...*/}  \
+	offset 		+= sz; 									\
+	image_base 	+= sz; 									\
 	remaining 	-= sz; 
 
 	UINT_PTR n_threads = image_base [0]; 
