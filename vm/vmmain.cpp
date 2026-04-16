@@ -50,7 +50,7 @@ NATIVE_CALL BOOL process_packets (
 			image_base 	+= sizeof (UINT_PTR) + param_size;
 
 			new_vms->image_offset [i] = image_base - *data; 
-			// honest to god we don't really need to consider if a parameter is beyond the arena unless it's a malformed packet, and then we have larger problems...
+			// honest to god we really don't need to consider if a parameter is beyond the arena unless it's a malformed packet: then we would have larger problems...
 			// we should be more worried about expanding the ELF data, and that's when I would perform bounds checking.
 		}
 
@@ -75,6 +75,8 @@ NATIVE_CALL BOOL process_packets (
 
 					SIZE_T file_sz = image_base + phdr->file_sz; // how does total account for this resize? where do we bounds-check?
 					needed += vm_sz;
+
+					continue;
 				}
 			}
 		}
