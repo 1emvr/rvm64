@@ -4,19 +4,22 @@
 
 // TODO: StackSpoof, CreateThread, and interact where it lives.
 
-NATIVE_CALL VOID vm_thread (_In_ const PACKET* packet) {
-	vm_mem_init ();
+NATIVE_CALL VOID vm_thread (_In_ const LPVOID vm, _In_ const LPVOID vm_params) {
+	vm_mem_reserve (vm->mem, vm->mem_size);
+	vm_mem_release (vm->mem, vm->mem_size);
 }
 
+
 NATIVE_CALL VOID rvm64_main () {
-	HANDLE threads [8] = { } // max of 8 parallel threads
-							 
-	check_packets ();		
-	for (int i = 0; i < packet_num; i++) {
-		threads [i] = CreateThread (nullptr, 0, vm_thread (new_vm), &params, 0, nullptr);
+	HANDLE threads [8] = { } 				// max of 8 parallel threads
+	UINT8 packet_num = check_packets ();	// check for waiting packets
+	VM_PACKET *new_vms = get_packets (); 	// arena allocate all vm code
+									   
+	for (UINT i = 0; i < packet_num; i++) {
+		threads [i] = CreateThread (nullptr, 0, vm_thread (new_vm->mem), &new_vm->params, 0, nullptr);
 	}
 
-	WaitForMultipleObjects (packet_num, &packets, true, 5000);
+	WaitForMultipleObjects (packet_num, &threads, true, 5000);
 }
 
 
