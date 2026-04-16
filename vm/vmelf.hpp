@@ -318,65 +318,71 @@ NATIVE_CALL VOID LoadImage (
 }
 
 
-static void ApplyRelativeOffsets (
-		_In_ const UINT8* Memory) 
+static VOID ApplyRelativeOffsets (
+		_In_ const UINT8* Memory,
+		_In_ const SIZE_T MemorySize) 
 {
 	auto* Ehdr = (ELF64_EHDR*)Memory;
 	auto* Phdr = (ELF64_PHDR*)(Memory + Ehdr->e_phoff);
 
-	UINT_PTR DynAddr = 0, dyn_size = 0;
+	SIZE_T DynAddr = 0, DynSize = 0;
 
-	for (int i = 0; i < ehdr->e_phnum; ++i) { 
-		if (phdr [i].p_type == PT_DYNA) {
-			DynAddr = phdr [i].p_vaddr;
-			dyn_size  = phdr [i].p_memsz;
+	for (int i = 0; i < Ehdr->e_phnum; ++i) { 
+		if (Phdr [i].p_type == PT_DYNA) {
+			DynAddr 	= Phdr [i].p_vaddr;
+			DynSize  	= Phdr [i].p_memsz;
 			break;
 		}
 	}
-	if (!DynAddr || !dyn_size) {
+	if (! DynAddr || !DynSize) {
 		return;
 	}
 
-	UINT_PTR DynOff = DynAddr - ElfBase;
-	UINT_PTR rela_va=0, rela_sz=0, rela_ent = sizeof (ELF64_RELA);
+	UINT_PTR DynOff = DynAddr - (UINT_PTR)Memory;
+	UINT_PTR RelVa=0, RelSz=0, RelEnt = sizeof (ELF64_RELA);
 
-	if (!InImg(DynOff, sizeof(elf64_dyn), g_img_size)) {
-		return;
-	}
-	for (ELF64_DYN* d = (ELF64_DYN*)(img + DynOff); 
-			InImage ((UINT8*)d - img, sizeof(*d), g_img_size) 
-			&& d->d_tag != DT_NULL; ++d) {
-
-		if (d->d_tag == DT_RELA)     rela_va  = d->d_un.d_ptr;
-		else if (d->d_tag == DT_RELASZ)  rela_sz  = d->d_un.d_val;
-		else if (d->d_tag == DT_RELAENT) rela_ent = d->d_un.d_val ? d->d_un.d_val : sizeof(elf64_rela);
-	}
-	if (!rela_va || !rela_sz || !rela_ent) {
-		return;
+	if (! InImage (DynOff, sizeof(ELF64_DYN), MemorySize)) {
+		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
 	}
 
-	UINT_PTR rela_off = rela_va - ElfBase;
-	SIZE_T n = (SIZE_T)(rela_sz / rela_ent);
+	for (
+			ELF64_DYN* d = (ELF64_DYN*)(Memory + DynOff); InImage ((UINT8*)d - Memory, sizeof(*d), MemorySize) && d->d_tag != DT_NULL; ++d) 
+	{
+		if (d->d_tag == DT_RELA) {
+			RelVa  = d->d_un.d_ptr;
+		} else if (d->d_tag == DT_RELASZ)  {
+			RelSz  = d->d_un.d_val;
+		} else if (d->d_tag == DT_RELAENT) {
+			RelEnt = d->d_un.d_val ? d->d_un.d_val : sizeof (ELF64_RELA);
+		}
+	}
+	if (!RelVa || !RelSz || !RelEnt) {
+		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
+	}
+
+	UINT_PTR RelOff = RelVa - ElfBase;
+	SIZE_T n = (SIZE_T)(RelSz / RelEnt);
 
 	for (SIZE_T i = 0; i < n; ++i) {
-		UINT_PTR off = rela_off + i * rela_ent;
+		UINT_PTR Off = RelOff + i * RelEnt;
 
-		if (! InImage (off, sizeof(elf64_rela), g_img_size)) {
+		if (! InImage (Off, sizeof (ELF64_RELA), MemorySize)) {
 			break;
 		}
-		const ELF64_RELA* r = (const ELF64_RELA*)(img + off);
-		const UINT32 rtype = ELF64_REL_TYPE (r->r_info);
+		const ELF64_RELA* Rela 	= (const ELF64_RELA*)(Memory + Off);
+		const UINT32 Rtype 		= ELF64_REL_TYPE (Rela->r_info);
 
-		if (rtype == R_RISCV_RELATIVE) {
-			UINT_PTR where_off = r->r_offset - ElfBase;
+		if (Rtype == R_RISCV_RELATIVE) {
+			UINT_PTR Where = Rela->r_offset - Memory;
 
-			if (! InImage (where_off, 8, g_img_size)) {
+			if (! InImage (Where, 8, MemorySize)) {
 				continue;
 			}
-			*(UINT_PTR*)(img + where_off) = ElfBase + (UINT_PTR)r->r_addend;
+			*(UINT_PTR*)(Memory + Where) = Memory + (UINT_PTR)Rela->r_addend;
 		}
 	}
 }
+
 
 static UINT_PTR FindEntry (
 		_In_ const UINT8* img) 
@@ -400,14 +406,14 @@ static UINT_PTR FindEntry (
 	}
 
 	UINT_PTR DynOff = DynAddr - ElfBase;
-	if (! InImage (DynOff, sizeof(elf64_dyn), g_img_size)) {
+	if (! InImage (DynOff, sizeof(elf64_dyn), MemorySize)) {
 		return 0;
 	}
 
 	// Pull tables
 	UINT_PTR symtab_va=0, strtab_va=0, syment=sizeof(elf64_sym), strsz=0;
 
-	for (elf64_dyn* d = (elf64_dyn*)(img + DynOff); InImg((UINT8*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
+	for (elf64_dyn* d = (elf64_dyn*)(img + DynOff); InImage ((UINT8*)d - img, sizeof(*d), MemorySize) && d->d_tag != DT_NULL; ++d) {
 		if (d->d_tag == DT_SYMTAB)  symtab_va = d->d_un.d_ptr;
 		else if (d->d_tag == DT_STRTAB)  strtab_va = d->d_un.d_ptr;
 		else if (d->d_tag == DT_SYMENT)  syment    = d->d_un.d_val ? d->d_un.d_val : sizeof(elf64_sym);
@@ -418,14 +424,14 @@ static UINT_PTR FindEntry (
 	UINT_PTR sym_off = symtab_va - ElfBase;
 	UINT_PTR str_off = strtab_va - ElfBase;
 
-	if (!InImg(sym_off, sizeof(elf64_sym), g_img_size)) return 0;
-	if (!InImg(str_off, 1, g_img_size)) return 0;
-	if (strsz == 0 || !InImg(str_off, strsz, g_img_size)) strsz = g_img_size - str_off;
+	if (!InImage (sym_off, sizeof(elf64_sym), MemorySize)) return 0;
+	if (!InImage (str_off, 1, MemorySize)) return 0;
+	if (strsz == 0 || !InImage (str_off, strsz, MemorySize)) strsz = MemorySize - str_off;
 
 	// Walk bounded
 	const UINT_PTR MAX_ITERS = 1u << 20;
 
-	for (UINT_PTR i = 0, off = sym_off; i < MAX_ITERS && InImg(off, syment, g_img_size); ++i, off += syment) {
+	for (UINT_PTR i = 0, off = sym_off; i < MAX_ITERS && InImage (off, syment, MemorySize); ++i, off += syment) {
 		const elf64_sym* s = (const elf64_sym*)(img + off);
 		if (!s->st_value) continue;
 
@@ -462,15 +468,16 @@ static VOID PatchPLT (
 	}
 
 	UINT_PTR DynOff = DynAddr - ElfBase;
-	if (! InImg (DynOff, sizeof (elf64_dyn), g_img_size)) {
+	if (! InImage  (DynOff, sizeof (elf64_dyn), MemorySize)) {
 		return;
 	}
 
 	UINT_PTR symtab_va=0, strtab_va=0, strsz=0, syment = sizeof (elf64_sym);
 	UINT_PTR jmprel_va=0, pltrel_sz=0, plt_rel_kind=0;
 
-	for (elf64_dyn* d = (elf64_dyn*)(img + DynOff) {
-			InImg((UINT8*)d - img, sizeof (*d), g_img_size) && d->d_tag != DT_NULL; ++d);
+	for (
+			ELF64_DYN* d = (ELF64_DYN*)(Memory + DynOff) {
+			InImage ((UINT8*)d - img, sizeof (*d), MemorySize) && d->d_tag != DT_NULL; ++d);
 	switch (d->d_tag) {
 		case DT_SYMTAB:   symtab_va   = d->d_un.d_ptr; break;
 		case DT_STRTAB:   strtab_va   = d->d_un.d_ptr; break;
@@ -491,25 +498,25 @@ static VOID PatchPLT (
 		return;
 	}
 
-	UINT_PTR rela_off   = jmprel_va - ElfBase;
+	UINT_PTR RelOff   = jmprel_va - ElfBase;
 	UINT_PTR symtab_off = symtab_va - ElfBase;
 	UINT_PTR strtab_off = strtab_va - ElfBase;
 
-	if (!InImg (rela_off, pltrel_sz, g_img_size) ||
-			!InImg (symtab_off, sizeof (elf64_sym), g_img_size) ||
-			!InImg (strtab_off, 1, g_img_size)) {
+	if (!InImage  (RelOff, pltrel_sz, MemorySize) ||
+			!InImage  (symtab_off, sizeof (elf64_sym), MemorySize) ||
+			!InImage  (strtab_off, 1, MemorySize)) {
 		return;
 	}
-	if (strsz == 0 || !InImg(strtab_off, strsz, g_img_size)) {
-		strsz = g_img_size - strtab_off;
+	if (strsz == 0 || !InImage (strtab_off, strsz, MemorySize)) {
+		strsz = MemorySize - strtab_off;
 	}
 
 	SIZE_T n = pltrel_sz / sizeof (elf64_rela);
 
 	for (SIZE_T i = 0; i < n; ++i) {
-		UINT_PTR off = rela_off + i * sizeof (elf64_rela);
+		UINT_PTR off = RelOff + i * sizeof (elf64_rela);
 
-		if (!InImg(off, sizeof (elf64_rela), g_img_size)) {
+		if (!InImage (off, sizeof (elf64_rela), MemorySize)) {
 			break;
 		}
 
@@ -523,7 +530,7 @@ static VOID PatchPLT (
 		UINT32 sym_idx = (UINT32)ELF64_R_SYM(r->r_info);
 		UINT_PTR s_off = symtab_off + (UINT_PTR)sym_idx * syment;
 
-		if (!InImg(s_off, sizeof (elf64_sym), g_img_size)) {
+		if (!InImage (s_off, sizeof (elf64_sym), MemorySize)) {
 			continue;
 		}
 
@@ -548,7 +555,7 @@ static VOID PatchPLT (
 
 		UINT_PTR where_off = r->r_offset - ElfBase;
 
-		if (! InImg (where_off, 8, g_img_size)) {
+		if (! InImage  (where_off, 8, MemorySize)) {
 			continue;
 		}
 
