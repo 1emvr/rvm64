@@ -13,6 +13,10 @@ NATIVE_CALL INT32 VmMain (
 
 	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: init memory/modules.
 	LoadImage 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: load risc-v image.
+
+	Vmcs->Magic1 = Magic1;
+	Vmcs->Magic2 = Magic2;
+
 	PatchAndSetEntry (); 									// NOTE: patch plt -> entrypoint
 
 	if (setjmp (Vmcs->ExitHandler)) {

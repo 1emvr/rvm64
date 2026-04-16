@@ -160,19 +160,25 @@ typedef struct {
 } WIN_PROC;
 
 
-typedef struct _vmcs {
+struct {
+	INTEL 		HostContext;
+	INTEL 		VmContext;
+	jmp_buf 	TrapHandler;
+	jmp_buf 	ExitHandler;
+	HANDLE 		VehHandle;
+	HANDLE 		Mutex;
+	UINT64 		LoadRsvAddr;
+	UINT64 		LoadRsvValid;
+} VM_CONTEXT;
+
+
+typedef struct {
     UINT64 Magic1, Magic2;
+	UINT64 Self;
 	UINT64 Pid;
 	UINT64 Tid;
 
-	struct {
-		INTEL* 		HostContext;
-		INTEL* 		VmContext;
-		jmp_buf* 	TrapHandler;
-		jmp_buf* 	ExitHandler;
-		HANDLE 		VehHandle;
-		HANDLE 		Mutex;
-	} Context;
+	VM_CONTEXT* Context;
 
 	struct {
 		HMODULE Ucrt;
@@ -188,20 +194,17 @@ typedef struct _vmcs {
 
 	typedef {
 		UINT64 Pc;
-		UINT64 Scratch [8];
-		UINT64 Regs [32];
-		UINT64 Stack [32];
-	} Gpr;
+		UINT64 Scratch 	[8];
+		UINT64 Regs 	[32];
+		UINT64 Stack 	[32];
+	} Hdw;
 
 	struct {
-		UINT64 Memory;
-		UINT64 MemorySize;
+		UINT64 			Memory;
+		UINT64 			MemorySize;
 		volatile UINT64 Ready;   
-	} VmProc;
+	} Proc;
 							   
-	UINT64 LoadRsvAddr;
-	UINT64 LoadRsvValid;
-
 	INT Trap;
 	INT Halt;
 } VMCS;
