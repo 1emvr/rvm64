@@ -162,8 +162,7 @@ struct {
 	UINT64 	LoadRsvAddr;
 	UINT64 	LoadRsvValid;
 							   
-	INT 	Trap;
-	INT 	Halt;
+	volatile INT Halt;
 } VM_CONTEXT;
 
 
