@@ -25,6 +25,18 @@ constexpr const char *C_MUNMAP = "munmap";
 constexpr const char *C_MPROTECT = "mprotect";
 
 
+VM_DATA UCRT_ALIAS AliasTable [] = {
+	{ "open",  "_open"  }, 
+	{ "read",  "_read"  }, 
+	{ "write", "_write" }, 
+	{ "close", "_close" }, 
+	{ "exit",  "_exit"  }, 
+	{ "mmap", "VirtualAlloc" }, 
+	{ "munmap", "VirtualFree" }, 
+	{ "mprotect", "VirtualProtect" }, 
+};
+
+
 typedef struct {
 	const CHAR* Original;
 	const CHAR* Alias;
@@ -80,19 +92,9 @@ DATA_SCN UCRT_FUNCTION FunctionTable[] = {
 };
 
 
-VM_DATA UCRT_ALIAS AliasTable [] = {
-	{ "open",  "_open"  }, 
-	{ "read",  "_read"  }, 
-	{ "write", "_write" }, 
-	{ "close", "_close" }, 
-	{ "exit",  "_exit"  }, 
-	{ "mmap", "VirtualAlloc" }, 
-	{ "munmap", "VirtualFree" }, 
-	{ "mprotect", "VirtualProtect" }, 
-};
-
-
-NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName) {
+NATIVE_CALL LPVOID ResolveRvniImport (
+		_In_ const CHAR *SymName) 
+{
 	if (! Vmcs->Module.Kernel32 || ! Vmcs->Module.Ucrt) {
 		CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
 	}
@@ -115,7 +117,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName) {
 	}
 
 	for (auto& f : FunctionTable) {
-		if (strcmp (SymName, f.Name) == 0) {
+		if (MbsCmp (SymName, f.Name) == 0) {
 			f.Address = Native;
 
 			switch (f.Typenum) {
