@@ -134,9 +134,9 @@ typedef struct {
 } OPCODE;
 
 
-typedef struct {
-    UINT64 Rip, Rsp, Rax, Rbx, Rcx, Rdx, Rsi, Rdi, Rbp;
-    UINT64 R8, R9, R10, R11, R12, R13, R14, R15;
+typedef struct { // relevant registers for software-based vm
+    UINT64 Rip, Rsp, Rax, Rbx, Rsi, Rdi, Rbp;
+    UINT64 R12, R13, R14, R15;
     UINT64 Rflags;
 } INTEL;
 
