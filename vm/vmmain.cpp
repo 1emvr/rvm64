@@ -9,18 +9,18 @@ struct PACKET_SEG {
 };
 
 
-NATIVE_CALL BOOL is_elf (_In_ const UINT_PTR base) {
+NATIVE_CALL BOOL is_elf (_In_ const UINT8* base) {
 	return base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
 			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
 }
 
 
-NATIVE_CALL VOID process_packets ( // process ELF params and headers
-		_In_ const UINT_PTR 	data,
-		_In_ const PACKET_SEG* 	new_vms,
-		_In_ const SIZE_T 		arena_size) 
+NATIVE_CALL BOOL process_packets ( // process ELF params and headers
+		_In_ 	const UINT_PTR 		data,
+		_In_ 	const SIZE_T 		arena_size,
+		_Out_ 	PACKET_SEG* 		new_vms)
 {
-	UINT_PTR 	image_base = data;
+	const UINT8 *image_base = (const UINT8*)data;
 	SIZE_T 		total_size = 0;
 
 	for (UINT8 i = 0; i < 8; i++) {
@@ -28,25 +28,37 @@ NATIVE_CALL VOID process_packets ( // process ELF params and headers
 		// PARAM_SIZE, 
 		// PARAM_DATA -> ELF
 		if (is_param (image_base)) {
-			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or whatever
+			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or however long offset
 
 			new_vms->params [i] = image_base;
 			image_base += param_size + PARAM_HEADER_SIZE;
 		}
-		if (!is_elf (image_base)) {
-			return;
+
+		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
+			return false;
 		}
 
-		UINT8 elf_class = image_base [EI_CLASS];
+		new_vms->files [i] = (UINT_PTR)image_base;
+		new_vms->count += 1;
 
-		if (elf_class == ELFCLASS64) {
-			ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
-			SIZE_T prog_size = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
+		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
+		SIZE_T prg_size = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
 
-			total_size += prog_size;
-			if (total_size > arena_size) return;
+		for (int i = 0; i < ehdr->e_phnum; i++) {
+			ELF64_PHDR *phdr = (ELF64_PHDR*)(image + ehdr->e_phoff + (i * ehdr->e_phentsize));
+			SIZE_T sg_end = phdr->p_offset + phdr->p_filesz;
+
+			if (sg_end > prg_size) {
+				prg_size = sg_end;
+			}
+		}
+
+		total_size += prg_size;
+		if (total_size > arena_size) {
+			// return false or resize the arena
 		}
 	}
+	return true;
 }
 
 
