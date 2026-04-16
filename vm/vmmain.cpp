@@ -64,19 +64,19 @@ NATIVE_CALL BOOL process_packets (
 
 		file_sz = max (
 				file_sz, 
-				(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // figure out why there's 3 different ways to determine the file size
+				(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // This member holds the size in bytes of one entry in the file's program header table; all entries are the same size. 
 
 		if (ehdr->e_shoff) {
 			file_sz = max (
 					file_sz, 
-					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize);
+					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize); // This member holds a section header's size in bytes. A section header is one entry in the section header table; all entries are the same size. 
 		}
 		{
-			for (int i = 0; i < ehdr->e_phnum; i++) { // for each section add their size
+			for (int i = 0; i < ehdr->e_phnum; i++) { 
 				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
 				file_sz = max (
 						file_sz, 
-						(UINT_PTR)phdr [i].p_offset + (UINT_PTR)phdr [i].p_filesz);
+						(UINT_PTR)phdr [i].p_offset + (UINT_PTR)phdr [i].p_filesz); // specifies the number of bytes a segment occupies in the file image
 
 				if (phdr->p_type != PT_LOAD) {
 					continue;
