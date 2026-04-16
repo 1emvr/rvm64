@@ -14,6 +14,7 @@ NATIVE_CALL BOOL is_elf (_In_ const UINT_PTR base) {
 			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
 }
 
+
 NATIVE_CALL VOID process_packets ( // process ELF params and headers
 		_In_ const UINT_PTR 	data,
 		_In_ const PACKET_SEG* 	new_vms,
@@ -23,7 +24,9 @@ NATIVE_CALL VOID process_packets ( // process ELF params and headers
 	SIZE_T 		total_size = 0;
 
 	for (UINT8 i = 0; i < 8; i++) {
-		// PARAM_MAGIC, PARAM_SIZE, PARAM_DATA -> ELF
+		// PARAM_MAGIC, 
+		// PARAM_SIZE, 
+		// PARAM_DATA -> ELF
 		if (is_param (image_base)) {
 			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or whatever
 
