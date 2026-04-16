@@ -55,14 +55,15 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 			return;
 		} 
 
-		for (int idx = 0; idx < sizeof (OPCODE); idx++) {
+		// NOTE: ???
+		for (int idx = 0; idx < 18; idx++) {
 			if (EncodingTable [idx].Mask == Opcode7) {
 				Decoded = EncodingTable [idx].Type;
 				break;
 			}
 		}
 		if (! Decoded) {
-			SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, opcode, 1);
+			SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, Opcode, 1);
 		}
 	}
 
