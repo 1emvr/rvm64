@@ -332,7 +332,7 @@ VM_CALL VOID NativeCall () {
 				LPVOID HostMem = (Api.Typecaster.mmap) Api.Address (
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
 
-				if (! MemoryUnregister ((UINT_PTR*)&Addr, HostMem, Len)) {
+				if (! MemoryRegister ((UINT_PTR*)&Addr, HostMem, Len)) {
 					SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
 				}
 
@@ -352,8 +352,12 @@ VM_CALL VOID NativeCall () {
 				BOOL Unregister = MemoryUnregister (GuestMem);
 
 				INT Result = (Api.Typecaster.munmap) Api.Address (HostMem, Len, MEM_RELEASE);
-				RegWrite (INT, A0, ((Result && Unregister) ? 0 : -1));
 
+				if (! MemoryUnregister ((UINT_PTR*)&Addr, HostMem, Len)) {
+					SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
+				}
+
+				RegWrite (INT, A0, ((Result && Unregister) ? 0 : -1));
 				break;
 			}
 		case UCRT_FUNCTION::MPROTECT: 
