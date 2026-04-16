@@ -22,33 +22,34 @@ NATIVE_CALL VOID thread_main () {
 
 
 NATIVE_CALL BOOL process_packets ( 
-// Process our packed ELF files and their params for thread creation. 
+// Process our packed ELF files and their param_base for thread creation. 
 // PLT_GOT will be dynamically resolved / addresses relocated in the arena. 
 		_Inout_ 	UINT_PTR* 		data,
 		_Inout_ 	UINT_PTR* 		data_size,
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
 	UINT_PTR image_base = *data;
-	UINT_PTR total = 0;
 	
 	UINT_PTR n_threads = image_base [0]; // number of files prepended to the start of the packet (n_threads), (param/data)...
-	image_base += sizeof (UINT_PTR); 
+	UINT_PTR total = sizeof (UINT_PTR);
+
+	image_base += total; 
 
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
 	for (int i = 0; i < n_threads; i++) { 
-		UINT_PTR param_size = image_base [0];
+		UINT_PTR param_size = image_base [0]; // packed data is [ (param size/data), (ELF data), ... ]
 		{
 			if (param_size != 0) {						
-				new_vms->param_offset [i] = image_base; // param_offset points to the header of the param first -> (param size), (*param data)
+				new_vms->param_offset [i] = image_base - *data; // param_offset points to the header of the param-> (param size), (param data)
 			}
 
 			total 		+= sizeof (UINT_PTR) + param_size;
 			image_base 	+= sizeof (UINT_PTR) + param_size;
 
-			new_vms->image_offset [i] = image_base;
+			new_vms->image_offset [i] = image_base - *data;
 
 			if (total > *data_size) {	
 				arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
@@ -93,7 +94,7 @@ NATIVE_CALL VOID rvm64_main (
 	HANDLE threads [MAX_VM_THREADS] = { };		
 	PACKET_SEG new_vms = { };
 
-	if (!process_packets (data, data_size, &new_vms)) { // track params / elf data offsets 
+	if (!process_packets (data, data_size, &new_vms)) { // track param_base / elf data offsets 
 		goto defer;
 	}
 	if (new_vms.count == 0) {
@@ -102,13 +103,13 @@ NATIVE_CALL VOID rvm64_main (
 
 	for (int i = 0; i < new_vms.count; i++) {
 		UINT_PTR image_base = *data + new_vms.image_offset [i];
-		UINT_PTR params 	= *data + new_vms.params_offset [i];
+		UINT_PTR param_base = *data + new_vms.param_offset [i];
 
-		if (params [0] == 0) {
-			params = nullptr;
+		if (param_base [0] == 0) {
+			param_base = nullptr;
 		}
 
-		threads [i] = CreateThread (nullptr, 0, vm_thread (image_base), params, 0, nullptr); // TODO: redesign vmcs to handle multiple threads
+		threads [i] = CreateThread (nullptr, 0, vm_thread (image_base), param_base, 0, nullptr); // TODO: redesign vmcs to handle multiple threads
 	}
 
 	WaitForMultipleObjects (new_vms.count, &threads, true, 5000);
@@ -121,7 +122,7 @@ defer:
 
 NATIVE_CALL VOID rvm64_start (
 		_In_ const UINT_PTR* data,
-		_In_ const UINT_PTR* data_size)
+		_In_ const UINT_PTR* data_size) // should rvm64_start handle the arena, or leave it to another module?
 {
 	VMCS instance = { };
 	vmcs = &instance; // a global vmcs instance to track everything (?)
@@ -132,5 +133,5 @@ NATIVE_CALL VOID rvm64_start (
 	rvm64_main (data, data_size); // TODO: arena_allocate () 
 
 	rvm64_load_reg (&vmcs->ctx->host_ctx);
-	rvm64_release (&vmcs->ctx); // NOTE: release context.
+	rvm64_release (&vmcs->ctx); // release context
 }
