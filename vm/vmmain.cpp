@@ -59,7 +59,6 @@ NATIVE_CALL BOOL process_packets (
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
 
-		UINT_PTR lo = (UINT_PTR)-1, hi = 0;
 		UINT_PTR file_sz = 0;	
 
 		file_sz = max (
@@ -71,27 +70,31 @@ NATIVE_CALL BOOL process_packets (
 					file_sz, 
 					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize); // shentsize : section header's size in bytes. A section header is one entry in the section header table.
 		}
-		{
-			for (int i = 0; i < ehdr->e_phnum; i++) {  // iterate program headers
-				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
-				file_sz = max (
-						file_sz, 
-						(UINT_PTR)phdr [i].p_offset + (UINT_PTR)phdr [i].p_filesz); // specifies the number of bytes a segment occupies in the file image
 
-				if (phdr->p_type != PT_LOAD) {
-					continue;
-				}
+		for (int i = 0; i < ehdr->e_phnum; i++) {  // iterate program headers
+			ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
 
-				UINT_PTR seg_lo = phdr->p_vaddr & ~(phdr->p_align - 1);
-				UINT_PTR seg_hi = phdr->p_vaddr + phdr->p_memsz;
+			UINT_PTR lo = (UINT_PTR)-1; 
+			UINT_PTR hi = 0;
 
-				if (seg_lo < lo) { lo = seg_lo; }
-				if (seg_hi > hi) { hi = seg_hi; }
+			file_sz = max (
+					file_sz, 
+					(UINT_PTR)phdr [i].p_offset + (UINT_PTR)phdr [i].p_filesz); // filesz : specifies the number of bytes a segment occupies in the file image
+
+			if (phdr->p_type != PT_LOAD) {
+				continue;
 			}
-		}
 
-		UINT_PTR expanded = hi - lo;
-		UINT_PTR delta = expanded - file_sz;
+			UINT_PTR seg_lo = phdr->p_vaddr & ~(phdr->p_align - 1);
+			UINT_PTR seg_hi = phdr->p_vaddr + phdr->p_memsz;
+
+			if (seg_lo < lo) { lo = seg_lo; }
+			if (seg_hi > hi) { hi = seg_hi; }
+
+			UINT_PTR expanded = hi - lo;
+			UINT_PTR delta = expanded - file_sz;
+
+		}
 
 		offset 		+= img_sz;
 		image_base 	+= img_sz;
