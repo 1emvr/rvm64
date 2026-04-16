@@ -12,19 +12,6 @@
 VM_CALL VOID Decode (_In_ const UINT32); 
 
 
-VM_CALL VOID VmExecute () {
-	if (setjmp (Vmcs->Context->Return)) { } 
-
-	while (true) {
-		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
-
-
-		Decode (Opcode); 
-		Vmcs->Hdw.Pc += 4;
-	}
-}
-
-
 VOID Opcall (
 		_In_ const UINT32 Index) 
 {
@@ -43,8 +30,15 @@ DATA_SCN OPCODE EncodingTable [] = {
 };
 
 
-// TODO: Opcode randomization for the entire decoding process.  Opcode-7 + Func-3 values can be randomized. Register values could be randomized (carefully).
+VM_CALL VOID VmExecute () {
+	while (true) {
+		Decode (*(INT32*)Vmcs->Hdw.Pc); 
+		Vmcs->Hdw.Pc += 4;
+	}
+}
 
+
+// TODO: Opcode randomization for the entire decoding process.  Opcode-7 + Func-3 values can be randomized. Register values could be randomized (carefully).
 VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Decoded = 0;
 	UINT8 Opcode7 = Opcode & 0x7F;
@@ -378,6 +372,7 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 								case 0b100: 
 									{
 										switch(Func7) {
+
 											case 0b0000000: { Opcall (_XOR); break; }
 											case 0b0000001: { Opcall (_DIV); break; }
 											default: break;
@@ -938,7 +933,7 @@ VM_CALL void jalr () {
 	ScrRead (INT32, _imm, 	IMM);
 
 	RegRead (UINT_PTR, 	address, 	_rs1);
-	RegWrite (UINT_PTR, _rd, 		Vmcs->Hdw.Pc);
+	RegWrite (UINT_PTR, _rd, 		Vmcs->Hdw.Pc + 4);
 
 	Vmcs->Hdw.Pc = address + (INT_PTR)_imm & ~((INT_PTR)1);
 
