@@ -24,7 +24,6 @@ VOID Opcall (
 
 
 VM_CALL VOID VmExecute () {
-	if (setjmp (Vmcs->Context->Branch)) { } 
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
@@ -33,6 +32,7 @@ VM_CALL VOID VmExecute () {
 				SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
 			}
 		}
+
 		Decode (Opcode); 
 		Vmcs->Hdw.Pc += 4;
 	}
@@ -494,7 +494,6 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 
 		default: {
 					 SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Opcode, 1);
-					 break;
 				 }
 	}
 }
@@ -2112,7 +2111,7 @@ VM_CALL void jal () {
 	RegWrite (UINT_PTR, _rd, Vmcs->Hdw.Pc + 4);
 
 	Vmcs->Hdw.Pc += offset;
-	SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
+	Vmcs->Hdw.Pc -= 4;
 }
 
 
@@ -2128,7 +2127,7 @@ VM_CALL void beq () {
 
 	if (v1 == v2) {
 		Vmcs->Hdw.Pc += offset;
-		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc -= 4;
 	}
 }
 
@@ -2145,7 +2144,7 @@ VM_CALL void bne () {
 
 	if (v1 != v2) {
 		Vmcs->Hdw.Pc += offset;
-		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc -= 4;
 	}
 }
 
@@ -2162,7 +2161,7 @@ VM_CALL void blt () {
 
 	if (v1 < v2) {
 		Vmcs->Hdw.Pc += offset;
-		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc -= 4;
 	}
 }
 
@@ -2179,7 +2178,7 @@ VM_CALL void bge () {
 
 	if (v1 >= v2) {
 		Vmcs->Hdw.Pc += offset;
-		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc -= 4;
 	}
 }
 
@@ -2196,7 +2195,7 @@ VM_CALL void bltu () {
 
 	if (v1 < v2) {
 		Vmcs->Hdw.Pc += offset;
-		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc -= 4;
 	}
 }
 
@@ -2213,7 +2212,7 @@ VM_CALL void bgeu () {
 
 	if (v1 >= v2) {
 		Vmcs->Hdw.Pc += offset;
-		SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
+		Vmcs->Hdw.Pc -= 4;
 	}
 }
 
