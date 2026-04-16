@@ -22,13 +22,11 @@ NATIVE_CALL VOID thread_main () {
 
 
 NATIVE_CALL BOOL process_packets ( 
-// Process our packed ELF files and their param_base for thread creation. 
-// PLT_GOT will be dynamically resolved / addresses relocated in the arena. 
 		_Inout_ 	UINT_PTR* 		data,
 		_Inout_ 	UINT_PTR* 		data_sz,
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
-	BYTE *image_base = (BYTE*)*data;
+	UINT8 *image_base = (UINT8*)*data;
 
 	UINT_PTR n_threads 	= image_base [0]; 
 	UINT_PTR remaining 	= *data_sz;
@@ -42,8 +40,9 @@ NATIVE_CALL BOOL process_packets (
 		return false;
 	}
 
-	while (n_threads != 0) { 
+	for (int i = 0; i < n_threads; i++) { 
 		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (data), (_pt_load_space)], ... 
+											//
 		if (param_sz != 0) {						
 			new_vms->param_offset [i] = offset; 
 		}
@@ -61,17 +60,24 @@ NATIVE_CALL BOOL process_packets (
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
 
 		UINT_PTR lo = (UINT_PTR)-1, hi = 0;
-		SIZE_T file_sz = 0;	
+		UINT_PTR file_sz = 0;	
 		{
-			file_sz = max (file_sz, ehdr->e_phoff + (SIZE_T)ehdr->e_phnum * ehdr->e_phentsize);
+			file_sz = max (
+					file_sz, 
+					(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // figure out why there's 3 different ways to determine the file size
+
 			if (ehdr->e_shoff) {
-				file_sz = max (file_sz, ehdr->e_shoff + (SIZE_T)ehdr->e_shnum * ehdr->e_shentsize);
+				file_sz = max (
+						file_sz, 
+						(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize);
 			}
 
 			for (int i = 0; i < ehdr->e_phnum; i++) { 
 				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
+				file_sz = max (
+						file_sz, 
+						(UINT_PTR)phdr [i].p_offset + (UINT_PTR)phdr [i].p_filesz);
 
-				file_sz = max (file_sz, phdr [i].p_offset + phdr [i].p_filesz);
 				if (phdr->p_type != PT_LOAD) {
 					continue;
 				}
@@ -79,19 +85,13 @@ NATIVE_CALL BOOL process_packets (
 				UINT_PTR seg_lo = phdr->p_vaddr & ~(phdr->p_align - 1);
 				UINT_PTR seg_hi = phdr->p_vaddr + phdr->p_memsz;
 				
-				if (seg_lo < lo) { lo = seg_lo }
-				if (seg_hi > hi) { hi = seg_hi }
-
-				if (img_end > img_sz) { 
-					if (offset + img_end > remaining) {
-						arena_realloc (data, data_sz, *(data_sz) + DEFAULT_ARENA_SIZE + img_sz);
-					}
-
-					MoveMemory (image_base + img_end, img_base + phdr->e_filesz, remaining);
-					remaining += DEFAULT_ARENA_SIZE + img_sz;
-				}
+				if (seg_lo < lo) { lo = seg_lo; }
+				if (seg_hi > hi) { hi = seg_hi; }
 			}
 		}
+
+		UINT_PTR expanded = hi - lo;
+		UINT_PTR delta = expanded - file_sz;
 
 		offset 		+= img_sz;
 		image_base 	+= img_sz;
@@ -102,8 +102,7 @@ NATIVE_CALL BOOL process_packets (
 			image_base = *data + offset;
 		}
 
-		new_vms->count 	+= 1;
-		n_threads 		-= 1;
+		new_vms->count += 1;
 	}
 	return true;
 }
