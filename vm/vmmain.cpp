@@ -3,8 +3,8 @@
 
 
 struct PACKET_SEG { 
-	UINT_PTR 	images	[8]; 
-	UINT_PTR 	params 	[8];
+	UINT_PTR 	image_offset [8]; 
+	UINT_PTR 	param_offset [8];
 	SIZE_T 		count; 
 };
 
@@ -15,19 +15,18 @@ NATIVE_CALL BOOL is_elf (_In_ UINT_PTR base) {
 }
 
 
-NATIVE_CALL BOOL process_packets ( // process ELF params and headers
+NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the arena
 		_Inout_ 	UINT_PTR* 		data,
 		_Inout_ 	SIZE_T* 		data_size,
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
 	UINT_PTR image_base = *data;
+	UINT_PTR offset = 0;
+
 	SIZE_T total_size = 0;
 
 	for (int i = 0; i < 8; i++) {
-		// PARAM_MAGIC, 
-		// PARAM_SIZE, 
-		// PARAM_DATA -> ELF
-		if (is_param (image_base) && remaining >= PARAM_HEADER_SIZE) {
+		if (is_param (image_base)) {
 			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or however long offset
 														  
 			param_size += PARAM_HEADER_SIZE;
@@ -36,15 +35,18 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 			if (total_size > *data_size) { // find a way to make this easy. not too big or too small of a realloc
 				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
 			}
-			new_vms->params [i] = image_base;
-			image_base += param_size;
+
+			offset += total size;
+			new_vms->param_offset [i] = offset;
+
+			image_base += offset;
 		}
 
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
 
-		new_vms->images [i] = image_base;
+		new_vms->image_offset [i] = offset;
 		new_vms->count += 1;
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
@@ -60,11 +62,13 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 		}
 
 		total_size += prg_size;
-		if (total_size > data_size) {
-			// return false or resize the arena
+		image_base += prg_size;
+
+		if (total_size > *data_size) {
+			arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
 		}
 
-		image_base += prg_size;
+		offset += total_size;
 	}
 	return true;
 }
