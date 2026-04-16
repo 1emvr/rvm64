@@ -51,6 +51,7 @@ DATA_SCN OPCODE EncodingTable [] = {
 };
 
 
+// TODO: Do not decrypt the table indicies directly.. instead find a way to copy them and decrypt locally.
 VMCALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Decoded = 0;
 	UINT8 Opcode7 = Opcode & 0x7F;
