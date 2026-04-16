@@ -12,8 +12,6 @@
 #include "vmveh.hpp"
 
 	VM_CALL VOID MemoryInit () {
-		Vmcs->Context->VehHandle = AddVectoredExceptionHandler (1, ExceptionHandler);
-																	
 		Vmcs->Self 			= (UINT64) Vmcs;
 		vmcs->Proc.Memory 	= (UINT64) VirtualAlloc(nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
@@ -31,35 +29,27 @@
 			CSR_SET_TRAP(0, OutOfMemory, 0, 0, 1);
 		}
 
+		Vmcs->Context->VehHandle = AddVectoredExceptionHandler (1, ExceptionHandler);
 		Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw->Stack + sizeof (Vmcs->Hdw.Stack));
 	}
 
-	VM_CALL void VmMemoryFree() {
-		RemoveVectoredExceptionHandler(veh_handle);
-		veh_handle = 0;
+	VM_CALL VOID MemoryFree () {
+		RemoveVectoredExceptionHandler (Vmcs->Context->VehHandle);
+		Vmcs->Context->VehHandle = 0;
 
-		if (vmcs->proc.buffer) {
-			VirtualFree((LPVOID)vmcs->proc.buffer, 0, MEM_RELEASE);
-			vmcs->proc.buffer = 0;
-		}
-		if (vmcs->hdw) {
-			VirtualFree(vmcs->hdw, 0, MEM_RELEASE);
-			vmcs->hdw = 0;
+		if (Vmcs->Proc.Memory) {
+			VirtualFree ((LPVOID)Vmcs->Proc.Memory, 0, MEM_RELEASE);
+			Vmcs->Proc.Memory = 0;
 		}
 
-		vmcs->proc.size   		= 0;
-		vmcs->proc.write_size 	= (UINT64)0;
-		vmcs->proc.ready 		= (UINT64)0;
+		vmcs->Proc.MemorySize   = 0;
+		vmcs->Proc.Ready 		= 0;
 
-		vmcs->size_ptr 			= (UINT64)0;
-		vmcs->write_size_ptr 	= (UINT64)0;
-		vmcs->ready_ptr 		= (UINT64)0;
-
-		vmcs->magic1 = 0;
-		vmcs->magic2 = 0;
+		Vmcs->Magic1 = 0;
+		Vmcs->Magic2 = 0;
 	}
 
-	VM_CALL void VmEntry() {
+	VM_CALL VOID VmEntry () {
 		volatile void *_pad0 = 0;
 		if (setjmp(vmcs->hdw->trap_handler)) {}
 

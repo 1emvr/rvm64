@@ -5,6 +5,25 @@
 
 #include "vmentry.hpp"
 
+
+VM_CALL VOID VmEntry () {
+	volatile LPVOID Pad0 = 0;
+
+	if (setjmp (Vmcs->Context->TrapHandle)) { } // NOTE: RETURN FROM INTERUPT
+	while (true) {
+		INT32 Opcode = *(INT32*) Vmcs->Hdw->Pc;
+
+		if (Opcode == RV64_RET) {
+			if (! PROCESS_MEMORY_IN_BOUNDS(Vmcs->Hdw->Regs [RA])) {
+				CSR_SET_TRAP(nullptr, EnvExit, 0, 0, 1);
+			}
+		}
+
+		VmDecode (Opcode); 
+		Vmcs->Hdw->Pc += 4;
+	}
+}
+
 NATIVE_CALL INT32 VmMain (
 		_In_ const UINT64 Magic1, 
 		_In_ const UINT64 Magic2) 
