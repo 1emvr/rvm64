@@ -7,34 +7,84 @@
 #define PROT_EXEC	0x4		
 #define PROT_SEM	0x8	
 
-	typedef struct {
-		UINT_PTR 	GuestAddr;
-		UINT_PTR 	HostAddr;
-		SIZE_T 		Length;
-	} PAGE_TABLE;
 
-	VM_DATA EXEC_REGION PageTable [128] = { };
-	VM_DATA static SIZE_T PageCount = 0;
+VM_CALL VOID MemoryInit () {
+	Vmcs->Self 			= (UINT64) Vmcs;
+	vmcs->Proc.Memory 	= (UINT64) VirtualAlloc(nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-	NATIVE_CALL BOOL MemoryRegister (_Out_ UINT_PTR* Guest, _In_ const UINT_PTR Host, _In_ const SIZE_T Length) {
-		if (PageCount >= 128 || Host == 0 || Guest == 0) {
-			return false;
-		}
-		if (*Guest == (UINT_PTR)0) {
-			*Guest = (UINT_PTR)Host;
-		}
-		for (auto& Entry : PageTable) {
-			if (Entry.GuestAddr == 0) {
-				Entry = { *Guest, Host, Length };
-
-				PageCount++;
-				return true;
-			}
-		}
-		return false;
+	if (!Vmcs->Proc.Memory) {
+		CSR_SET_TRAP(Vmcs->Gpr->Pc, GetLastError (), 0, 0, 1);
+		return;
 	}
 
-NATIVE_CALL BOOL MemoryUnregister (_In_ const UINT_PTR guest) {
+	Vmcs->Proc.MemorySize   = DEFAULT_PROC_SIZE;
+	Vmcs->Proc.Ready 		= (UINT64)0;
+
+	Vmcs->Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+	if (!Vmcs->Context) {
+		CSR_SET_TRAP(0, OutOfMemory, 0, 0, 1);
+	}
+
+	Vmcs->Context->VehHandle = AddVectoredExceptionHandler (1, ExceptionHandler);
+	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw->Stack + sizeof (Vmcs->Hdw.Stack));
+}
+
+
+VM_CALL VOID MemoryFree () {
+	RemoveVectoredExceptionHandler (Vmcs->Context->VehHandle);
+	Vmcs->Context->VehHandle = 0;
+
+	if (Vmcs->Proc.Memory) {
+		VirtualFree ((LPVOID)Vmcs->Proc.Memory, 0, MEM_RELEASE);
+		Vmcs->Proc.Memory = 0;
+	}
+
+	vmcs->Proc.MemorySize   = 0;
+	vmcs->Proc.Ready 		= 0;
+
+	Vmcs->Magic1 = 0;
+	Vmcs->Magic2 = 0;
+}
+
+
+typedef struct {
+	UINT_PTR 	GuestAddr;
+	UINT_PTR 	HostAddr;
+	SIZE_T 		Length;
+} PAGE_TABLE;
+
+
+VM_DATA PAGE_TABLE PageTable [128] = { };
+VM_DATA static SIZE_T PageCount = 0;
+
+
+NATIVE_CALL BOOL MemoryRegister (
+		_Out_ 		UINT_PTR* 	Guest, 
+		_In_ const 	UINT_PTR 	Host, 
+		_In_ const 	SIZE_T 		Size) 
+{
+	if (PageCount >= 128 || Host == 0 || Guest == 0) {
+		return false;
+	}
+	if (*Guest == (UINT_PTR)0) {
+		*Guest = (UINT_PTR)Host;
+	}
+	for (auto& Entry : PageTable) {
+		if (Entry.GuestAddr == 0) {
+			Entry = { *Guest, Host, Size };
+			PageCount++;
+
+			return true;
+		}
+	}
+	return false;
+}
+
+
+NATIVE_CALL BOOL MemoryUnregister (
+		_In_ const UINT_PTR Guest) 
+{
 	if (Guest == 0 || PageCount == 0) {
 		return false;
 	}
@@ -46,13 +96,17 @@ NATIVE_CALL BOOL MemoryUnregister (_In_ const UINT_PTR guest) {
 
 			PageTable [PageCount - 1] = { 0, 0, 0 };
 			--PageCount;
+
 			return true;
 		}
 	}
 	return false;
 }
 
-NATIVE_CALL UINT8* MemoryCheck (_In_ const UINT_PTR guest) {
+
+NATIVE_CALL UINT8* MemoryCheck (
+		_In_ const UINT_PTR guest) 
+{
 	if (Guest == 0) {
 		return nullptr;
 	}
@@ -64,6 +118,26 @@ NATIVE_CALL UINT8* MemoryCheck (_In_ const UINT_PTR guest) {
 	}
 	return nullptr;
 }
+
+
+template <typename T>
+NATIVE_CALL VOID CheckMemory (
+		_In_ 	const T		Type, 
+		_Inout_ UINT_PTR* 	Address) 
+{
+	UINT_PTR Heap = MemoryCheck (Address); // check if this is v-heap memory. if found in the table, will return the real address.
+	if (Heap) {  																	
+		*Address = (UINT_PTR)Heap; 													
+		return;
+	} 																			
+	if ((*Address) % sizeof (Type) != 0) {                                         	
+		CSR_SET_TRAP (Vmcs->hdw->Pc, LoadAddressMiss, 0, *Address, 1);       
+	}                                                                      		
+	if (! STACK_MEMORY_IN_BOUNDS (*Address) && ! PROCESS_MEMORY_IN_BOUNDS (*Address)) {		
+		CSR_SET_TRAP (Vmcs->Hdw->Pc, LoadAccessFault, 0, *Address, 1);      		
+	} 																			
+}
+
 
 DWORD TranslateLinuxProt (
 		_In_ const UINT32 Prot) 
@@ -90,24 +164,5 @@ DWORD TranslateLinuxProt (
 	}
 
 	return PAGE_NOACCESS;
-}
-
-
-template <typename T>
-NATIVE_CALL VOID CheckMemory (
-		_In_ 	const T, 
-		_Inout_ UINT_PTR* Address) 
-{
-	UINT_PTR Heap = MemoryCheck (Address); // check if this is v-heap memory. if found in the table, will return the real address.
-	if (Heap) {  																	
-		*Address = (UINT_PTR)Heap; 													
-		return;
-	} 																			
-	if ((*Address) % sizeof (T) != 0) {                                         	
-		CSR_SET_TRAP (Vmcs->hdw->Pc, LoadAddressMiss, 0, *Address, 1);       
-	}                                                                      		
-	if (! STACK_MEMORY_IN_BOUNDS (*Address) && ! PROCESS_MEMORY_IN_BOUNDS (*Address)) {		
-		CSR_SET_TRAP (Vmcs->Hdw->Pc, LoadAccessFault, 0, *Address, 1);      		
-	} 																			
 }
 #endif // VMMU_H

@@ -12,16 +12,16 @@ VM_CALL VOID VmEntry () {
 	if (setjmp (Vmcs->Context->TrapHandler)) { } 
 
 	while (true) {
-		INT32 Opcode = *(INT32*) Vmcs->Hdw->Pc;
+		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
 		if (Opcode == RV64_RET) {
-			if (! PROCESS_MEMORY_IN_BOUNDS(Vmcs->Hdw->Regs [RA])) {
-				CSR_SET_TRAP(nullptr, EnvExit, 0, 0, 1);
+			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) {
+				CSR_SET_TRAP (nullptr, EnvExit, 0, 0, 1);
 			}
 		}
 
 		VmDecode (Opcode); 
-		Vmcs->Hdw->Pc += 4;
+		Vmcs->Hdw.Pc += 4;
 	}
 }
 
@@ -40,7 +40,7 @@ NATIVE_CALL INT32 VmMain (
 	PatchImportTable (); 									// NOTE: patch plt -> entrypoint
 	VmEntry ();
 
-	if (setjmp (Vmcs->ExitHandler)) {
+	if (setjmp (Vmcs->Context->ExitHandler)) {
 		goto defer;	
 	}
 
@@ -48,7 +48,7 @@ defer:
 	MemoryFree ();
 	RestoreHostContext ();
 
-	return Vmcs->Csr->Cause;
+	return Vmcs->Csr.Cause;
 }
 
 int main () {
