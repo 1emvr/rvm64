@@ -24,123 +24,129 @@ constexpr const char *C_MMAP = "mmap";
 constexpr const char *C_MUNMAP = "munmap";
 constexpr const char *C_MPROTECT = "mprotect";
 
-	struct ucrt_function {
-		LPVOID Address;
-		const CHAR *name;
 
-		enum {
-			OPEN, READ, WRITE, CLOSE, LSEEK, STAT64, MALLOC, FREE,
-			MEMCPY, MEMSET, STRLEN, STRCPY, MMAP, MUNMAP, MPROTECT,
-			UNKNOWN
-		} typenum;
+typedef struct {
+	const CHAR* Original;
+	const CHAR* Alias;
+} UCRT_ALIAS;
 
-		union {
-			INT 	(__cdecl* open)(PCHAR, INT, INT);
-			INT 	(__cdecl* read)(INT, LPVOID, UINT);
-			INT 	(__cdecl* write)(INT, LPVOID, UINT);
-			INT 	(__cdecl* close)(INT);
-			LONG 	(__cdecl* lseek)(INT, LONG, INT);
-			INT 	(__cdecl* stat64)(const CHAR *, LPVOID);
-			LPVOID 	(__cdecl* malloc)(SIZE_T);
-			VOID 	(__cdecl* free)(LPVOID);
-			LPVOID 	(__cdecl* memcpy)(LPVOID, LPVOID, SIZE_T);
-			LPVOID 	(__cdecl* memset)(LPVOID, INT, SIZE_T);
-			SIZE_T 	(__cdecl* strlen)(CHAR *);
-			CHAR * 	(__cdecl* strcpy)(CHAR *, CHAR *);
-			LPVOID 	(__stdcall* mmap)(LPVOID, SIZE_T, DWORD, DWORD); // aliased to VirtualAlloc
-			BOOL 	(__stdcall* munmap)(LPVOID, SIZE_T, DWORD); // aliased to VirtualFree
-			BOOL 	(__stdcall* mprotect)(LPVOID, SIZE_T, DWORD, PDWORD); // aliased to VirtualProtect
-		} Typecaster;
-	};
 
-	VM_DATA UCRT_FUNCTION FunctionTable[] = {
-		{ .Address = 0, .Name = C_OPEN, 	.Typenum = UCRT_FUNCTION::OPEN		}, 
-		{ .Address = 0, .Name = C_READ, 	.Typenum = UCRT_FUNCTION::READ		}, 
-		{ .Address = 0, .Name = C_WRITE, 	.Typenum = UCRT_FUNCTION::WRITE 	}, 
-		{ .Address = 0, .Name = C_CLOSE, 	.Typenum = UCRT_FUNCTION::CLOSE 	},
-		{ .Address = 0, .Name = C_LSEEK, 	.Typenum = UCRT_FUNCTION::LSEEK 	}, 
-		{ .Address = 0, .Name = C_STAT64, 	.Typenum = UCRT_FUNCTION::STAT64 	}, 
-		{ .Address = 0, .Name = C_MALLOC, 	.Typenum = UCRT_FUNCTION::MALLOC 	}, 
-		{ .Address = 0, .Name = C_FREE, 	.Typenum = UCRT_FUNCTION::FREE 		},
-		{ .Address = 0, .Name = C_MEMCPY, 	.Typenum = UCRT_FUNCTION::MEMCPY 	}, 
-		{ .Address = 0, .Name = C_MEMSET, 	.Typenum = UCRT_FUNCTION::MEMSET 	}, 
-		{ .Address = 0, .Name = C_STRLEN, 	.Typenum = UCRT_FUNCTION::STRLEN 	}, 
-		{ .Address = 0, .Name = C_STRCPY, 	.Typenum = UCRT_FUNCTION::STRCPY 	},
-		{ .Address = 0, .Name = C_MMAP, 	.Typenum = UCRT_FUNCTION::MMAP 		}, 
-		{ .Address = 0, .Name = C_MUNMAP, 	.Typenum = UCRT_FUNCTION::MUNMAP 	}, 
-		{ .Address = 0, .Name = C_MPROTECT, .Typenum = UCRT_FUNCTION::MPROTECT 	},
-	};
+typedef struct _ucrt_function {
+	const CHAR*	Name;
+	LPVOID 		Address;
 
-	typedef struct {
-		const CHAR *Original;
-		const CHAR *Alias;
-	} UCRT_ALIAS;
+	enum {
+		OPEN, READ, WRITE, CLOSE, LSEEK, STAT64, MALLOC, FREE,
+		MEMCPY, MEMSET, STRLEN, STRCPY, MMAP, MUNMAP, MPROTECT,
+		UNKNOWN
+	} Typenum;
 
-	VM_DATA UCRT_ALIAS AliasTable [] = {
-		{ "open",  "_open"  }, 
-		{ "read",  "_read"  }, 
-		{ "write", "_write" }, 
-		{ "close", "_close" }, 
-		{ "exit",  "_exit"  }, 
-		{ "mmap", "VirtualAlloc" }, 
-		{ "munmap", "VirtualFree" }, 
-		{ "mprotect", "VirtualProtect" }, 
-	};
+	union {
+		INT 	(__cdecl* open)(PCHAR, INT, INT);
+		INT 	(__cdecl* read)(INT, LPVOID, UINT);
+		INT 	(__cdecl* write)(INT, LPVOID, UINT);
+		INT 	(__cdecl* close)(INT);
+		LONG 	(__cdecl* lseek)(INT, LONG, INT);
+		INT 	(__cdecl* stat64)(const CHAR *, LPVOID);
+		LPVOID 	(__cdecl* malloc)(SIZE_T);
+		VOID 	(__cdecl* free)(LPVOID);
+		LPVOID 	(__cdecl* memcpy)(LPVOID, LPVOID, SIZE_T);
+		LPVOID 	(__cdecl* memset)(LPVOID, INT, SIZE_T);
+		SIZE_T 	(__cdecl* strlen)(CHAR *);
+		CHAR * 	(__cdecl* strcpy)(CHAR *, CHAR *);
+		LPVOID 	(__stdcall* mmap)(LPVOID, SIZE_T, DWORD, DWORD); // aliased to VirtualAlloc
+		BOOL 	(__stdcall* munmap)(LPVOID, SIZE_T, DWORD); // aliased to VirtualFree
+		BOOL 	(__stdcall* mprotect)(LPVOID, SIZE_T, DWORD, PDWORD); // aliased to VirtualProtect
+	} Typecaster;
+} UCRT_FUNCTION;
 
-	NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName) {
-		static HMODULE Ucrt = LoadLibraryA ("ucrtbase.dll");
-		static HMODULE Kern32 = LoadLibraryA ("kernel32.dll");
 
-		if (! Ucrt || ! Kern32) {
-			CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
+DATA_SCN UCRT_FUNCTION FunctionTable[] = {
+	{ .Address = 0, .Name = C_OPEN, 	.Typenum = UCRT_FUNCTION::OPEN		}, 
+	{ .Address = 0, .Name = C_READ, 	.Typenum = UCRT_FUNCTION::READ		}, 
+	{ .Address = 0, .Name = C_WRITE, 	.Typenum = UCRT_FUNCTION::WRITE 	}, 
+	{ .Address = 0, .Name = C_CLOSE, 	.Typenum = UCRT_FUNCTION::CLOSE 	},
+	{ .Address = 0, .Name = C_LSEEK, 	.Typenum = UCRT_FUNCTION::LSEEK 	}, 
+	{ .Address = 0, .Name = C_STAT64, 	.Typenum = UCRT_FUNCTION::STAT64 	}, 
+	{ .Address = 0, .Name = C_MALLOC, 	.Typenum = UCRT_FUNCTION::MALLOC 	}, 
+	{ .Address = 0, .Name = C_FREE, 	.Typenum = UCRT_FUNCTION::FREE 		},
+	{ .Address = 0, .Name = C_MEMCPY, 	.Typenum = UCRT_FUNCTION::MEMCPY 	}, 
+	{ .Address = 0, .Name = C_MEMSET, 	.Typenum = UCRT_FUNCTION::MEMSET 	}, 
+	{ .Address = 0, .Name = C_STRLEN, 	.Typenum = UCRT_FUNCTION::STRLEN 	}, 
+	{ .Address = 0, .Name = C_STRCPY, 	.Typenum = UCRT_FUNCTION::STRCPY 	},
+	{ .Address = 0, .Name = C_MMAP, 	.Typenum = UCRT_FUNCTION::MMAP 		}, 
+	{ .Address = 0, .Name = C_MUNMAP, 	.Typenum = UCRT_FUNCTION::MUNMAP 	}, 
+	{ .Address = 0, .Name = C_MPROTECT, .Typenum = UCRT_FUNCTION::MPROTECT 	},
+};
+
+
+VM_DATA UCRT_ALIAS AliasTable [] = {
+	{ "open",  "_open"  }, 
+	{ "read",  "_read"  }, 
+	{ "write", "_write" }, 
+	{ "close", "_close" }, 
+	{ "exit",  "_exit"  }, 
+	{ "mmap", "VirtualAlloc" }, 
+	{ "munmap", "VirtualFree" }, 
+	{ "mprotect", "VirtualProtect" }, 
+};
+
+
+NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName) {
+	static HMODULE Ucrt = LoadLibraryA ("ucrtbase.dll");
+	static HMODULE Kern32 = LoadLibraryA ("kernel32.dll");
+
+	if (! Ucrt || ! Kern32) {
+		CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
+	}
+
+	const CHAR *AliasName = SymName;
+
+	for (auto& i : AliasTable) {
+		if (strcmp (SymName, i.Original) == 0) {
+			AliasName = (const CHAR*) i.Alias;
+			break;
 		}
+	}
 
-		const CHAR *AliasName = SymName;
+	LPVOID Native = (LPVOID) GetProcAddress (Ucrt, AliasName);
 
-		for (auto& i : AliasTable) {
-			if (strcmp (SymName, i.original) == 0) {
-				AliasName = (const CHAR*) i.Alias;
-				break;
-			}
-		}
-
-		LPVOID Native = (LPVOID) GetProcAddress (Ucrt, AliasName);
+	if (! Native) {
+		Native = (LPVOID) GetProcAddress (Kern32, AliasName);
 
 		if (! Native) {
-			Native = (LPVOID) GetProcAddress (Kern32, AliasName);
-
-			if (! Native) {
-				CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, 1);
-			}
+			CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, 1);
 		}
-
-		for (auto& f : FunctionTable) {
-			if (strcmp (SymName, f.Name) == 0) {
-				f.Address = Native;
-				 
-				switch (f.Typenum) {
-					case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native; break;
-					case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; break;
-					case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; break;
-					case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; break;
-					case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; break;
-					case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; break;
-					case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; break;
-					case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; break;
-					case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; break;
-					case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; break;
-					case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; break;
-					case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; break;
-					case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; break;
-					case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; break;
-					case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; break;
-					default:  CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
-				}
-				break;
-			}
-		}
-		return Native;
 	}
+
+	for (auto& f : FunctionTable) {
+		if (strcmp (SymName, f.Name) == 0) {
+			f.Address = Native;
+
+			switch (f.Typenum) {
+				case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native; break;
+				case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; break;
+				case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; break;
+				case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; break;
+				case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; break;
+				case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; break;
+				case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; break;
+				case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; break;
+				case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; break;
+				case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; break;
+				case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; break;
+				case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; break;
+				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; break;
+				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; break;
+				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; break;
+				default:  CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
+			}
+			break;
+		}
+	}
+	return Native;
+}
+
 
 VMCALL VOID NativeCall () {
 	UCRT_FUNCTION *Api = nullptr;
