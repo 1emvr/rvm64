@@ -3,28 +3,29 @@
 
 
 NATIVE_CALL VOID VmMain () {
-	if (setjmp (Vmcs->Context->Interrupt)) {
-	} 
-	do {
-		if (Vmcs->Proc.Memory) {
-			MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
+	if (setjmp (Vmcs->Context->Interrupt)) { } 
+	do{
+		{
+			if (Vmcs->Proc.Memory) {
+				MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
+			}
+
+			MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
+			Vmcs->Context->Ready = 1;
+
+			while (Vmcs->Context.Halt) { 
+				Sleep (10); 
+			}
 		}
-		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
-		Vmcs->Context->Ready = 1;
+		{
+			LoadImage (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
+			PatchAndExecute (Vmcs->Proc.Memory); 		
 
-		while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
-			Sleep (10);
-		}
-
-		LoadImage (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
-		PatchAndExecute (Vmcs->Proc.Memory); 		
-
-		if (setjmp (Vmcs->Context->Shutdown)) { 
-			goto defer;	
+			if (setjmp (Vmcs->Context->Shutdown)) { 
+				return;	
+			}
 		}
 	} while (true);
-defer:
-	LoadRegisters (&Vmcs->Context->HostContext);
 }
 
 
@@ -42,5 +43,7 @@ NATIVE_CALL VOID VmStart (
 	SaveRegisters (&Vmcs->Context->HostContext);
 
 	VmMain ();
+
+	LoadRegisters (&Vmcs->Context->HostContext);
 	ContextRelease (&Vmcs->Context);
 }
