@@ -101,7 +101,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 		_In_ const CHAR *SymName) 
 {
 	if (! Vmcs->Module.Kernel32 || ! Vmcs->Module.Ucrt) {
-		CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
+		SetTrap (nullptr, ImageBadSymbol, 0, 0, 1);
 	}
 
 	const CHAR *AliasName = SymName;
@@ -118,7 +118,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 		Native = (LPVOID) GetProcAddress (Vmcs->Module.Kernel32, AliasName);
 
 		if (! Native) {
-			CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, 1);
+			SetTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, 1);
 		}
 	}
 
@@ -142,7 +142,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; break;
 				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; break;
 				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; break;
-				default:  CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, 0, 1);
+				default:  SetTrap (nullptr, ImageBadSymbol, 0, 0, 1);
 			}
 			break;
 		}
@@ -155,13 +155,13 @@ VM_CALL VOID NativeCall () {
 	UCRT_FUNCTION *Api = nullptr;
 
 	for (auto &f : FunctionTable) {
-		if (Vmcs->Gpr->Pc == (UINT_PTR)f.Address) {
+		if (Vmcs->Hdw.Pc == (UINT_PTR)f.Address) {
 			Api = &f;
 			break;
 		}
 	}
 	if (! Api) {
-		CSR_SET_TRAP (Vmcs->Gpr->Pc, ImageBadSymbol, 0, Vmcs->Gpr->Pc, 1);
+		SetTrap (Vmcs->Hdw.Pc, ImageBadSymbol, 0, Vmcs->Hdw.Pc, 1);
 	}
 
 	switch (Api->Typenum) {
@@ -333,7 +333,7 @@ VM_CALL VOID NativeCall () {
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
 
 				if (! MemoryUnregister ((UINT_PTR*)&Addr, HostMem, Len)) {
-					CSR_SET_TRAP (Vmcs->Gpr->Pc, OutOfMemory, 0, (UINT_PTR)Addr, 1);
+					SetTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, 1);
 				}
 
 				RegWrite(UINT_PTR, A0, Addr);
@@ -373,7 +373,7 @@ VM_CALL VOID NativeCall () {
 			}
 		default: 
 			{
-				CSR_SET_TRAP (Vmcs->Gpr->Pc, IllegalInstruction, 0, Api->Typenum, 1);
+				SetTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Api->Typenum, 1);
 			}
 	}
 }
