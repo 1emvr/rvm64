@@ -8,7 +8,7 @@
 #include "rvni.hpp"
 #define LONGJMP(addr, b) longjmp(addr, b); VM_UNREACHABLE()
 
-LONG CALLBACK VmExceptionHandler (PEXCEPTION_POINTERS ExceptionInfo) {
+LONG CALLBACK InteruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
 	CONTEXT *WinCtx = ExceptionInfo->ContextRecord;
 

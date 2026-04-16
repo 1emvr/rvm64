@@ -2,12 +2,12 @@
 #include "vmctx.inc"
 
 .text
-.extern vm_context
-.extern host_context
+.extern VmContext
+.extern HostContext
 
-.global save_host_context
-save_host_context:
-    lea     rdi, [rip + host_context]
+.global SaveHostContext
+SaveHostContext:
+    lea     rdi, [rip + HostContext]
 
     mov     [rdi + OFFSET_RSP], rsp
     mov     [rdi + OFFSET_RAX], rax
@@ -33,8 +33,8 @@ save_host_context:
     ret
 
 .global restore_host_context
-restore_host_context:
-    lea     rsi, [rip + host_context]
+RestoreHostContext:
+    lea     rsi, [rip + HostContext]
 
     mov     rax, [rsi + OFFSET_RAX]
     mov     rbx, [rsi + OFFSET_RBX]
@@ -58,9 +58,9 @@ restore_host_context:
     ret
 
 
-.global save_vm_context
-save_vm_context:
-    lea     rdi, [rip + vm_context]
+.global SaveVmContext
+SaveVmContext:
+    lea     rdi, [rip + VmContext]
 
     mov     [rdi + OFFSET_RAX], rax
     mov     [rdi + OFFSET_RBX], rbx
@@ -85,9 +85,9 @@ save_vm_context:
     ret
 
 
-.global restore_vm_context
-restore_vm_context:
-    lea     rsi, [rip + vm_context]
+.global RestoreVmContext
+RestoreVmContext:
+    lea     rsi, [rip + VmContext]
 
     mov     rax, [rsi + OFFSET_RAX]
     mov     rbx, [rsi + OFFSET_RBX]
