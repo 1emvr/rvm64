@@ -6,13 +6,13 @@
 
 #include "vmcommon.hpp"
 
-#define NATIVE_CALL   	//__attribute__((section(".text$B")))
+#define NATIVE_CALL   	//__attribute__((section(".text$B"))) __stdcall
 #define VM_CALL   		//__attribute__((section(".text$B"))) __attribute__((calling_convention("custom")))
-#define VM_RDATA    	__attribute__((section(".rdata")))
+#define RDATA_SCN    	__attribute__((section(".rdata")))
 #define DATA_SCN     	__attribute__((section(".data")))
 
-#define NtCurrentProcess()      ((HANDLE)(LONG_PTR)-1)
-#define NtCurrentThread()       ((HANDLE)(LONG_PTR)-2)
+#define NtCurrentProcess ()      ((HANDLE)(LONG_PTR)-1)
+#define NtCurrentThread ()       ((HANDLE)(LONG_PTR)-2)
 
 #define RVM_TRAP_EXCEPTION      0xE0424242
 #define DEFAULT_PROC_SIZE     	0x10000
@@ -25,7 +25,17 @@
 #define RV64_RET                0x00008067
 
 
-// Safe MIN/MAX that work on both compilers
+#define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
+	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
+	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
+
+
+#define STACK_MEMORY_IN_BOUNDS (addr) 									\
+	((addr) >= (uintptr_t)vmcs->hdw->vstack && 							\
+	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
+
+
+
 #define MIN (a, b) ([] (auto _a, auto _b) { return _a < _b ? _a : _b; } ((a),(b)))
 #define MAX (a, b) ([] (auto _a, auto _b) { return _a > _b ? _a : _b; } ((a),(b)))
 

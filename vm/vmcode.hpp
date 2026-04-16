@@ -21,6 +21,17 @@
 	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
 
 
+#define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
+	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
+	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
+
+
+#define STACK_MEMORY_IN_BOUNDS (addr) 									\
+	((addr) >= (uintptr_t)vmcs->hdw->vstack && 							\
+	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
+
+
+
 VOID Opcall (
 		_In_ const UINT32 Index) 
 {
