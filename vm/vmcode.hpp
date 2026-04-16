@@ -2,34 +2,11 @@
 #define VMCODE_H
 #include <stdarg.h>
 
-#include "../include/vmmain.hpp"
-#include "../include/vmmem.hpp"
-
+#include "vmmain.hpp"
+#include "vmmem.hpp"
 #include "vmutils.hpp"
 #include "vmcrypt.hpp"
-#include "vmrwx.hpp"
 #include "vmmu.hpp"
-
-
-#define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
-	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
-	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
-
-
-#define STACK_MEMORY_IN_BOUNDS (addr) 									\
-	((addr) >= (uintptr_t)vmcs->hdw->vstack && 							\
-	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
-
-
-#define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
-	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
-	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
-
-
-#define STACK_MEMORY_IN_BOUNDS (addr) 									\
-	((addr) >= (uintptr_t)vmcs->hdw->vstack && 							\
-	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
-
 
 
 VOID Opcall (
@@ -62,8 +39,6 @@ VM_CALL VOID VmExecute () {
 		Vmcs->Hdw.Pc += 4;
 	}
 }
-
-
 
 
 // TODO: Change reg read/write from macros to functions for size.

@@ -26,20 +26,19 @@ unsigned char code[] =
 "\xd5\x63\x61\x6c\x63\x2e\x65\x78\x65\x00";
 
 extern "C" int main() {
-	size_t size = sizeof(code);
-	void *buffer = mmap(nullptr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, 3, 0);
+	size_t size = sizeof (code);
+	void *buffer = mmap (nullptr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, 3, 0);
 
 	if (buffer == nullptr) {
 		return -1;
 	}
 
-	memset(buffer, 0xcc, size);
-	__debugbreak();
-	memcpy(buffer, (void*)code, size);
+	memset (buffer, 0xcc, size);
+	memcpy (buffer, (void*)code, size);
 
 	void (*fn)() = (void(*)())buffer;
 	fn();
 
-	munmap(buffer, sizeof(code));
+	munmap (buffer, sizeof (code));
 	return 0;
 }
