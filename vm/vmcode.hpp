@@ -38,7 +38,6 @@ VM_CALL VOID VmExecute () {
 	}
 }
 
-// TODO: Opcode randomization
 DATA_SCN OPCODE EncodingTable [] = {
 	{0b1010011, RTYPE}, {0b1000011, RTYPE}, {0b0110011, RTYPE}, {0b1000111, R4TYPE}, {0b1001011, R4TYPE}, {0b1001111, R4TYPE},
 	{0b0000011, ITYPE}, {0b0001111, ITYPE}, {0b1100111, ITYPE}, {0b0010011, ITYPE}, {0b1110011, ITYPE}, {0b0011011, ITYPE},
@@ -46,11 +45,13 @@ DATA_SCN OPCODE EncodingTable [] = {
 };
 
 
+// TODO: Opcode randomization for the entire decoding process.  Opcode-7 + Func-3 values can be randomized.
+
 VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Decoded = 0;
 	UINT8 Opcode7 = Opcode & 0x7F;
 
-	for (int idx = 0; idx < sizeof (ENCODING); idx++) {
+	for (int idx = 0; idx < sizeof (OPCODE); idx++) {
 		if (EncodingTable [idx].Mask == Opcode7) {
 			Decoded = EncodingTable [idx].Type;
 			break;
@@ -89,8 +90,8 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 								case 0b111: { ScrWrite (INT32, Imm, imm_i (Opcode)); Opcall (_ANDI); break; }
 								case 0b001: { ScrWrite (INT32, Imm, shamt_i (Opcode)); Opcall (_SLLI); break; }
 								case 0b101: {
-												UINT8 Func7 = (Opcode >> 25) & 0x7F; 
-												switch(Func7) {
+												UINT8 Msb = (Opcode >> 25) & 0x7F; 
+												switch(Msb) {
 													case 0b0000000: { ScrWrite (INT32, Imm, shamt_i (Opcode)); Opcall (_SRLI); break; }
 													case 0b0100000: { ScrWrite (INT32, Imm, shamt_i (Opcode)); Opcall (_SRAI); break; }
 													default: break;
@@ -107,8 +108,8 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 								case 0b001: { ScrWrite (INT32, Imm, shamt_i (Opcode)); Opcall (_SLLIW); break; }
 								case 0b101: 
 											{
-												UINT8 Func7 = (Opcode >> 25) & 0x7F;
-												switch(Func7) {
+												UINT8 Msb = (Opcode >> 25) & 0x7F;
+												switch(Msb) {
 													case 0b0000000: { ScrWrite (INT32, Imm, shamt_i (Opcode)); Opcall (_SRLIW); break; }
 													case 0b0100000: { ScrWrite (INT32, Imm, shamt_i (Opcode)); Opcall (_SRAIW); break; }
 													default: break;
