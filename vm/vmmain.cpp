@@ -12,8 +12,6 @@ NATIVE_CALL VOID VmMain () {
 		}
 
 		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
-		Vmcs->Context->Ready = 1;
-
 		while (Vmcs->Context.Halt) { 
 			Sleep (10); 
 		}

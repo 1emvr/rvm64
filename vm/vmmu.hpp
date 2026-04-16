@@ -64,6 +64,7 @@ VM_CALL VOID MemoryInit (
 	Vmcs->Module.Ucrtbase = GetModuleHandle ("ucrtbase.dll");
 
 	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw.Stack + sizeof (Vmcs->Hdw.Stack));
+	Vmcs->Context.Ready = 1;
 }
 
 
