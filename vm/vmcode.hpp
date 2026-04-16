@@ -15,8 +15,8 @@ VOID Opcall (
 	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
 	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
 
-	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)()) b;											
-	operation ();													
+	VOID (VM_CALL *Operation)() = (VOID (VM_CALL*)()) b;											
+	Operation ();													
 }
 
 
@@ -25,10 +25,6 @@ VM_CALL VOID Decode (_In_ const UINT32);
 
 VM_CALL VOID VmExecute () {
 	if (setjmp (Vmcs->Context->Branch)) { } 
-	if (Vmcs->Context->Halt) {
-		return;
-	}
-
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
@@ -37,7 +33,6 @@ VM_CALL VOID VmExecute () {
 				SetCsrTrap (nullptr, EnvExit, 0, 0, 1);
 			}
 		}
-
 		Decode (Opcode); 
 		Vmcs->Hdw.Pc += 4;
 	}

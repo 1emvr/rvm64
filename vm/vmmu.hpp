@@ -113,7 +113,7 @@ VM_CALL VOID SetLoadRsv (
 		_In_ const INT 		HartId, 
 		_In_ const UINT_PTR Address) 
 {
-	WaitForSingleObject (Vmcs->Context->RWMutex, INFINITE);
+	WaitForSingleObject (Vmcs->Context->MutexRW, INFINITE);
 
 	Vmcs->Context->LoadRsvAddress = Address; // vmcs_array[hart_id]->load_rsv_addr = address;
 	Vmcs->Context->LoadRsvValid = true; // vmcs_array[hart_id]->load_rsv_valid = true;
