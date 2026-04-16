@@ -8,39 +8,39 @@
 #include "rvni.hpp"
 #define LONGJMP(addr, b) longjmp(addr, b); VM_UNREACHABLE()
 
-LONG CALLBACK vm_exception_handler(PEXCEPTION_POINTERS exception_info) {
-	CONTEXT *winctx = exception_info->ContextRecord;
-	DWORD code = exception_info->ExceptionRecord->ExceptionCode;
+LONG CALLBACK VmExceptionHandler (PEXCEPTION_POINTERS ExceptionInfo) {
+	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
+	CONTEXT *WinCtx = ExceptionInfo->ContextRecord;
 
-	vmcs->hdw->csr.m_cause = code;
-	vmcs->hdw->csr.m_epc = winctx->Rip;
+	Vmcs->Csr.Cause 	= code;
+	Vmcs->Csr.Epc 		= WinCtx->Rip;
 
-	if (code == STATUS_SINGLE_STEP) {
+	if (Code == STATUS_SINGLE_STEP) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
-	if (vmcs->halt || code != RVM_TRAP_EXCEPTION) {
-		LONGJMP(vmcs->hdw->exit_handler, true);
+	if (Vmcs->Halt || Code != RVM_TRAP_EXCEPTION) {
+		longjmp (Vmcs->ExitHandler, true);
 	}
 
-	switch (vmcs->hdw->csr.m_cause) {
-		case environment_exit: 		LONGJMP(vmcs->hdw->exit_handler, true);
-		case environment_branch: 	LONGJMP(vmcs->hdw->trap_handler, true);
-		case environment_execute:
+	switch (Vmcs->Csr.m_cause) {
+		case EnvExit: 	longjmp (Vmcs->ExitHandler, true);
+		case EnvBranch: longjmp (Vmcs->TrapHandler, true);
+		case EnvExecute:
 		{
-			void (__stdcall *memory)() = (void (__stdcall*)()) vmcs->hdw->pc;
-			memory();
+			VOID (__stdcall *Memory) () = (VOID (__stdcall*) ()) Vmcs->Gpr->Pc;
+			Memory();
 			break;
 		}
-		case environment_call_native: 
+		case EnvNative: 
 		{
-			rvm64::rvni::vm_native_call();
+			VmNativeCall ();
 			break;
 		}
 		default: 
 			break;
 	}
 
-	reg_read(uintptr_t, vmcs->hdw->pc, regenum::ra); 
-	LONGJMP(vmcs->hdw->trap_handler, true); 
+	RegRead (UINT_PTR, Vmcs->Gpr.pc, regenum::ra); 
+	longjmp (Vmcs->TrapHandler, true); 
 }
 #endif //VMVEH_H

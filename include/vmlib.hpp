@@ -3,16 +3,16 @@
 #include <stdint.h>
 #include <windows.h>
 
-void x_memcpy(void *dst, const void *const src, const size_t n) {
+VOID vm_memcpy (LPVOID dst, const LPVOID const src, const SIZE_T n) {
     const auto a = (uint8_t*) dst;
     const auto b = (const uint8_t*) src;
 
     for (size_t i = 0; i < n; i++) {
-        a[i] = b[i];
+        a [i] = b [i];
     }
 }
 
-void *x_memset(void *const dst, const int val, size_t len) {
+void* vm_memset(void *const dst, const int val, size_t len) {
     auto ptr = (uint8_t*) dst;
     while (len-- > 0) {
         *ptr++ = val;

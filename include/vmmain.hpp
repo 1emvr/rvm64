@@ -13,74 +13,73 @@ typedef struct {
 	SIZE_T size;
 } win_process;
 
-typedef struct _hardware {
-	uint64_t pc;
-	uint64_t vscratch[8];
-	uint64_t vregs[32];
-	uint64_t vstack[32];
-
-	struct {
-		uintptr_t m_epc;
-		uintptr_t m_cause;
-		uintptr_t m_status;
-		uintptr_t m_tval;
-	} csr;
-
-	jmp_buf trap_handler;
-	jmp_buf exit_handler;
-} hardware;
 
 typedef struct _vmcs {
-    uint64_t magic1, magic2;
-	uint64_t thread_id;
+    UINT64 magic1, magic2;
+	UINT64 thread_id;
 
-	uint64_t self;
-	uint64_t ready_ptr;	
-	uint64_t size_ptr;
-	uint64_t write_size_ptr;
+	UINT64 self;
+	UINT64 ready_ptr;	
+	UINT64 size_ptr;
+	UINT64 write_size_ptr;
+
+	typedef struct _hardware {
+		UINT64 pc;
+		UINT64 vscratch[8];
+		UINT64 vregs[32];
+		UINT64 vstack[32];
+
+		struct {
+			UINT_PTR m_epc;
+			UINT_PTR m_cause;
+			UINT_PTR m_status;
+			UINT_PTR m_tval;
+		} csr;
+
+		jmp_buf trap_handler;
+		jmp_buf exit_handler;
+	} hardware;
 
 	struct {
-		uint64_t buffer;
-		uint64_t size;
-		uint64_t write_size;   
-		volatile uint64_t ready;   
+		UINT64 buffer;
+		UINT64 size;
+		UINT64 write_size;   
+		volatile UINT64 ready;   
 	} proc;
 							   
-	hardware* hdw;
-	uint64_t load_rsv_addr;
-	uint64_t load_rsv_valid;
+	UINT64 load_rsv_addr;
+	UINT64 load_rsv_valid;
 
-	int cache;
-	int trap;
-	int halt;
+	INT cache;
+	INT trap;
+	INT halt;
 } vmcs_t;
 
 
 struct intel_t {
-    uint64_t rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
-    uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
-    uint64_t rflags;
+    UINT64 rip, rsp, rax, rbx, rcx, rdx, rsi, rdi, rbp;
+    UINT64 r8, r9, r10, r11, r12, r13, r14, r15;
+    UINT64 rflags;
 };
 
 #include "vmport.hpp"
+
 #ifdef __cplusplus
-VM_EXTERN_C {
+extern "C" {
 #endif
+	extern const UINT_PTR dispatch_table [256];
 
-	void save_host_context();
-	void restore_host_context();
-	void save_vm_context();
-	void restore_vm_context();
+	VOID SaveHostContext ();
+	VOID RestoreHostContext ();
+	VOID SaveVmContext ();
+	VOID RestoreVmContext ();
 
-	VM_DATA vmcs_t* vmcs = { };
-	VM_DATA HANDLE vmcs_mutex = 0;
-	VM_DATA HANDLE veh_handle = 0;
+	VM_DATA VMCS* 	Vmcs 		= { };
+	VM_DATA HANDLE 	VmcsMux 	= 0;
+	VM_DATA HANDLE 	VehHandle 	= 0;
 
-	VM_DATA intel_t host_context = { };
-	VM_DATA intel_t vm_context = { };
-
-	extern const uintptr_t dispatch_table[256];
-
+	VM_DATA INTEL HostContext 	= { };
+	VM_DATA INTEL VmContext 	= { };
 #ifdef __cplusplus
 }
 #endif
