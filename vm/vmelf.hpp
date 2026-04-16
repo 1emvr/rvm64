@@ -202,92 +202,103 @@ typedef struct {
 	static UINT_PTR ElfBase = 0;   // min p_vaddr of PT_LOAD
 	static UINT_PTR g_img_size = 0;   // relocated image size (copied into vm bufEhdrr)
 
-	NATIVE VOID LoadImage (
-			_In_ UINT_PTR 		Memory, 
-			_In_ const SIZE_T 	MemorySize) 
+NATIVE VOID LoadImage (
+		_In_ const UINT_PTR Memory, 
+		_In_ const SIZE_T 	MemorySize) 
+{
+	const UINT8 *File 		= (const UINT8*)Memory;
+	const ELF64_EHDR *Ehdr 	= (const ELF64_EHDR*)File;
+
+	UINT_PTR base = UINT64_MAX, end = 0;
+	if (
+			File [0] != 0x7F || 
+			File [1] !='E' ||
+			File [2] !='L' ||
+			File [3] !='F') 
 	{
-		const UINT8 *File = (const UINT8*)Memory;
-		const ELF64_EHDR *Ehdr = (const ELF64_EHDR*)File;
+		CSR_SET_TRAP (nullptr, ImageBadType, 0, 0, 1);
+	}
+	if (
+			Ehdr->e_ident [EI_CLASS] != ELFCLASS64 || 
+			Ehdr->e_ident [EI_DATA] != 1 || 
+			Ehdr->e_machine != EM_RISC) 
+	{
+		CSR_SET_TRAP (nullptr, ImageBadType, 0, 0, 1);
+	}
 
-		UINT_PTR base = UINT64_MAX, end = 0;
+	const UINT_PTR VirtualSize = (UINT_PTR)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
+	if (VirtualSize > MemorySize) {
+		CSR_SET_TRAP(nullptr, ImageBadLoad, 0, 0, 1);
+	}
 
-		if (!(File [0]==0x7F && File [1]=='E' && File [2]=='L' && File [3]=='F')) {
-			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
+	const ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
+
+	for (int i = 0; i < Ehdr->e_phnum; ++i) {
+		const auto& Ph = Fph [i];
+
+		if (Ph.p_type == PT_LOAD) {
+			base = MIN (base, Ph.p_vaddr); // NOTE: what tf is base?
+			end  = MAX (end,  Ph.p_vaddr + Ph.p_memsz);
 		}
-		if (Ehdr->e_ident [EI_CLASS] != ELFCLASS64 || Ehdr->e_ident [EI_DATA] != 1 || Ehdr->e_machine != EM_RISC) {
-			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
+	}
+	if (base == UINT64_MAX || end <= base) {
+		CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+	}
+
+	UINT_PTR header_span = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
+
+	if (header_span < Ehdr->e_ehsize) {
+		header_span = Ehdr->e_ehsize;
+	}
+	if (header_span > MemorySize) {
+		header_span = MemorySize;
+	}
+
+	UINT_PTR need = MAX (header_span, end - base);
+	UINT_PTR img_size = AlignUp (need, 0x1000);
+
+	UINT8* img = (UINT8*)VirtualAlloc(nullptr, img_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+	if (!img) {
+		CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
+	}
+
+	x_memset(img, 0, img_size);
+	MemCpy(img, File, header_span);
+
+	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
+		const auto& ph = fph [i];
+
+		if (ph.p_type != PT_LOAD) {
+			continue;
 		}
-		if ((UINT_PTR)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum > MemorySize) {
-			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
-		}
-
-		const ELF64_PHDR *fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
-
-		for (int i = 0; i < Ehdr->e_phnum; ++i) {
-			const auto& ph = fph [i];
-			if (ph.p_type == PT_LOAD) {
-				base = MIN (base, ph.p_vaddr);
-				end  = MAX (end,  ph.p_vaddr + ph.p_memsz);
-			}
-		}
-		if (base == UINT64_MAX || end <= base) {
-			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
-		}
-
-		UINT_PTR header_span = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
-
-		if (header_span < Ehdr->e_ehsize) {
-			header_span = Ehdr->e_ehsize;
-		}
-		if (header_span > MemorySize) {
-			header_span = MemorySize;
-		}
-
-		UINT_PTR need = MAX (header_span, end - base);
-		UINT_PTR img_size = AlignUp (need, 0x1000);
-
-		UINT8* img = (UINT8*)VirtualAlloc(nullptr, img_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-		if (!img) {
-			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
-		}
-
-		x_memset(img, 0, img_size);
-		MemCpy(img, File, header_span);
-
-		for (INT i = 0; i < Ehdr->e_phnum; ++i) {
-			const auto& ph = fph [i];
-
-			if (ph.p_type != PT_LOAD) {
-				continue;
-			}
-			if ((UINT_PTR)ph.p_offset + ph.p_Filesz > MemorySize) {
-				VirtualFree (img, 0, MEM_RELEASE);
-				CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
-			}
-
-			UINT_PTR dest_off = ph.p_vaddr - base;
-
-			if (! InImage (dest_off, ph.p_memsz, img_size)) {
-				VirtualFree (img, 0, MEM_RELEASE);
-				CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
-			}
-			if (ph.p_Filesz) {
-				MemCpy(img + dest_off, File + ph.p_offset, ph.p_Filesz);
-			}
-		}
-		if (img_size > PROCESS_BUFEhdrR_SIZE) {
+		if ((UINT_PTR)ph.p_offset + ph.p_Filesz > MemorySize) {
 			VirtualFree (img, 0, MEM_RELEASE);
 			CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		MemCpy ((void*)vmcs->proc.bufEhdrr, img, img_size);
-		vmcs->proc.write_size = img_size;
-		VirtualFree (img, 0, MEM_RELEASE);
+		UINT_PTR dest_off = ph.p_vaddr - base;
 
-		ElfBase = Base;
-		g_img_size = img_size;
+		if (! InImage (dest_off, ph.p_memsz, img_size)) {
+			VirtualFree (img, 0, MEM_RELEASE);
+			CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
+		}
+		if (ph.p_Filesz) {
+			MemCpy(img + dest_off, File + ph.p_offset, ph.p_Filesz);
+		}
 	}
+	if (img_size > PROCESS_BUFEhdrR_SIZE) {
+		VirtualFree (img, 0, MEM_RELEASE);
+		CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
+	}
+
+	MemCpy ((void*)vmcs->proc.bufEhdrr, img, img_size);
+	vmcs->proc.MemorySize = img_size;
+	VirtualFree (img, 0, MEM_RELEASE);
+
+	ElfBase = Base;
+	g_img_size = img_size;
+}
 
 	// ========= reloc + PLT + entry =========
 	static void ApplyRelativeOffsets (UINT8* img) {
