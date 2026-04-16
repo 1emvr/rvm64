@@ -28,14 +28,15 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 	// just always parse the header, and then go by it's size (could be 0)_
 	
 	for (int i = 0; i < 8; i++) {
-		if (is_param (image_base)) {
-			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or however long offset
-														  
+		UINT_PTR param_size = image_base [0];
+
+		if (param_size != 0) {
 			param_size += PARAM_HEADER_SIZE;
 			total += param_size;
 
 			if (total > *data_size) { // find a way to make this easy. not too big or too small of a realloc
 				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
+				// reallocating will invalidate the image_base. need to adjust for it.
 			}
 
 			new_vms->param_offset [i] = image_base; // would be the first address (image-base) since params are prepended to program
