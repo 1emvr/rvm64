@@ -21,43 +21,6 @@ NATIVE_CALL VOID thread_main () {
 }
 
 
-NATIVE_CALL UINT64 elf_runtime_size (
-		_In_ 	const 	UINT8  	*base, 
-		_Inout_ 		UINT64 	*out_align)
-{
-	const ELF64_EHDR *ehdr = (const ELF64_EHDR*)base;
-	const ELF64_PHDR *phdr = (const ELF64_PHDR*)(base + ehdr->e_phoff);
-
-	UINT64 lo = (UINT64)-1, hi = 0, align = 0x1000;
-
-	for (int i = 0; i < ehdr->e_phnum; i++) {
-		if (phdr [i].p_type != PT_LOAD) {
-			continue;
-		}
-
-		UINT64 seg_lo = phdr [i].p_vaddr;
-		UINT64 seg_hi = phdr [i].p_vaddr + phdr [i].p_memsz;
-		UINT64 p_align = phdr [i].p_align;
-
-		if (p_align > align) { align = p_align; }
-		if (seg_lo < lo) 	 { lo = seg_lo; }
-		if (seg_hi > hi) 	 { hi = seg_hi; }
-	}
-
-	lo &= ~(align -1);
-	hi = (hi + align -1) & ~(align -1);
-
-	if (out_align) *out_align = align;
-	return hi - lo;
-}
-
-
-#define update_arena_space (o, b, r, sz) 	\
-	o += sz; 								\
-	b += sz; 								\
-	r -= sz;
-
-
 NATIVE_CALL BOOL process_packets ( 
 		_Inout_ 	UINT_PTR* 		data,
 		_Inout_ 	UINT_PTR* 		data_sz,
@@ -69,29 +32,73 @@ NATIVE_CALL BOOL process_packets (
 	UINT_PTR remaining 	= *data_sz;
 	UINT_PTR offset 	= 0;
 
-	update_arena_space (offset, image_base, remaining, sizeof (UINT_PTR));
+	offset 		+= sizeof (UINT_PTR);
+	image_base 	+= sizeof (UINT_PTR); 
+	remaining 	-= sizeof (UINT_PTR); 
+
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
 	for (int i = 0; i < n_threads; i++) { 
-		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (size/data), (_pt_load_space)], ... 
+		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (data), (_pt_load_space)], ... 
 											//
 		if (param_sz != 0) {						
 			new_vms->param_offset [i] = offset; 
 		}
 
-		update_arena_space (offset, image_base, remaining, sizeof (UINT_PTR) + param_sz);
-		new_vms->image_offset [i] = offset; 
+		offset 		+= sizeof (UINT_PTR) + param_sz;
+		image_base 	+= sizeof (UINT_PTR) + param_sz;
+		remaining 	-= sizeof (UINT_PTR) + param_sz;
 
-		UINT_PTR elf_sz = image_base [0];
-		update_arena_space (offset, image_base, remaining, sizeof (UINT_PTR));
+		new_vms->image_offset [i] = offset; 
 
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
 
-		UINT64 runtime_sz = elf_runtime_size (image_base, nullptr);
+		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
+		UINT_PTR file_sz = 0;	
+
+		file_sz = max (
+				file_sz, 
+				(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // phentsize : Size in bytes of one entry in the file's program header table; all entries are the same size. 
+
+		if (ehdr->e_shoff) {
+			file_sz = max (
+					file_sz, 
+					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize); // shentsize : section header's size in bytes. A section header is one entry in the section header table.
+		}
+
+		UINT_PTR lo = (UINT_PTR)-1; 
+		UINT_PTR hi = 0;
+
+		for (int i = 0; i < ehdr->e_phnum; i++) {  // iterate program headers
+			ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
+			file_sz = max (
+					file_sz, 
+					(UINT_PTR)phdr [i].p_offset + (UINT_PTR)phdr [i].p_filesz); // filesz : specifies the number of bytes a segment occupies in the file image
+
+			if (phdr->p_type != PT_LOAD) {
+				continue;
+			}
+
+			UINT_PTR seg_lo = phdr->p_vaddr & ~(phdr->p_align - 1);
+			UINT_PTR seg_hi = phdr->p_vaddr + phdr->p_memsz;
+
+			if (seg_lo < lo) { lo = seg_lo; }
+			if (seg_hi > hi) { hi = seg_hi; }
+		}
+
+		offset 		+= img_sz;
+		image_base 	+= img_sz;
+		remaining 	-= img_sz;
+
+		if (total > *data_sz) {	
+			arena_realloc (data, data_sz, *(data_sz) + DEFAULT_ARENA_SIZE);
+			image_base = *data + offset;
+		}
+
 		new_vms->count += 1;
 	}
 	return true;
