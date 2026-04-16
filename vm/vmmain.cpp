@@ -21,32 +21,32 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
 	UINT_PTR image_base = *data;
-	UINT_PTR offset = 0;
+	UINT_PTR total = 0;
 
-	SIZE_T total_size = 0;
-
+	// TODO: consider the following: appending a param header to the start of every program regardless of whether it has them or not.
+	// this would be much simpler to follow parsing, and would also be an easy bypass for a lot of products
+	// just always parse the header, and then go by it's size (could be 0)_
+	
 	for (int i = 0; i < 8; i++) {
 		if (is_param (image_base)) {
 			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or however long offset
 														  
 			param_size += PARAM_HEADER_SIZE;
-			total_size += param_size;
+			total += param_size;
 
-			if (total_size > *data_size) { // find a way to make this easy. not too big or too small of a realloc
+			if (total > *data_size) { // find a way to make this easy. not too big or too small of a realloc
 				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
 			}
 
-			offset += total size;
-			new_vms->param_offset [i] = offset;
-
-			image_base += offset;
+			new_vms->param_offset [i] = image_base; // would be the first address (image-base) since params are prepended to program
+			image_base += param_size;
 		}
 
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
 
-		new_vms->image_offset [i] = offset;
+		new_vms->image_offset [i] = image_base;
 		new_vms->count += 1;
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
