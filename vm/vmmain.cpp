@@ -27,7 +27,7 @@ NATIVE_CALL INT32 VmMain (
 		PatchAndExecute (Vmcs->Proc.Memory); 		
 
 		MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-		if (setjmp (Vmcs->Context->ExitHandler)) {
+		if (setjmp (Vmcs->Context->Shutdown)) {
 			goto defer;	
 		}
 	} while (true);
@@ -36,7 +36,7 @@ defer:
 	LoadHostRegCtx (Vmcs->Context->HostContext);
 
 	MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-	ContextRelease ();
+	ContextRelease (&Vmcs->Context);
 
 	return Vmcs->Csr.Cause;
 }

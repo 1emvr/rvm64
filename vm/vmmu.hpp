@@ -18,16 +18,16 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	if (Code == STATUS_SINGLE_STEP) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
-	if (Vmcs->Context->Exit || Code != RVM_TRAP_EXCEPTION) {
-		longjmp (Vmcs->Context->ExitHandler, true);
+	if (Code != RVM_TRAP_EXCEPTION) {
+		longjmp (Vmcs->Context->Shutdown, true);
 	}
 
 	switch (Vmcs->Csr.Cause) {
-		case ENV_EXIT: 		longjmp (Vmcs->Context->ExitHandler, true);
-		case ENV_BRANCH: 	longjmp (Vmcs->Context->TrapHandler, true);
+		case ENV_EXIT: 		longjmp (Vmcs->Context->Shutdown, true);
+		case ENV_BRANCH: 	longjmp (Vmcs->Context->Interrupt, true);
 		case ENV_EXECUTE:
 		{
-			VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw->Pc;
+			VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw.Pc;
 			Memory ();
 			break;
 		}
@@ -41,7 +41,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	}
 
 	RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
-	longjmp (Vmcs->Context->TrapHandler, true); 
+	longjmp (Vmcs->Context->Interrupt, true); 
 }
 
 

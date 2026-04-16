@@ -123,7 +123,7 @@ enum Causenum {
     EnvExecute           	= 0xb028,
     OutOfMemory             = 0xb029,
     EnvBranch            	= 0xb030,
-    EnvExit              	= 0xb031,
+    EnvShutdown             = 0xb031,
     InvalidChannel          = 0xffff,
 };
 
@@ -153,8 +153,8 @@ struct {
 	INTEL 	HostContext;
 	INTEL 	VmContext;
 
-	jmp_buf TrapHandler;
-	jmp_buf ExitHandler;
+	jmp_buf Interrupt;
+	jmp_buf Shutdown;
 
 	HANDLE 	InterHandle;
 	HANDLE 	MutexRW;
