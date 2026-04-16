@@ -16,7 +16,7 @@
 #define DT_SYMTAB       6       
 #define DT_STRTAB       5       
 #define DT_STRSZ 		10
-#define DT_SYMENT       11      
+#define DT_SymEnt       11      
 #define DT_JMPREL       23     
 #define DT_PLTRELSZ     2     
 #define DT_PLTREL       20   
@@ -318,7 +318,7 @@ NATIVE_CALL VOID LoadImage (
 }
 
 
-static VOID ApplyRelativeOffsets (
+VOID ApplyRelativeOffsets (
 		_In_ const UINT_PTR Memory,
 		_In_ const SIZE_T 	MemorySize) 
 {
@@ -384,7 +384,7 @@ static VOID ApplyRelativeOffsets (
 }
 
 
-static UINT_PTR FindEntry (
+UINT_PTR FindEntry (
 		_In_ const UINT8* Memory,
 		_In_ const SIZE_T MemorySize) 
 {
@@ -412,7 +412,7 @@ static UINT_PTR FindEntry (
 	}
 
 	// Pull tables
-	UINT_PTR SymVa = 0, StrVa = 0, Syment = sizeof(ELF64_SYM), Strsz = 0;
+	UINT_PTR SymVa = 0, StrVa = 0, SymEnt = sizeof(ELF64_SYM), Strsz = 0;
 	for (
 			ELF64_DYN* d = (ELF64_DYN*)(Memory + DynOff); InImage ((UINT8*)d - Memory, sizeof(*d), MemorySize) && d->d_tag != DT_NULL; ++d) 
 	{
@@ -420,8 +420,8 @@ static UINT_PTR FindEntry (
 			SymVa = d->d_un.d_ptr;
 		} else if (d->d_tag == DT_STRTAB) {
 			StrVa = d->d_un.d_ptr;
-		} else if (d->d_tag == DT_SYMENT) {
-			Syment = d->d_un.d_val ? d->d_un.d_val : sizeof (ELF64_SYM);
+		} else if (d->d_tag == DT_SymEnt) {
+			SymEnt = d->d_un.d_val ? d->d_un.d_val : sizeof (ELF64_SYM);
 		} else if (d->d_tag == DT_STRSZ)   {
 			Strsz = d->d_un.d_val;
 		}
@@ -447,7 +447,7 @@ static UINT_PTR FindEntry (
 	// Walk bounded
 	const UINT_PTR MAX_ITERS = 1u << 20;
 
-	for (UINT_PTR i = 0, Off = SymOff; i < MAX_ITERS && InImage (Off, Syment, MemorySize); ++i, Off += Syment) {
+	for (UINT_PTR i = 0, Off = SymOff; i < MAX_ITERS && InImage (Off, SymEnt, MemorySize); ++i, Off += SymEnt) {
 		const ELF64_SYM *s = (const ELF64_SYM*)(Memory + Off);
 		if (!s->st_value) {
 			continue;
@@ -472,8 +472,9 @@ static UINT_PTR FindEntry (
 	return 0;
 }
 
-static VOID PatchPLT (
-		_In_ const UINT_PTR Memory) 
+VOID PatchPLT (
+		_In_ const UINT_PTR Memory,
+		_In_ const SIZE_T 	MemorySize) 
 {
 	auto* Ehdr = (ELF64_EHDR*)Memory;
 	auto* Phdr = (ELF64_PHDR*)(Memory + Ehdr->e_phoff);
@@ -486,103 +487,102 @@ static VOID PatchPLT (
 			break; 
 		}
 	}
-	if (!DynAddr) {
+	if (! DynAddr) {
 		return;
 	}
 
 	UINT_PTR DynOff = DynAddr - Vmcs->Proc.ImageBase;
-	if (! InImage  (DynOff, sizeof (elf64_dyn), MemorySize)) {
+	if (! InImage  (DynOff, sizeof (ELF64_DYN), MemorySize)) {
 		return;
 	}
 
-	UINT_PTR SymVa=0, StrVa=0, strsz=0, syment = sizeof (elf64_sym);
-	UINT_PTR jmprel_va=0, pltrel_sz=0, plt_rel_kind=0;
+	UINT_PTR SymVa = 0, StrVa = 0, StrSz = 0, SymEnt = sizeof (ELF64_SYM);
+	UINT_PTR JmpRelVa = 0, PltRelSz = 0, PltRelKind = 0;
 
-	for (
-			ELF64_DYN* d = (ELF64_DYN*)(Memory + DynOff) {
-			InImage ((UINT8*)d - img, sizeof (*d), MemorySize) && d->d_tag != DT_NULL; ++d);
-	switch (d->d_tag) {
-		case DT_SYMTAB:   SymVa   = d->d_un.d_ptr; break;
-		case DT_STRTAB:   StrVa   = d->d_un.d_ptr; break;
-		case DT_STRSZ:    strsz       = d->d_un.d_val; break;
-		case DT_JMPREL:   jmprel_va   = d->d_un.d_ptr; break;
-		case DT_PLTRELSZ: pltrel_sz   = d->d_un.d_val; break;
-		case DT_PLTREL:   plt_rel_kind= d->d_un.d_val; break;
-		case DT_SYMENT:   syment      = 
-						  {
-							  d->d_un.d_val ? d->d_un.d_val : sizeof (elf64_sym); 
-							  break;
-						  }
-		default: 
-						  break;
+	for (ELF64_DYN* d = (ELF64_DYN*)(Memory + DynOff); 	InImage ((UINT8*)d - img, sizeof (*d), MemorySize) && d->d_tag != DT_NULL; ++d) {
+		switch (d->d_tag) {
+			case DT_SYMTAB:   SymVa   		= d->d_un.d_ptr; break;
+			case DT_STRTAB:   StrVa   		= d->d_un.d_ptr; break;
+			case DT_STRSZ:    StrSz       	= d->d_un.d_val; break;
+			case DT_JMPREL:   JmpRelVa   	= d->d_un.d_ptr; break;
+			case DT_PLTRELSZ: PltRelSz   	= d->d_un.d_val; break;
+			case DT_PLTREL:   PltRelKind	= d->d_un.d_val; break;
+			case DT_SymEnt:   SymEnt      	= 
+				{
+					d->d_un.d_val 
+						? d->d_un.d_val 
+						: sizeof (ELF64_SYM); 
+
+					break;
+				}
+			default: break;
+		}
 	}
-	}
-	if (!jmprel_va || !pltrel_sz || plt_rel_kind != DT_RELA || !SymVa || !StrVa) {
+	if (! JmpRelVa || ! PltRelSz || PltRelKind != DT_RELA || ! SymVa || ! StrVa) {
 		return;
 	}
 
-	UINT_PTR RelOff   = jmprel_va - Vmcs->Proc.ImageBase;
-	UINT_PTR symtab_off = SymVa - Vmcs->Proc.ImageBase;
-	UINT_PTR strtab_off = StrVa - Vmcs->Proc.ImageBase;
+	UINT_PTR RelOff   = JmpRelVa - Vmcs->Proc.ImageBase;
+	UINT_PTR SymTabOff = SymVa - Vmcs->Proc.ImageBase;
+	UINT_PTR StrTabOff = StrVa - Vmcs->Proc.ImageBase;
 
-	if (!InImage  (RelOff, pltrel_sz, MemorySize) ||
-			!InImage  (symtab_off, sizeof (elf64_sym), MemorySize) ||
-			!InImage  (strtab_off, 1, MemorySize)) {
+	if (! InImage  (RelOff, PltRelSz, MemorySize) ||
+		! InImage  (SymTabOff, sizeof (ELF64_SYM), MemorySize) ||
+		! InImage  (StrTabOff, 1, MemorySize)) {
 		return;
 	}
-	if (strsz == 0 || !InImage (strtab_off, strsz, MemorySize)) {
-		strsz = MemorySize - strtab_off;
+	if (StrSz == 0 || ! InImage (StrTabOff, StrSz, MemorySize)) {
+		StrSz = MemorySize - StrTabOff;
 	}
 
-	SIZE_T n = pltrel_sz / sizeof (elf64_rela);
+	SIZE_T n = PltRelSz / sizeof (ELF64_RELA);
 
 	for (SIZE_T i = 0; i < n; ++i) {
-		UINT_PTR off = RelOff + i * sizeof (elf64_rela);
+		UINT_PTR Off = RelOff + i * sizeof (ELF64_RELA);
 
-		if (!InImage (off, sizeof (elf64_rela), MemorySize)) {
+		if (!InImage (Off, sizeof (ELF64_RELA), MemorySize)) {
 			break;
 		}
 
-		const ELF64_RELA* r = (const ELF64_RELA*)(img + off);
-		UINT32 rtype = ELF64_REL_TYPE(r->r_info);
+		const ELF64_RELA* r = (const ELF64_RELA*)(Memory + Off);
+		const UINT32 Rtype 	= ELF64_REL_TYPE (r->r_info);
 
-		if (rtype != R_RISCV_JUMP_SLOT && rtype != R_RISCV_CALL_PLT) {
+		if (Rtype != R_RISCV_JUMP_SLOT && Rtype != R_RISCV_CALL_PLT) {
 			continue;
 		}
 
-		UINT32 sym_idx = (UINT32)ELF64_R_SYM(r->r_info);
-		UINT_PTR s_off = symtab_off + (UINT_PTR)sym_idx * syment;
+		const UINT32 SymIdx 	= (UINT32)ELF64_R_SYM(r->r_info);
+		const UINT_PTR SymOff 	= SymTabOff + (UINT_PTR)SymIdx * SymEnt;
 
-		if (!InImage (s_off, sizeof (elf64_sym), MemorySize)) {
+		if (! InImage (SymOff, sizeof (ELF64_SYM), MemorySize)) {
 			continue;
 		}
 
-		const ELF64_SYM* s = (const ELF64_SYM*)(img + s_off);
-		UINT32 name_off = s->st_name;
+		const ELF64_SYM* s = (const ELF64_SYM*)(Memory + SymOff);
+		const UINT32 NameOff = s->st_name;
 
-		if (name_off >= strsz) {
+		if (NameOff >= StrSz) {
 			continue;
 		}
 
-		const CHAR* name 	= (const CHAR*)(img + strtab_off + name_off);
-		const SIZE_T remain = (const SIZE_T)(strsz - name_off);
+		const CHAR* Name 	= (const CHAR*)(Memory + StrTabOff + NameOff);
+		const SIZE_T Remain = (const SIZE_T)(StrSz - NameOff);
 
-		if (!memchr(name, 0, remain)) {
+		if (! MemChr (Name, 0, Remain)) {
 			continue;
 		}
 
-		LPVOID target = ResolveRvniImport (name);
-		if (!target) {
-			SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)name, 1);
+		LPVOID Target = ResolveRvniImport (Name);
+		if (!Target) {
+			SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)Name, 1);
 		}
 
-		UINT_PTR where_off = r->r_offset - Vmcs->Proc.ImageBase;
-
-		if (! InImage  (where_off, 8, MemorySize)) {
+		UINT_PTR WhereOff = r->r_offset - Vmcs->Proc.ImageBase;
+		if (! InImage  (WhereOff, 8, MemorySize)) {
 			continue;
 		}
 
-		*(UINT_PTR*)(img + where_off) = (UINT_PTR)target;
+		*(UINT_PTR*)(Memory + WhereOff) = (UINT_PTR)Target;
 	}
 }
 
