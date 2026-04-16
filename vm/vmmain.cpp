@@ -9,7 +9,7 @@ struct PACKET_SEG {
 };
 
 
-NATIVE_CALL BOOL is_elf (_In_ const UINT8* base) {
+NATIVE_CALL BOOL is_elf (_In_ UINT_PTR base) {
 	return base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
 			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
 }
@@ -20,8 +20,8 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 		_In_ 	const SIZE_T 		arena_size,
 		_Out_ 	PACKET_SEG* 		new_vms)
 {
-	const UINT8 *image_base = (const UINT8*)data;
-	SIZE_T 		total_size = 0;
+	SIZE_T total_size = 0;
+	UINT_PTR image_base = data;
 
 	for (UINT8 i = 0; i < 8; i++) {
 		// PARAM_MAGIC, 
