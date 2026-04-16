@@ -3,13 +3,17 @@
 #include "../include/vmmain.hpp"
 
 // TODO: use elf64_ehdr->e_entry as initial decryption key.
-namespace rvm64::crypt {
-	constexpr uintptr_t encrypt_ptr(uintptr_t ptr, uintptr_t key) {
-		return ptr ^ key;
-	}
+constexpr UINT_PTR EncryptPtr (
+		_In_ const UINT_PTR ptr, 
+		_In_ const UINT_PTR key) 
+{
+	return ptr ^ key;
+}
 
-	_vmcall inline uintptr_t decrypt_ptr(uintptr_t ptr, uintptr_t key) {
-		return ptr ^ DKEY;
-	}
-};
+VM_CALL inline UINT_PTR DecryptPtr (
+		_In_ const UINT_PTR ptr, 
+		_In_ const UINT_PTR key) 
+{
+	return ptr ^ key;
+}
 #endif // VMCRYPT_HPP

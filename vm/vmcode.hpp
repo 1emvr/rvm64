@@ -11,6 +11,9 @@
 #include "vmmu.hpp"
 
 
+VOID Opcall (_In_ const UINT32 TableIndex);
+
+
 union {
 	double d;
 	UINT64 u;
@@ -2323,10 +2326,11 @@ DATA_SCN const UINT_PTR DispatchTable [256] = {
 
 
 
-VOID Opcall (_In_ const UINT32 hdl_idx) {
-	uintptr_t a = ((uintptr_t*)DispatchTable) [hdl_idx];					
-	uintptr_t b = DecryptPtr ((uintptr_t)a, (uintptr_t)0);	
-	void (*fn)() = (void (*)())(b);											
-	fn ();													
+VOID Opcall (_In_ const UINT32 TableIndex) {
+	UINT_PTR a = ((UINT_PTR*)DispatchTable) [TableIndex];					
+	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
+
+	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)())(b);											
+	operation ();													
 }
 #endif // VMCODE_H
