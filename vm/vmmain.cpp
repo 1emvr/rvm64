@@ -55,7 +55,7 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 			}
 		}
 
-		total += prg_size;
+		total += prg_size; // probably doesn't include headers
 		{
 			if (total > *data_size) {
 				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
