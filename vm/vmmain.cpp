@@ -16,22 +16,28 @@ NATIVE_CALL BOOL is_elf (_In_ UINT_PTR base) {
 
 
 NATIVE_CALL BOOL process_packets ( // process ELF params and headers
-		_In_ 	const UINT_PTR 		data,
-		_In_ 	const SIZE_T 		arena_size,
-		_Out_ 	PACKET_SEG* 		new_vms)
+		_Inout_ 	UINT_PTR* 		data,
+		_Inout_ 	SIZE_T* 		data_size,
+		_Out_ 		PACKET_SEG* 	new_vms)
 {
+	UINT_PTR image_base = *data;
 	SIZE_T total_size = 0;
-	UINT_PTR image_base = data;
 
 	for (int i = 0; i < 8; i++) {
 		// PARAM_MAGIC, 
 		// PARAM_SIZE, 
 		// PARAM_DATA -> ELF
-		if (is_param (image_base)) {
+		if (is_param (image_base) && remaining >= PARAM_HEADER_SIZE) {
 			SIZE_T param_size = *(SIZE_T*)image_base + 2; // ... or however long offset
+														  
+			param_size += PARAM_HEADER_SIZE;
+			total_size += param_size;
 
+			if (total_size > *data_size) {
+				arena_realloc (data, data_size, *(data_size) * 2);
+			}
 			new_vms->params [i] = image_base;
-			image_base += param_size + PARAM_HEADER_SIZE;
+			image_base += param_size;
 		}
 
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
@@ -54,7 +60,7 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 		}
 
 		total_size += prg_size;
-		if (total_size > arena_size) {
+		if (total_size > data_size) {
 			// return false or resize the arena
 		}
 
