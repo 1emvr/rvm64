@@ -21,7 +21,6 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 			return EXCEPTION_CONTINUE_SEARCH;
 		}
 		if (Code != RVM_TRAP_EXCEPTION) { 
-			Vmcs->Context->Halt = 1;
 			longjmp (Vmcs->Context->Interrupt, true);
 		}
 	}
