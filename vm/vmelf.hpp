@@ -222,6 +222,7 @@ NATIVE_CALL VOID LoadImage (
 {
 	UINT8 *File 		= *Memory;
 	ELF64_EHDR *Ehdr 	= (ELF64_EHDR*)File;
+	ELF64_PHDR *Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 
 	if (File [0] != 0x7F || 
 		File [1] !='E' ||
@@ -238,7 +239,7 @@ NATIVE_CALL VOID LoadImage (
 		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
 	}
 
-	SIZE_T VirtualSize = (SIZE_T)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
+	SIZE_T VirtualSize 	= (SIZE_T)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
 	{
 		if (VirtualSize > *MemorySize) {
 			VirtualFree (*Memory, 0, MEM_RELEASE);
@@ -256,8 +257,7 @@ NATIVE_CALL VOID LoadImage (
 		}
 	}
 
-	ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
-	UINT_PTR End 	= UINT64_MAX;
+	UINT_PTR End = UINT64_MAX;
 	{
 		for (INT i = 0; i < Ehdr->e_phnum; ++i) {
 			const auto& Ph = Fph [i];
