@@ -64,12 +64,12 @@ NATIVE_CALL BOOL process_packets (
 
 		file_sz = max (
 				file_sz, 
-				(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // Size in bytes of one entry in the file's program header table; all entries are the same size. 
+				(UINT_PTR)ehdr->e_phoff + (UINT_PTR)ehdr->e_phnum * ehdr->e_phentsize); // phentsize : Size in bytes of one entry in the file's program header table; all entries are the same size. 
 
 		if (ehdr->e_shoff) {
 			file_sz = max (
 					file_sz, 
-					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize); // section header's size in bytes. A section header is one entry in the section header table.
+					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize); // shentsize : section header's size in bytes. A section header is one entry in the section header table.
 		}
 		{
 			for (int i = 0; i < ehdr->e_phnum; i++) {  // iterate program headers
