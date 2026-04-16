@@ -12,17 +12,6 @@
 VM_CALL VOID Decode (_In_ const UINT32); 
 
 
-VOID Opcall (
-		_In_ const UINT32 Index) 
-{
-	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
-	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
-
-	VOID (VM_CALL *Operation)() = (VOID (VM_CALL*)()) b;											
-	Operation ();													
-}
-
-
 VM_CALL VOID VmExecute () {
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
@@ -37,6 +26,18 @@ VM_CALL VOID VmExecute () {
 		Vmcs->Hdw.Pc += 4;
 	}
 }
+
+
+VOID Opcall (
+		_In_ const UINT32 Index) 
+{
+	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
+	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
+
+	VOID (VM_CALL *Operation)() = (VOID (VM_CALL*)()) b;											
+	Operation ();													
+}
+
 
 DATA_SCN OPCODE EncodingTable [] = {
 	{0b1010011, RTYPE}, {0b1000011, RTYPE}, {0b0110011, RTYPE}, {0b1000111, R4TYPE}, {0b1001011, R4TYPE}, {0b1001111, R4TYPE},
