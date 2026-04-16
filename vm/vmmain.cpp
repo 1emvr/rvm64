@@ -11,7 +11,7 @@ NATIVE_CALL VOID vm_thread (_In_ const LPVOID vm, _In_ const LPVOID vm_params) {
 NATIVE_CALL VOID rvm64_main () {
 	HANDLE threads [8] = { } 			
 
-	static struct PACKET_SEG {
+	static struct PACKET_SEG { // process packet + populate with related data
 		LPVOID files 	[8] = { }; 
 		LPVOID params 	[8] = { };
 		SIZE_T count 		= 0; 
