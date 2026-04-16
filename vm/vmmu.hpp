@@ -47,7 +47,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 
-VM_CALL VOID MemoryInit (
+VM_CALL VOID MemoryInit ( // NOTE: What happens when there's not enough memory.
 		_Out_ UINT_PTR* Memory, 
 		_Out_ UINT_PTR* MemorySize) 
 {
