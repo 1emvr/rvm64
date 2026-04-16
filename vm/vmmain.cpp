@@ -72,7 +72,7 @@ NATIVE_CALL BOOL process_packets (
 					(UINT_PTR)ehdr->e_shoff + (UINT_PTR)ehdr->e_shnum * ehdr->e_shentsize);
 		}
 		{
-			for (int i = 0; i < ehdr->e_phnum; i++) { 
+			for (int i = 0; i < ehdr->e_phnum; i++) { // for each section add their size
 				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
 				file_sz = max (
 						file_sz, 
