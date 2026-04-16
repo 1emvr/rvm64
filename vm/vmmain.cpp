@@ -22,27 +22,23 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 {
 	UINT_PTR image_base = *data;
 	UINT_PTR total = 0;
-
-	// TODO: consider the following: appending a param header to the start of every program regardless of whether it has them or not.
-	// this would be much simpler to follow parsing, and would also be an easy bypass for a lot of products
-	// just always parse the header, and then go by it's size (could be 0)_
 	
 	for (int i = 0; i < 8; i++) {
 		UINT_PTR param_size = image_base [0];
+		{
+			if (param_size != 0) {
+				param_size += PARAM_HEADER_SIZE;
+				total += param_size;
 
-		if (param_size != 0) {
-			param_size += PARAM_HEADER_SIZE;
-			total += param_size;
+				if (total > *data_size) { // find a way to make this easy. not too big or too small of a realloc
+					arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
+					image_base = *data + total;
+				}
 
-			if (total > *data_size) { // find a way to make this easy. not too big or too small of a realloc
-				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
-				// reallocating will invalidate the image_base. need to adjust for it.
+				new_vms->param_offset [i] = image_base; // would be the first address (image-base) since params are prepended to program
+				image_base += param_size;
 			}
-
-			new_vms->param_offset [i] = image_base; // would be the first address (image-base) since params are prepended to program
-			image_base += param_size;
 		}
-
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
@@ -67,6 +63,7 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 
 		if (total_size > *data_size) {
 			arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
+			image_base = *data + total;
 		}
 
 		offset += total_size;
