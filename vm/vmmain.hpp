@@ -15,7 +15,7 @@
 #define NtCurrentThread ()       ((HANDLE)(LONG_PTR)-2)
 
 #define RVM_TRAP_EXCEPTION      0xE0424242
-#define DEFAULT_PROC_SIZE     	0x10000
+#define ARENA_SIZE     	0x10000
 #define INTERNAL_MAGIC1         0x524d5636345f4949ULL  // "RMV64_II"
 #define INTERNAL_MAGIC2         0x5f424541434f4e00ULL  // "_BEACON"
 #define VM_BEACON_VER           1

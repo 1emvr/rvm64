@@ -4,44 +4,37 @@
 
 // TODO: StackSpoof, CreateThread, and interact where it lives.
 
-NATIVE_CALL VOID VmMain () {
-	if (setjmp (Vmcs->Context->Interrupt)) { 
-	} 
-	do{
-		if (Vmcs->Proc.Memory) {
-			MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-		}
+NATIVE_CALL VOID rvm64_main () {
+	if (setjmp (vmcs->context->shutdown)) { 
+		return;	
+	}
 
-		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
-		while (Vmcs->Context.Halt) { 
-			Sleep (10); 
-		}
-
-		LoadImage 		(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
-		PatchAndExecute (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 		
-
-		if (setjmp (Vmcs->Context->Shutdown)) { 
-			return;	
-		}
-	} while (true);
+	while (;;) {
+		// NOTE: in the context of sleepobf do we really want to continue looping forever? prob not...
+		// would probably crash or never sleep
+		//
+		// NOTE: how do we process multiple programs? do we need to?
+		run_packets ();		
+	}
 }
 
 
-NATIVE_CALL VOID VmStart (
-		_In_ const UINT64 Magic1,
-		_In_ const UINT64 Magic2) 
+NATIVE_CALL VOID proc_main () {
+}
+
+
+NATIVE_CALL VOID rvm64_start (
+		_In_ const UINT64 magic1,
+		_In_ const UINT64 magic2) 
 {
-	VMCS Instance = { };
-	Vmcs = &Instance;
+	VMCS instance = { };
+	vmcs = &instance;
 
-	Vmcs->Magic1 = Magic1;
-	Vmcs->Magic2 = Magic2;
+	rvm64_init (&vmcs->ctx); // NOTE: create global context for all vms.
+	rvm64_save_reg (&vmcs->ctx->host_ctx);
 
-	ContextInit (&Vmcs->Context);
-	SaveRegisters (&Vmcs->Context->HostContext);
+	rvm64_main ();
 
-	VmMain ();
-
-	LoadRegisters (&Vmcs->Context->HostContext);
-	ContextRelease (&Vmcs->Context);
+	rvm64_load_reg (&vmcs->ctx->host_ctx);
+	rvm64_release (&vmcs->ctx); // NOTE: release context.
 }

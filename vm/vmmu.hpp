@@ -8,7 +8,13 @@
 #define PROT_SEM	0x8	
 
 
-// NOTE: Anything other than a branch, execute, native call, or shutdown will be treated as a violation.
+/*
+ * NOTE: Anything other than a branch, execute, native call, or shutdown will be treated as a violation.
+ *
+ * NOTE: Changing to arena allocation. Starting rvm64 will allocate 1 space for all programs.
+ * When a program starts running the MMU will reserve memory, register & manage that memory. 
+ * The arena will continue to live until shutdown. Programs will be zeroed and released to the MMU instead of deallocating system memory.
+ */
 
 LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
@@ -52,8 +58,8 @@ VM_CALL VOID MemoryInit (
 		_Out_ UINT_PTR* MemorySize) 
 {
 	Vmcs->Self 		= (UINT64) &Vmcs;
-	*MemorySize 	= (UINT64) DEFAULT_PROC_SIZE; // NOTE: What happens when there's not enough memory. Maybe superv should allocate.
-	*Memory 		= (UINT64) VirtualAlloc (nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	*MemorySize 	= (UINT64) ARENA_SIZE; 
+	*Memory 		= (UINT64) VirtualAlloc (nullptr, ARENA_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 	if (! *Memory) {
 		SetCsrTrap (nullptr, GetLastError (), 0, 0, 1);
