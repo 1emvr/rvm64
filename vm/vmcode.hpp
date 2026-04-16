@@ -2330,7 +2330,7 @@ VOID Opcall (_In_ const UINT32 TableIndex) {
 	UINT_PTR a = ((UINT_PTR*)DispatchTable) [TableIndex];					
 	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
 
-	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)())(b);											
+	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)()) b;											
 	operation ();													
 }
 #endif // VMCODE_H
