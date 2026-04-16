@@ -139,10 +139,10 @@ typedef struct {
 typedef struct {
     UINT32 		p_type;
     UINT32 		p_flags;
-    UINT_PTR 	p_offset;   // Offset in file
+    UINT_PTR 	p_offset;   // Offset in File
     UINT_PTR 	p_vaddr;    // Virtual address in memory
     UINT_PTR 	p_paddr;
-    UINT_PTR 	p_filesz;   // Bytes in file
+    UINT_PTR 	p_Filesz;   // Bytes in File
     UINT_PTR 	p_memsz;    // Bytes in memory
     UINT_PTR 	p_align;
 } ELF64_PHDR;
@@ -167,7 +167,7 @@ typedef struct {
     UINT32 		sh_type;       // Section type (e.g., SHT_PROGBITS, SHT_SYMTAB)
     UINT_PTR 	sh_flags;      // Section attributes (e.g., SHF_ALLOC, SHF_EXECINSTR)
     UINT_PTR 	sh_addr;       // Virtual address in memory (for loaded sections)
-    UINT_PTR 	sh_offset;     // Offset in the file
+    UINT_PTR 	sh_offset;     // Offset in the File
     UINT_PTR 	sh_size;       // Size of the section
     UINT32 		sh_link;       // Link to another section (e.g., symbol table link)
     UINT32 		sh_info;       // Additional section information (depends on type)
@@ -184,36 +184,46 @@ typedef struct {
 } ELF64_DYN;
 
 
-namespace rvm64::elf {
-	static inline UINT_PTR AlignUp (UINT_PTR x, UINT_PTR a) { 
+	static inline UINT_PTR AlignUp (
+			_In_ const UINT_PTR x, 
+			_In_ const UINT_PTR a) 
+	{ 
 		return (x + a - 1) & ~(a - 1); 
 	}
-	static inline BOOL InImage (UINT_PTR off, UINT_PTR len, UINT_PTR size) {
-		return off <= img_size && len <= size - off;
+
+	static inline BOOL InImage (
+			_In_ const UINT_PTR Off, 
+			_In_ const UINT_PTR Len, 
+			_In_ const UINT_PTR Size) 
+	{
+		return Off <= Size && Len <= Size - Off;
 	}
 
-	static UINT_PTR g_elf_base = 0;   // min p_vaddr of PT_LOAD
-	static UINT_PTR g_img_size = 0;   // relocated image size (copied into vm buffer)
+	static UINT_PTR ElfBase = 0;   // min p_vaddr of PT_LOAD
+	static UINT_PTR g_img_size = 0;   // relocated image size (copied into vm bufEhdrr)
 
-	NATIVE VOID LoadImage (UINT_PTR image_data, SIZE_T image_size) {
-		const UINT8 *file = (const UINT8*)image_data;
-		const ELF64_EHDR *fe = (const ELF64_EHDR*)file;
+	NATIVE VOID LoadImage (
+			_In_ UINT_PTR 		Memory, 
+			_In_ const SIZE_T 	MemorySize) 
+	{
+		const UINT8 *File = (const UINT8*)Memory;
+		const ELF64_EHDR *Ehdr = (const ELF64_EHDR*)File;
 
 		UINT_PTR base = UINT64_MAX, end = 0;
 
-		if (!(file [0]==0x7F && file [1]=='E' && file [2]=='L' && file [3]=='F')) {
+		if (!(File [0]==0x7F && File [1]=='E' && File [2]=='L' && File [3]=='F')) {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
-		if (fe->e_ident [EI_CLASS] != ELFCLASS64 || fe->e_ident [EI_DATA] != 1 || fe->e_machine != EM_RISC) {
+		if (Ehdr->e_ident [EI_CLASS] != ELFCLASS64 || Ehdr->e_ident [EI_DATA] != 1 || Ehdr->e_machine != EM_RISC) {
 			CSR_SET_TRAP(nullptr, image_bad_type, 0, 0, 1);
 		}
-		if ((UINT_PTR)fe->e_phoff + (UINT_PTR)fe->e_phentsize * fe->e_phnum > image_size) {
+		if ((UINT_PTR)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum > MemorySize) {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		const ELF64_PHDR *fph = (const ELF64_PHDR*)(file + fe->e_phoff);
+		const ELF64_PHDR *fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
 
-		for (int i = 0; i < fe->e_phnum; ++i) {
+		for (int i = 0; i < Ehdr->e_phnum; ++i) {
 			const auto& ph = fph [i];
 			if (ph.p_type == PT_LOAD) {
 				base = MIN (base, ph.p_vaddr);
@@ -224,14 +234,13 @@ namespace rvm64::elf {
 			CSR_SET_TRAP(nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		// Mirror headers at offset 0 so ehdr/phdrs are readable in relocated image
-		UINT_PTR header_span = fe->e_phoff + (UINT_PTR)fe->e_phentsize * fe->e_phnum;
+		UINT_PTR header_span = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
 
-		if (header_span < fe->e_ehsize) {
-			header_span = fe->e_ehsize;
+		if (header_span < Ehdr->e_ehsize) {
+			header_span = Ehdr->e_ehsize;
 		}
-		if (header_span > image_size) {
-			header_span = image_size;
+		if (header_span > MemorySize) {
+			header_span = MemorySize;
 		}
 
 		UINT_PTR need = MAX (header_span, end - base);
@@ -244,15 +253,15 @@ namespace rvm64::elf {
 		}
 
 		x_memset(img, 0, img_size);
-		x_memcpy(img, file, header_span);
+		MemCpy(img, File, header_span);
 
-		for (INT i = 0; i < fe->e_phnum; ++i) {
+		for (INT i = 0; i < Ehdr->e_phnum; ++i) {
 			const auto& ph = fph [i];
 
 			if (ph.p_type != PT_LOAD) {
 				continue;
 			}
-			if ((UINT_PTR)ph.p_offset + ph.p_filesz > image_size) {
+			if ((UINT_PTR)ph.p_offset + ph.p_Filesz > MemorySize) {
 				VirtualFree (img, 0, MEM_RELEASE);
 				CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
 			}
@@ -263,20 +272,20 @@ namespace rvm64::elf {
 				VirtualFree (img, 0, MEM_RELEASE);
 				CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
 			}
-			if (ph.p_filesz) {
-				x_memcpy(img + dest_off, file + ph.p_offset, ph.p_filesz);
+			if (ph.p_Filesz) {
+				MemCpy(img + dest_off, File + ph.p_offset, ph.p_Filesz);
 			}
 		}
-		if (img_size > PROCESS_BUFFER_SIZE) {
+		if (img_size > PROCESS_BUFEhdrR_SIZE) {
 			VirtualFree (img, 0, MEM_RELEASE);
 			CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
 		}
 
-		x_memcpy ((void*)vmcs->proc.buffer, img, img_size);
+		MemCpy ((void*)vmcs->proc.bufEhdrr, img, img_size);
 		vmcs->proc.write_size = img_size;
 		VirtualFree (img, 0, MEM_RELEASE);
 
-		g_elf_base = base;
+		ElfBase = Base;
 		g_img_size = img_size;
 	}
 
@@ -285,26 +294,26 @@ namespace rvm64::elf {
 		auto* ehdr = (elf64_ehdr*)img;
 		auto* phdr = (elf64_phdr*)(img + ehdr->e_phoff);
 
-		UINT_PTR dyn_vaddr = 0, dyn_size = 0;
+		UINT_PTR DynAddr = 0, dyn_size = 0;
 
 		for (int i = 0; i < ehdr->e_phnum; ++i) { 
 			if (phdr [i].p_type == PT_DYNA) {
-				dyn_vaddr = phdr [i].p_vaddr;
+				DynAddr = phdr [i].p_vaddr;
 				dyn_size  = phdr [i].p_memsz;
 				break;
 			}
 		}
-		if (!dyn_vaddr || !dyn_size) {
+		if (!DynAddr || !dyn_size) {
 			return;
 		}
 
-		UINT_PTR dyn_off = dyn_vaddr - g_elf_base;
+		UINT_PTR DynOff = DynAddr - ElfBase;
 		UINT_PTR rela_va=0, rela_sz=0, rela_ent = sizeof (ELF64_RELA);
 
-		if (!in_img(dyn_off, sizeof(elf64_dyn), g_img_size)) {
+		if (!InImg(DynOff, sizeof(elf64_dyn), g_img_size)) {
 			return;
 		}
-		for (ELF64_DYN* d = (ELF64_DYN*)(img + dyn_off); 
+		for (ELF64_DYN* d = (ELF64_DYN*)(img + DynOff); 
 				InImage ((UINT8*)d - img, sizeof(*d), g_img_size) 
 				&& d->d_tag != DT_NULL; ++d) {
 
@@ -316,7 +325,7 @@ namespace rvm64::elf {
 			return;
 		}
 
-		UINT_PTR rela_off = rela_va - g_elf_base;
+		UINT_PTR rela_off = rela_va - ElfBase;
 		SIZE_T n = (SIZE_T)(rela_sz / rela_ent);
 
 		for (SIZE_T i = 0; i < n; ++i) {
@@ -329,12 +338,12 @@ namespace rvm64::elf {
 			const UINT32 rtype = ELF64_REL_TYPE (r->r_info);
 
 			if (rtype == R_RISCV_RELATIVE) {
-				UINT_PTR where_off = r->r_offset - g_elf_base;
+				UINT_PTR where_off = r->r_offset - ElfBase;
 
 				if (! InImage (where_off, 8, g_img_size)) {
 					continue;
 				}
-				*(UINT_PTR*)(img + where_off) = g_elf_base + (UINT_PTR)r->r_addend;
+				*(UINT_PTR*)(img + where_off) = ElfBase + (UINT_PTR)r->r_addend;
 			}
 		}
 	}
@@ -343,30 +352,30 @@ namespace rvm64::elf {
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)img;
 		ELF64_PHDR *phdr = (ELF64_PHDR*)(img + ehdr->e_phoff);
 
-		UINT_PTR dyn_vaddr = 0;
+		UINT_PTR DynAddr = 0;
 
 		if (ehdr->e_entry) {
 			return ehdr->e_entry;
 		}
 		for (int i = 0; i < ehdr->e_phnum; ++i) {
 			if (phdr [i].p_type == PT_DYNA) { 
-				dyn_vaddr = phdr [i].p_vaddr; 
+				DynAddr = phdr [i].p_vaddr; 
 				break; 
 			}
 		}
-		if (!dyn_vaddr) {
+		if (!DynAddr) {
 			return 0;
 		}
 
-		UINT_PTR dyn_off = dyn_vaddr - g_elf_base;
-		if (! InImage (dyn_off, sizeof(elf64_dyn), g_img_size)) {
+		UINT_PTR DynOff = DynAddr - ElfBase;
+		if (! InImage (DynOff, sizeof(elf64_dyn), g_img_size)) {
 			return 0;
 		}
 
 		// Pull tables
 		UINT_PTR symtab_va=0, strtab_va=0, syment=sizeof(elf64_sym), strsz=0;
 
-		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off); in_img((UINT8*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
+		for (elf64_dyn* d = (elf64_dyn*)(img + DynOff); InImg((UINT8*)d - img, sizeof(*d), g_img_size) && d->d_tag != DT_NULL; ++d) {
 			if (d->d_tag == DT_SYMTAB)  symtab_va = d->d_un.d_ptr;
 			else if (d->d_tag == DT_STRTAB)  strtab_va = d->d_un.d_ptr;
 			else if (d->d_tag == DT_SYMENT)  syment    = d->d_un.d_val ? d->d_un.d_val : sizeof(elf64_sym);
@@ -374,17 +383,17 @@ namespace rvm64::elf {
 		}
 		if (!symtab_va || !strtab_va) return 0;
 
-		UINT_PTR sym_off = symtab_va - g_elf_base;
-		UINT_PTR str_off = strtab_va - g_elf_base;
+		UINT_PTR sym_off = symtab_va - ElfBase;
+		UINT_PTR str_off = strtab_va - ElfBase;
 
-		if (!in_img(sym_off, sizeof(elf64_sym), g_img_size)) return 0;
-		if (!in_img(str_off, 1, g_img_size)) return 0;
-		if (strsz == 0 || !in_img(str_off, strsz, g_img_size)) strsz = g_img_size - str_off;
+		if (!InImg(sym_off, sizeof(elf64_sym), g_img_size)) return 0;
+		if (!InImg(str_off, 1, g_img_size)) return 0;
+		if (strsz == 0 || !InImg(str_off, strsz, g_img_size)) strsz = g_img_size - str_off;
 
 		// Walk bounded
 		const UINT_PTR MAX_ITERS = 1u << 20;
 
-		for (UINT_PTR i = 0, off = sym_off; i < MAX_ITERS && in_img(off, syment, g_img_size); ++i, off += syment) {
+		for (UINT_PTR i = 0, off = sym_off; i < MAX_ITERS && InImg(off, syment, g_img_size); ++i, off += syment) {
 			const elf64_sym* s = (const elf64_sym*)(img + off);
 			if (!s->st_value) continue;
 
@@ -402,32 +411,32 @@ namespace rvm64::elf {
 		return 0;
 	}
 
-	static VOID PatchPLT (UINT8* img) {
-		auto* ehdr = (ELF64_EHDR*)img;
-		auto* phdr = (ELF64_PHDR*)(img + ehdr->e_phoff);
+	static VOID PatchPLT (_In_ const UINT_PTR Memory) {
+		auto* Ehdr = (ELF64_EHDR*)Memory;
+		auto* Phdr = (ELF64_PHDR*)(Memory + Ehdr->e_phoff);
 
-		UINT_PTR dyn_vaddr = 0;
+		UINT_PTR DynAddr = 0;
 
-		for (INT i = 0; i < ehdr->e_phnum; ++i) { // Find PT_DYNAMIC
-			if (phdr [i].p_type == PT_DYNA) { 
-				dyn_vaddr = phdr [i].p_vaddr; 
+		for (INT i = 0; i < Ehdr->e_phnum; ++i) { // Find PT_DYNAMIC
+			if (Phdr [i].p_type == PT_DYNA) { 
+				DynAddr = Phdr [i].p_vaddr; 
 				break; 
 			}
 		}
-		if (!dyn_vaddr) {
+		if (!DynAddr) {
 			return;
 		}
 
-		UINT_PTR dyn_off = dyn_vaddr - g_elf_base;
-		if (! in_img (dyn_off, sizeof (elf64_dyn), g_img_size)) {
+		UINT_PTR DynOff = DynAddr - ElfBase;
+		if (! InImg (DynOff, sizeof (elf64_dyn), g_img_size)) {
 			return;
 		}
 
 		UINT_PTR symtab_va=0, strtab_va=0, strsz=0, syment = sizeof (elf64_sym);
 		UINT_PTR jmprel_va=0, pltrel_sz=0, plt_rel_kind=0;
 
-		for (elf64_dyn* d = (elf64_dyn*)(img + dyn_off) {
-				in_img((UINT8*)d - img, sizeof (*d), g_img_size) && d->d_tag != DT_NULL; ++d);
+		for (elf64_dyn* d = (elf64_dyn*)(img + DynOff) {
+				InImg((UINT8*)d - img, sizeof (*d), g_img_size) && d->d_tag != DT_NULL; ++d);
 				switch (d->d_tag) {
 					case DT_SYMTAB:   symtab_va   = d->d_un.d_ptr; break;
 					case DT_STRTAB:   strtab_va   = d->d_un.d_ptr; break;
@@ -448,16 +457,16 @@ namespace rvm64::elf {
 			return;
 		}
 
-		UINT_PTR rela_off   = jmprel_va - g_elf_base;
-		UINT_PTR symtab_off = symtab_va - g_elf_base;
-		UINT_PTR strtab_off = strtab_va - g_elf_base;
+		UINT_PTR rela_off   = jmprel_va - ElfBase;
+		UINT_PTR symtab_off = symtab_va - ElfBase;
+		UINT_PTR strtab_off = strtab_va - ElfBase;
 
-		if (!in_img (rela_off, pltrel_sz, g_img_size) ||
-			!in_img (symtab_off, sizeof (elf64_sym), g_img_size) ||
-			!in_img (strtab_off, 1, g_img_size)) {
+		if (!InImg (rela_off, pltrel_sz, g_img_size) ||
+			!InImg (symtab_off, sizeof (elf64_sym), g_img_size) ||
+			!InImg (strtab_off, 1, g_img_size)) {
 			return;
 		}
-		if (strsz == 0 || !in_img(strtab_off, strsz, g_img_size)) {
+		if (strsz == 0 || !InImg(strtab_off, strsz, g_img_size)) {
 			strsz = g_img_size - strtab_off;
 		}
 
@@ -466,7 +475,7 @@ namespace rvm64::elf {
 		for (SIZE_T i = 0; i < n; ++i) {
 			UINT_PTR off = rela_off + i * sizeof (elf64_rela);
 
-			if (!in_img(off, sizeof (elf64_rela), g_img_size)) {
+			if (!InImg(off, sizeof (elf64_rela), g_img_size)) {
 				break;
 			}
 
@@ -480,7 +489,7 @@ namespace rvm64::elf {
 			UINT32 sym_idx = (UINT32)ELF64_R_SYM(r->r_info);
 			UINT_PTR s_off = symtab_off + (UINT_PTR)sym_idx * syment;
 
-			if (!in_img(s_off, sizeof (elf64_sym), g_img_size)) {
+			if (!InImg(s_off, sizeof (elf64_sym), g_img_size)) {
 				continue;
 			}
 
@@ -498,14 +507,14 @@ namespace rvm64::elf {
 				continue;
 			}
 
-			LPVOID target = ResolveUCRTImport(name);
+			LPVOID target = ResolveUCRTImport (name);
 			if (!target) {
 				CSR_SET_TRAP(nullptr, image_bad_symbol, 0, (UINT_PTR)name, 1);
 			}
 
-			UINT_PTR where_off = r->r_offset - g_elf_base;
+			UINT_PTR where_off = r->r_offset - ElfBase;
 
-			if (!in_img(where_off, 8, g_img_size)) {
+			if (! InImg (where_off, 8, g_img_size)) {
 				continue;
 			}
 
@@ -513,35 +522,43 @@ namespace rvm64::elf {
 		}
 	}
 
-	NATIVE VOID PatchAndSetEntry () {
-		UINT8 *img = (UINT8*)vmcs->proc.buffer;
-		ELF64_EHDR *ehdr = (ELF64_EHDR*)img;
-
-		if (! img || imgSize == 0) {
-			CSR_SET_TRAP(nullptr, ImageBadLoad, 0, 0, 1);
-		}
-		if (ehdr->e_ident [0] != 0x7F || ehdr->e_ident [1] != 'E' || ehdr->e_ident [2] != 'L' || ehdr->e_ident [3] != 'F') {
-			CSR_SET_TRAP (nullptr, ImageBadType, 0, 0, 1);
-		}
-		if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
-			CSR_SET_TRAP (nullptr, ImageBadType, 0, 0, 1);
-		}
-
-		ApplyRelativeOffsets (img);
-		PatchPLT(img);
-
-		UINT_PTR entry = FindEntry (img);
-		UINT_PTR pcOff = entry - base;
-
-		if (! entry) {
-			CSR_SET_TRAP (nullptr, image_bad_symbol, 0, (UINT_PTR)"no entry", 1);
-		}
-		if (! InImage (pcOff, 4, imgSize)) {
-			CSR_SET_TRAP (nullptr, image_bad_load, 0, 0, 1);
-		}
-
-		vmcs->hdw->pc = (UINT_PTR)(img + pcOff);
-		VmEntry ();
+NATIVE_CALL VOID PatchAndSetEntry (
+		_In_ const UINT_PTR Memory, 
+		_In_ const UINT_PTR MemorySize) 
+{
+	if (! Memory || ! MemorySize) {
+		CSR_SET_TRAP (nullptr, ImageBadLoad, 0, 0, 1);
 	}
-};
+
+	UINT8 *Img 			= (UINT8*)Memory;
+	ELF64_EHDR *Ehdr 	= (ELF64_EHDR*)Img;
+
+	if (Ehdr->e_type != ET_EXEC && Ehdr->e_type != ET_DYN) {
+		CSR_SET_TRAP (nullptr, ImageBadType, 0, 0, 1);
+	}
+	if (
+			Ehdr->e_ident [0] != 0x7F || 
+			Ehdr->e_ident [1] != 'E' || 
+			Ehdr->e_ident [2] != 'L' || 
+			Ehdr->e_ident [3] != 'F') 
+	{
+		CSR_SET_TRAP (nullptr, ImageBadType, 0, 0, 1);
+	}
+
+	ApplyRelativeOffsets (Img);
+	PatchPLT (Img);
+
+	const UINT_PTR Entry = FindEntry (Img);
+	const UINT_PTR PcOff = Entry - Base; // NOTE: where tf is Base??
+
+	if (! Entry) {
+		CSR_SET_TRAP (nullptr, ImageBadSymbol, 0, (UINT_PTR)"no entry", 1);
+	}
+	if (! InImage (PcOff, 4, MemorySize)) {
+		CSR_SET_TRAP (nullptr, ImageBadLoad, 0, 0, 1);
+	}
+
+	Vmcs->Gpr->Pc = (UINT_PTR)(Img + PcOff);
+	VmEntry ();
+}
 #endif // VMELF_H

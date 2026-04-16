@@ -5,29 +5,27 @@
 
 #include "vmentry.hpp"
 
-namespace rvm64 {
-	NATIVE INT32 VmMain (UINT64 magic1, UINT64 magic2) {
-		SaveHostContext ();
+NATIVE_CALL INT32 VmMain (_In_ const UINT64 magic1, _In_ const UINT64 magic2) {
+	SaveHostContext ();
 
-		VmMemoryInit(); 
-		LoadImage (vmcs->Proc.Buffer, vmcs->Proc.WriteSize);
+	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
+	LoadImage 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize);
+	PatchAndSetEntry ();
 
-		PatchAndSetEntry ();
-
-		if (setjmp(vmcs->Hdw->ExitHandler)) {
-			goto defer;	
-		}
-defer:
-		VmMemoryFree ();
-		RestoreHostContext ();
-
-		return vmcs->Hdw->Csr.MCause;
+	if (setjmp (Vmcs->ExitHandler)) {
+		goto defer;	
 	}
-};
+
+defer:
+	MemoryFree ();
+	RestoreHostContext ();
+
+	return Vmcs->Csr->Cause;
+}
 
 int main () {
 	VMCS instance = { };
-	vmcs = &instance;
+	Vmcs = &instance;
 
 	// TODO: incoming packets/supervisor will assign random magics
     return VmMain (VM_MAGIC1, VM_MAGIC2);

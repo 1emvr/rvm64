@@ -135,16 +135,20 @@ enum Causenum {
     InvalidChannel          = 0xffff,
 };
 
+
 typedef struct {
 	UINT8 mask;
 	Typenum type;
 } OPCODE;
+
 
 VM_DATA OPCODE Encoding [] = {
 	{0b1010011, RTYPE}, {0b1000011, RTYPE}, {0b0110011, RTYPE}, {0b1000111, R4TYPE}, {0b1001011, R4TYPE}, {0b1001111, R4TYPE},
 	{0b0000011, ITYPE}, {0b0001111, ITYPE}, {0b1100111, ITYPE}, {0b0010011, ITYPE}, {0b1110011, ITYPE}, {0b0011011, ITYPE},
 	{0b0100011, STYPE}, {0b0100111, STYPE}, {0b1100011, BTYPE}, {0b0010111, UTYPE}, {0b0110111, UTYPE}, {0b1101111, JTYPE},
 };
+
+
 
 typedef struct {
     UINT64 Rip, Rsp, Rax, Rbx, Rcx, Rdx, Rsi, Rdi, Rbp;
@@ -194,13 +198,85 @@ typedef struct _vmcs {
 	INT Halt;
 } VMCS;
 
+
+VM_DATA const UINT_PTR DispatchTable [256] = {
+#define ENCRYPT (op) EncryptPtr ((UINT_PTR)(op), (UINT_PTR)0)
+    // ITYPE
+    ENCRYPT (itype::rv_addi), 		ENCRYPT (itype::rv_slti),
+    ENCRYPT (itype::rv_sltiu), 		ENCRYPT (itype::rv_xori),
+    ENCRYPT (itype::rv_ori), 		ENCRYPT (itype::rv_andi),
+    ENCRYPT (itype::rv_slli), 		ENCRYPT (itype::rv_srli),
+    ENCRYPT (itype::rv_srai), 		ENCRYPT (itype::rv_addiw),
+    ENCRYPT (itype::rv_slliw), 		ENCRYPT (itype::rv_srliw),
+    ENCRYPT (itype::rv_sraiw), 		ENCRYPT (itype::rv_lb),
+    ENCRYPT (itype::rv_lh), 		ENCRYPT (itype::rv_lw),
+    ENCRYPT (itype::rv_lbu), 		ENCRYPT (itype::rv_lhu),
+    ENCRYPT (itype::rv_lwu), 		ENCRYPT (itype::rv_ld),
+    ENCRYPT (itype::rv_flq), 		ENCRYPT (itype::rv_fence),
+    ENCRYPT (itype::rv_fence_i), 	ENCRYPT (itype::rv_jalr),
+    ENCRYPT (itype::rv_ecall), 		ENCRYPT (itype::rv_ebreak),
+    ENCRYPT (itype::rv_csrrw), 		ENCRYPT (itype::rv_csrrs),
+    ENCRYPT (itype::rv_csrrc), 		ENCRYPT (itype::rv_csrrwi),
+    ENCRYPT (itype::rv_csrrsi), 	ENCRYPT (itype::rv_csrrci),
+    ENCRYPT (itype::rv_fclass_d), 	ENCRYPT (itype::rv_lrw),
+    ENCRYPT (itype::rv_lrd), 		ENCRYPT (itype::rv_fmv_d_x),
+    ENCRYPT (itype::rv_fcvt_s_d), 	ENCRYPT (itype::rv_fcvt_d_s),
+    ENCRYPT (itype::rv_fcvt_w_d), 	ENCRYPT (itype::rv_fcvt_wu_d),
+    ENCRYPT (itype::rv_fcvt_d_w), 	ENCRYPT (itype::rv_fcvt_d_wu),
+
+    // RTYPE
+    ENCRYPT (rtype::rv_fadd_d), 	ENCRYPT (rtype::rv_fsub_d),
+    ENCRYPT (rtype::rv_fmul_d), 	ENCRYPT (rtype::rv_fdiv_d),
+    ENCRYPT (rtype::rv_fsgnj_d), 	ENCRYPT (rtype::rv_fsgnjn_d),
+    ENCRYPT (rtype::rv_fsgnjx_d), 	ENCRYPT (rtype::rv_fmin_d),
+    ENCRYPT (rtype::rv_fmax_d), 	ENCRYPT (rtype::rv_feq_d),
+    ENCRYPT (rtype::rv_flt_d), 		ENCRYPT (rtype::rv_fle_d),
+    ENCRYPT (rtype::rv_scw), 		ENCRYPT (rtype::rv_amoswap_w),
+    ENCRYPT (rtype::rv_amoadd_w), 	ENCRYPT (rtype::rv_amoxor_w),
+    ENCRYPT (rtype::rv_amoand_w), 	ENCRYPT (rtype::rv_amoor_w),
+    ENCRYPT (rtype::rv_amomin_w), 	ENCRYPT (rtype::rv_amomax_w),
+    ENCRYPT (rtype::rv_amominu_w), 	ENCRYPT (rtype::rv_amomaxu_w),
+    ENCRYPT (rtype::rv_scd), 		ENCRYPT (rtype::rv_amoswap_d),
+    ENCRYPT (rtype::rv_amoadd_d), 	ENCRYPT (rtype::rv_amoxor_d),
+    ENCRYPT (rtype::rv_amoand_d), 	ENCRYPT (rtype::rv_amoor_d),
+    ENCRYPT (rtype::rv_amomin_d), 	ENCRYPT (rtype::rv_amomax_d),
+    ENCRYPT (rtype::rv_amominu_d), 	ENCRYPT (rtype::rv_amomaxu_d),
+    ENCRYPT (rtype::rv_addw), 		ENCRYPT (rtype::rv_subw),
+    ENCRYPT (rtype::rv_mulw), 		ENCRYPT (rtype::rv_srlw),
+    ENCRYPT (rtype::rv_sraw), 		ENCRYPT (rtype::rv_divuw),
+    ENCRYPT (rtype::rv_sllw), 		ENCRYPT (rtype::rv_divw),
+    ENCRYPT (rtype::rv_remw), 		ENCRYPT (rtype::rv_remuw),
+    ENCRYPT (rtype::rv_add), 		ENCRYPT (rtype::rv_sub),
+    ENCRYPT (rtype::rv_mul), 		ENCRYPT (rtype::rv_sll),
+    ENCRYPT (rtype::rv_mulh), 		ENCRYPT (rtype::rv_slt),
+    ENCRYPT (rtype::rv_mulhsu), 	ENCRYPT (rtype::rv_sltu),
+    ENCRYPT (rtype::rv_mulhu), 		ENCRYPT (rtype::rv_xor),
+    ENCRYPT (rtype::rv_div), 		ENCRYPT (rtype::rv_srl),
+    ENCRYPT (rtype::rv_sra), 		ENCRYPT (rtype::rv_divu),
+    ENCRYPT (rtype::rv_or), 		ENCRYPT (rtype::rv_rem),
+    ENCRYPT (rtype::rv_and), 		ENCRYPT (rtype::rv_remu),
+
+    // STYPE
+    ENCRYPT (stype::rv_sb), 	ENCRYPT (stype::rv_sh),
+    ENCRYPT (stype::rv_sw), 	ENCRYPT (stype::rv_sd),
+    ENCRYPT (stype::rv_fsw), 	ENCRYPT (stype::rv_fsd),
+
+    // BTYPE
+    ENCRYPT (btype::rv_beq), 	ENCRYPT (btype::rv_bne),
+    ENCRYPT (btype::rv_blt), 	ENCRYPT (btype::rv_bge),
+    ENCRYPT (btype::rv_bltu), 	ENCRYPT (btype::rv_bgeu),
+
+    // UTYPE/JTYPE
+    ENCRYPT (utype::rv_lui), ENCRYPT (utype::rv_auipc),
+    ENCRYPT (jtype::rv_jal)
+
+#undef ENCRYPT
+
 #include "vmport.hpp"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-	extern const UINT_PTR dispatch_table [256];
-
 	VOID SaveHostContext ();
 	VOID RestoreHostContext ();
 	VOID SaveVmContext ();
