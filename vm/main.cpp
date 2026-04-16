@@ -1,6 +1,5 @@
 #include "vmmain.cpp"
 int main () {
-	// TODO: incoming packets/supervisor will assign random magics
-    return VmMain (MAGIC_1, MAGIC_2);
+    return VmStart (INTERNAL_MAGIC1, INTERNAL_MAGIC2); // TODO: incoming packets will assign random magics
 }
 
