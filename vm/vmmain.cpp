@@ -4,9 +4,12 @@
 
 NATIVE_CALL VOID VmMain () {
 	if (setjmp (Vmcs->Context->Interrupt)) { 
-		Sleep (10);
 	}
 	do {
+		if (Vmcs->Proc.Memory) {
+			MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
+		}
+
 		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
 		Vmcs->Context->Ready = 1;
 
@@ -20,8 +23,6 @@ NATIVE_CALL VOID VmMain () {
 		if (setjmp (Vmcs->Context->Shutdown)) { 
 			goto defer;	
 		}
-
-		MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 	} while (true);
 
 defer:

@@ -95,8 +95,6 @@ VM_CALL VOID MemoryRelease (
 	}
 
 	*MemorySize = 0;
-	Vmcs->Context.Ready = 0;
-
 	Vmcs->Magic1 = 0;
 	Vmcs->Magic2 = 0;
 }
