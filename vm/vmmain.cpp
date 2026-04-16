@@ -26,7 +26,7 @@ NATIVE_CALL INT32 VmMain (
 		PatchAndExecute (Vmcs->Proc.Memory); 		
 
 		VmFree ();
-	} while (true)
+	} while (true);
 
 	if (setjmp (Vmcs->Context->ExitHandler)) {
 		goto defer;	
