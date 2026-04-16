@@ -23,9 +23,9 @@ namespace rvm64::entry {
 			return;
 		}
 
-		vmcs->proc.size   			= PROCESS_BUFFER_SIZE;
-		vmcs->proc.write_size 		= (uint64_t)0;
-		vmcs->proc.ready 			= (uint64_t)0;
+		vmcs->proc.size   		= PROCESS_BUFFER_SIZE;
+		vmcs->proc.write_size 	= (uint64_t)0;
+		vmcs->proc.ready 		= (uint64_t)0;
 
 		vmcs->size_ptr 			= (uint64_t)&vmcs->proc.size;
 		vmcs->write_size_ptr 	= (uint64_t)&vmcs->proc.write_size;
@@ -39,7 +39,7 @@ namespace rvm64::entry {
 			CSR_SET_TRAP(0, out_of_memory, 0, 0, 1);
 		}
 
-		vmcs->hdw->vregs[sp] = (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY);
+		Vmcs->Gpr->Vregs [sp] = (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY);
 		if (vmcs->cache) {
 			rvm64::memory::cache_data(vmcs->proc.buffer, vmcs->proc.write_size);
 		}
