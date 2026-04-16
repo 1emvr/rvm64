@@ -85,8 +85,8 @@ VM_CALL VOID ContextInit (_Inout_ VM_CONTEXT** Context) {
 
 
 VM_CALL VOID MemoryRelease (
-		_In_ const UINT_PTR* Memory, 
-		_In_ const UINT_PTR* MemorySize) 
+		_In_ UINT_PTR* Memory, 
+		_In_ UINT_PTR* MemorySize) 
 {
 	if (*Memory) {
 		MemSet (*Memory, 0, *MemorySize);
