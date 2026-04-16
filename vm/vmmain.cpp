@@ -95,7 +95,6 @@ NATIVE_CALL BOOL process_packets (
 		if (elf_sz < runtime_sz) {
 
 		}
-
 		new_vms->count += 1;
 	}
 	return true;
