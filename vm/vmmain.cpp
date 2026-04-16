@@ -2,9 +2,10 @@
 #include "vmmain.hpp"
 
 
+#define MAX_VM_THREADS 5
 struct PACKET_SEG { 
-	UINT_PTR 	image_offset [8]; 
-	UINT_PTR 	param_offset [8];
+	UINT_PTR 	image_offset [MAX_VM_THREADS]; 
+	UINT_PTR 	param_offset [MAX_VM_THREADS];
 	SIZE_T 		count; 
 };
 
@@ -15,28 +16,27 @@ NATIVE_CALL BOOL is_elf (_In_ UINT_PTR base) {
 }
 
 
-NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the arena
+NATIVE_CALL BOOL process_packets ( // process packed ELF files and their params for thread creation. everything will be dynamically resolved and addresses relocated in the arena, so it all needs to fit.
 		_Inout_ 	UINT_PTR* 		data,
-		_Inout_ 	SIZE_T* 		data_size,
+		_Inout_ 	UINT_PTR* 		data_size,
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
 	UINT_PTR image_base = *data;
-	static UINT_PTR total = 0;
+	UINT_PTR total = 0;
 	
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < MAX_VM_THREADS; i++) {
 		UINT_PTR param_size = image_base [0];
+		{
+			if (param_size != 0) {						
+				new_vms->param_offset [i] = image_base; // param_offset points to the header of the param first -> (param size), (*param data)
+			}
 
-		if (param_size != 0) {
-			param_size += PARAM_HEADER_SIZE;
-			total += param_size;
-			{
-				if (total > *data_size) { 
-					arena_realloc (data, data_size, *(data_size) + ARENA_SIZE);
-					image_base = *data + (total - param_size);
-				}
+			total 		+= sizeof (UINT_PTR) + param_size;
+			image_base 	+= sizeof (UINT_PTR) + param_size;
 
-				new_vms->param_offset [i] = image_base; 
-				image_base += param_size;
+			if (total > *data_size) {	
+				arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
+				image_base = *data + total;
 			}
 		}
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
@@ -45,41 +45,40 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
 		SIZE_T prg_size = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
-
-		for (int i = 0; i < ehdr->e_phnum; i++) {
-			ELF64_PHDR *phdr = (ELF64_PHDR*)(image + ehdr->e_phoff + (i * ehdr->e_phentsize));
-			SIZE_T sg_end = phdr->p_offset + phdr->p_filesz;
-
-			if (sg_end > prg_size) {
-				prg_size = sg_end;
-			}
-		}
-
-		total += prg_size; // probably doesn't include headers
 		{
-			if (total > *data_size) {
-				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
-				image_base = *data + (total - prg_size);
+			for (int i = 0; i < ehdr->e_phnum; i++) {
+				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
+				SIZE_T sg_end = phdr->p_offset + phdr->p_filesz;
+
+				if (sg_end > prg_size) {
+					prg_size = sg_end;
+				}
 			}
 
-			new_vms->image_offset [i] = image_base;
-			image_base += prg_size;
+			total 		+= prg_size; 
+			image_base 	+= prg_size;
 
-			new_vms->count += 1;
+			if (total > *data_size) {	// since programs can expand in memory we need to check to make sure we have enough.
+				arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
+				image_base = *data + total;
+			}
 		}
+
+		new_vms->image_offset [i] = image_base;
+		new_vms->count += 1;
 	}
 	return true;
 }
 
 
 NATIVE_CALL VOID rvm64_main (
-		_In_ const UINT_PTR data,
-		_In_ const SIZE_T	size) 
+		_In_ const UINT_PTR* data, 	// data points to a pre-made arena
+		_In_ const UINT_PTR* data_size) 
 {
-	HANDLE threads [8] = { };			// might change it to 5 max threads idk
+	HANDLE threads [MAX_VM_THREADS] = { };		// might change it to 5 max threads idk
 	PACKET_SEG new_vms = { };
 
-	process_packets (&data, &new_vms); // track params (magic, params size, param data)-> nt_head + file size
+	process_packets (&data, &new_vms); // track params, elf data and offsets 
 	if (new_vms.count == 0) {
 		return;
 	}
