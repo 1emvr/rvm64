@@ -33,7 +33,7 @@ DATA_SCN OPCODE EncodingTable [] = {
 VM_CALL VOID VmExecute () {
 	while (true) {
 		Decode (*(INT32*)Vmcs->Hdw.Pc); 
-		Vmcs->Hdw.Pc += 4;
+		Vmcs->Hdw.Pc += 4; // TODO: Consider removing this and forcing operations to perform the math.
 	}
 }
 
