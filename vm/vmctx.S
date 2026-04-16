@@ -4,7 +4,7 @@
 .text
 .global SaveRegisterCtx
 SaveRegisterCtx:
-    mov     [rcx + OFFSET_RAX], rax
+    mov     rcx + OFFSET_RAX, rax
 	mov		rax, [rsp]
 	mov		[rcx + OFFSET_RIP], rax
     mov     [rcx + OFFSET_RSP], rsp
