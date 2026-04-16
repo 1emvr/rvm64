@@ -28,30 +28,29 @@ NATIVE_CALL BOOL process_packets (
 		_Inout_ 	UINT_PTR* 		data_sz,
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
-	UINT_PTR image_base = *data;
-	UINT_PTR n_threads 	= image_base [0]; 
+	BYTE *image_base = (BYTE*)*data;
 
+	UINT_PTR n_threads 	= image_base [0]; 
 	UINT_PTR remaining 	= *data_sz;
 	UINT_PTR offset 	= 0;
 
 	offset 		+= sizeof (UINT_PTR);
-	image_base 	+= offset; 
-	remaining 	-= offset; 
+	image_base 	+= sizeof (UINT_PTR); 
+	remaining 	-= sizeof (UINT_PTR); 
 
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
 	while (n_threads != 0) { 
-		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (data)], ... 
-
+		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (data), (_pt_load_space)], ... 
 		if (param_sz != 0) {						
 			new_vms->param_offset [i] = offset; 
 		}
 
 		offset 		+= sizeof (UINT_PTR) + param_sz;
-		image_base 	+= offset;
-		remaining 	-= offset;
+		image_base 	+= sizeof (UINT_PTR) + param_sz;
+		remaining 	-= sizeof (UINT_PTR) + param_sz;
 
 		new_vms->image_offset [i] = offset; 
 
@@ -60,35 +59,43 @@ NATIVE_CALL BOOL process_packets (
 		}
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
-		UINT_PTR img_sz = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
 
-		for (int i = 0; i < ehdr->e_phnum; i++) { 
-			ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
-
-			if (phdr->p_type != PT_LOAD) {
-				continue;
+		UINT_PTR lo = (UINT_PTR)-1, hi = 0;
+		SIZE_T file_sz = 0;	
+		{
+			file_sz = max (file_sz, ehdr->e_phoff + (SIZE_T)ehdr->e_phnum * ehdr->e_phentsize);
+			if (ehdr->e_shoff) {
+				file_sz = max (file_sz, ehdr->e_shoff + (SIZE_T)ehdr->e_shnum * ehdr->e_shentsize);
 			}
 
-			UINT_PTR img_end = phdr->v_addr + phdr->p_memsz;
+			for (int i = 0; i < ehdr->e_phnum; i++) { 
+				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
 
-			if (img_end > img_sz) { // if img_end > img_size it means we need to reserve space and move the next elf forward
-				img_sz = img_end;
-
-				if (image_base + img_sz > remaining) {
-					UINT_PTR expand = DEFAULT_ARENA_SIZE + img_sz; 
-
-					remaining += expand;
-					arena_realloc (data, data_sz, *(data_sz) + expand);
-
-					image_base = *data + offset;
+				file_sz = max (file_sz, phdr [i].p_offset + phdr [i].p_filesz);
+				if (phdr->p_type != PT_LOAD) {
+					continue;
 				}
-				// here we move memory of the next elf forward and reserve memory for this one.
+
+				UINT_PTR seg_lo = phdr->p_vaddr & ~(phdr->p_align - 1);
+				UINT_PTR seg_hi = phdr->p_vaddr + phdr->p_memsz;
+				
+				if (seg_lo < lo) { lo = seg_lo }
+				if (seg_hi > hi) { hi = seg_hi }
+
+				if (img_end > img_sz) { 
+					if (offset + img_end > remaining) {
+						arena_realloc (data, data_sz, *(data_sz) + DEFAULT_ARENA_SIZE + img_sz);
+					}
+
+					MoveMemory (image_base + img_end, img_base + phdr->e_filesz, remaining);
+					remaining += DEFAULT_ARENA_SIZE + img_sz;
+				}
 			}
 		}
 
 		offset 		+= img_sz;
-		image_base 	+= offset;
-		remaining 	-= offset;
+		image_base 	+= img_sz;
+		remaining 	-= img_sz;
 
 		if (total > *data_sz) {	
 			arena_realloc (data, data_sz, *(data_sz) + DEFAULT_ARENA_SIZE);
