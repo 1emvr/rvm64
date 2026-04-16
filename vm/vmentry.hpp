@@ -11,8 +11,7 @@
 #include "vmelf.hpp"
 #include "vmveh.hpp"
 
-namespace rvm64::entry {
-	_vmcall void VmMemoryInit() {
+	VM_CALL void MemoryInit() {
 		veh_handle = AddVectoredExceptionHandler(1, vm_exception_handler);
 																	
 		vmcs->self = (uint64_t)vmcs;
@@ -45,7 +44,7 @@ namespace rvm64::entry {
 		}
 	}
 
-	_vmcall void VmMemoryFree() {
+	VM_CALL void VmMemoryFree() {
 		RemoveVectoredExceptionHandler(veh_handle);
 		veh_handle = 0;
 
@@ -70,7 +69,7 @@ namespace rvm64::entry {
 		vmcs->magic2 = 0;
 	}
 
-	_vmcall void VmEntry() {
+	VM_CALL void VmEntry() {
 		volatile void *_pad0 = 0;
 		if (setjmp(vmcs->hdw->trap_handler)) {}
 
@@ -86,5 +85,4 @@ namespace rvm64::entry {
 			vmcs->hdw->pc += 4;
 		}
 	}
-};
 #endif // VMENTRY_HPP

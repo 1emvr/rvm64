@@ -29,17 +29,16 @@
 #define RV64_RET                0x00008067
 
 #define CSR_SET_TRAP(epc, cause, stat, val, hlt) 		\
-    vmcs->hdw->csr.m_epc = (uintptr_t)(epc);          	\
-    vmcs->hdw->csr.m_cause = (cause);                 	\
-    vmcs->hdw->csr.m_status = (stat);                 	\
-    vmcs->hdw->csr.m_tval = (val);                    	\
+    Vmcs->Csr->Epc = (uintptr_t)(epc);          		\
+    vmcs->Csr->Cause = (cause);                 		\
+    vmcs->Csr->Status = (stat);                 		\
+    vmcs->Csr->Tval = (val);                    		\
     vmcs->halt = (hlt);                          		\
-    RaiseException(RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	\
-    VM_UNREACHABLE()
+    RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
 
 // Safe MIN/MAX that work on both compilers
-#define MIN(a, b) ([](auto _a, auto _b){ return _a < _b ? _a : _b; }((a),(b)))
-#define MAX(a, b) ([](auto _a, auto _b){ return _a > _b ? _a : _b; }((a),(b)))
+#define MIN (a, b) ([] (auto _a, auto _b) { return _a < _b ? _a : _b; } ((a),(b)))
+#define MAX (a, b) ([] (auto _a, auto _b) { return _a > _b ? _a : _b; } ((a),(b)))
 
 
 enum Screnum {
@@ -163,29 +162,36 @@ typedef struct {
 
 typedef struct _vmcs {
     UINT64 Magic1, Magic2;
-	UINT64 PtrSelf;
 	UINT64 Pid;
 	UINT64 Tid;
+
+	struct {
+		INTEL* 		HostContext;
+		INTEL* 		VmContext;
+		jmp_buf* 	TrapHandler;
+		jmp_buf* 	ExitHandler;
+		HANDLE 		VehHandle;
+		HANDLE 		Mutex;
+	} Context;
 
 	struct {
 		HMODULE Ucrt;
 		HMODULE Kernel32;
 	} Module;
+
 	struct {
 		UINT_PTR Epc;
 		UINT_PTR Cause;
 		UINT_PTR Status;
 		UINT_PTR Tval;
 	} Csr;
+
 	typedef {
 		UINT64 Pc;
 		UINT64 Scratch [8];
 		UINT64 Regs [32];
 		UINT64 Stack [32];
 	} Gpr;
-
-	jmp_buf TrapHandler;
-	jmp_buf ExitHandler;
 
 	struct {
 		UINT64 Memory;
@@ -280,11 +286,7 @@ extern "C" {
 	VOID RestoreVmContext ();
 
 	DATA_SCN VMCS* 	Vmcs 		= 0;
-	DATA_SCN HANDLE VmcsMux 	= 0;
-	DATA_SCN HANDLE VehHandle 	= 0;
 
-	DATA_SCN INTEL HostContext 	= { };
-	DATA_SCN INTEL VmContext 	= { };
 #ifdef __cplusplus
 }
 #endif
