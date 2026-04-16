@@ -42,21 +42,21 @@ typedef struct _ucrt_function {
 	} Typenum;
 
 	union {
-		INT 	(__cdecl* open)(PCHAR, INT, INT);
-		INT 	(__cdecl* read)(INT, LPVOID, UINT);
-		INT 	(__cdecl* write)(INT, LPVOID, UINT);
-		INT 	(__cdecl* close)(INT);
-		LONG 	(__cdecl* lseek)(INT, LONG, INT);
-		INT 	(__cdecl* stat64)(const CHAR *, LPVOID);
-		LPVOID 	(__cdecl* malloc)(SIZE_T);
-		VOID 	(__cdecl* free)(LPVOID);
-		LPVOID 	(__cdecl* memcpy)(LPVOID, LPVOID, SIZE_T);
-		LPVOID 	(__cdecl* memset)(LPVOID, INT, SIZE_T);
-		SIZE_T 	(__cdecl* strlen)(CHAR *);
-		CHAR * 	(__cdecl* strcpy)(CHAR *, CHAR *);
-		LPVOID 	(__stdcall* mmap)(LPVOID, SIZE_T, DWORD, DWORD); // aliased to VirtualAlloc
-		BOOL 	(__stdcall* munmap)(LPVOID, SIZE_T, DWORD); // aliased to VirtualFree
-		BOOL 	(__stdcall* mprotect)(LPVOID, SIZE_T, DWORD, PDWORD); // aliased to VirtualProtect
+		INT 	(__cdecl* open)			(CHAR*, INT, INT);
+		INT 	(__cdecl* read)			(INT, LPVOID, UINT);
+		INT 	(__cdecl* write)		(INT, LPVOID, UINT);
+		INT 	(__cdecl* close)		(INT);
+		LONG 	(__cdecl* lseek)		(INT, LONG, INT);
+		INT 	(__cdecl* stat64)		(const CHAR*, LPVOID);
+		LPVOID 	(__cdecl* malloc)		(SIZE_T);
+		VOID 	(__cdecl* free)			(LPVOID);
+		LPVOID 	(__cdecl* memcpy)		(LPVOID, LPVOID, SIZE_T);
+		LPVOID 	(__cdecl* memset)		(LPVOID, INT, SIZE_T);
+		SIZE_T 	(__cdecl* strlen)		(CHAR *);
+		CHAR * 	(__cdecl* strcpy)		(CHAR *, CHAR *);
+		LPVOID 	(__stdcall* mmap)		(LPVOID, SIZE_T, DWORD, DWORD); 	// aliased to VirtualAlloc
+		BOOL 	(__stdcall* munmap)		(LPVOID, SIZE_T, DWORD); 			// aliased to VirtualFree
+		BOOL 	(__stdcall* mprotect)	(LPVOID, SIZE_T, DWORD, PDWORD); 	// aliased to VirtualProtect
 	} Typecaster;
 } UCRT_FUNCTION;
 
