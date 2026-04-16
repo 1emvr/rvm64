@@ -7,16 +7,15 @@
 NATIVE_CALL VOID VmMain () {
 	if (setjmp (Vmcs->Context->Interrupt)) { } 
 	do{
-		{
-			if (Vmcs->Proc.Memory) {
-				MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-			}
-
-			MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
-			while (Vmcs->Context.Halt) { 
-				Sleep (10); 
-			}
+		if (Vmcs->Proc.Memory) {
+			MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 		}
+
+		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
+		while (Vmcs->Context.Halt) { 
+			Sleep (10); 
+		}
+
 		LoadImage 		(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
 		PatchAndExecute (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 		
 
