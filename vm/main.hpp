@@ -161,14 +161,20 @@ typedef struct {
 
 
 struct {
-	INTEL 		HostContext;
-	INTEL 		VmContext;
-	jmp_buf 	TrapHandler;
-	jmp_buf 	ExitHandler;
-	HANDLE 		VehHandle;
-	HANDLE 		Mutex;
-	UINT64 		LoadRsvAddr;
-	UINT64 		LoadRsvValid;
+	INTEL 	HostContext;
+	INTEL 	VmContext;
+
+	jmp_buf TrapHandler;
+	jmp_buf ExitHandler;
+
+	HANDLE 	VehHandle;
+	HANDLE 	RWMutex;
+
+	UINT64 	LoadRsvAddr;
+	UINT64 	LoadRsvValid;
+							   
+	INT 	Trap;
+	INT 	Halt;
 } VM_CONTEXT;
 
 
@@ -204,9 +210,6 @@ typedef struct {
 		UINT64 			MemorySize;
 		volatile UINT64 Ready;   
 	} Proc;
-							   
-	INT Trap;
-	INT Halt;
 } VMCS;
 
 

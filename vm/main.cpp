@@ -7,7 +7,7 @@
 
 
 VM_CALL VOID VmEntry () {
-	volatile LPVOID Pad0 = 0;
+	volatile LPVOID Pad0 = 0; // Used to align the function ? Added when making the debugger.
 	
 	if (setjmp (Vmcs->Context->TrapHandler)) { } 
 
@@ -31,13 +31,13 @@ NATIVE_CALL INT32 VmMain (
 {
 	SaveHostContext ();
 
-	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: init memory/modules.
-	LoadImage 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: load risc-v image.
+	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // init memory/modules.
+	LoadImage 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // load risc-v image.
 
 	Vmcs->Magic1 = Magic1;
 	Vmcs->Magic2 = Magic2;
 
-	PatchImportTable (); 									// NOTE: patch plt -> entrypoint
+	PatchImportTable (); 									// patch plt/entrypoint
 	VmEntry ();
 
 	if (setjmp (Vmcs->Context->ExitHandler)) {
