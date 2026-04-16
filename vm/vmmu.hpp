@@ -19,7 +19,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 	if (Vmcs->Context->Exit || Code != RVM_TRAP_EXCEPTION) {
-		longjmp (Vmcs->ExitHandler, true);
+		longjmp (Vmcs->Context->ExitHandler, true);
 	}
 
 	switch (Vmcs->Csr.Cause) {
@@ -41,7 +41,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	}
 
 	RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
-	longjmp (Vmcs->TrapHandler, true); 
+	longjmp (Vmcs->Context->TrapHandler, true); 
 }
 
 

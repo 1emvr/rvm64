@@ -273,11 +273,11 @@ DATA_SCN const UINT_PTR DispatchTable [256] = {
 
 
 VM_CALL VOID SetCsrTrap (
-		_In_ const INT Epc, 
-		_In_ const INT Cause, 
-		_In_ const INT Stat, 
-		_In_ const INT Tval, 
-		_In_ const INT Halt) 
+		_In_ const INT32 Epc, 
+		_In_ const INT32 Cause, 
+		_In_ const INT32 Stat, 
+		_In_ const INT32 Tval, 
+		_In_ const INT32 Halt) 
 {
     Vmcs->Csr->Epc 		= (UINT_PTR)Epc;			
     Vmcs->Csr->Cause 	= Cause;                 	
@@ -297,8 +297,7 @@ extern "C" {
 	VOID SaveVmRegCtx ();
 	VOID LoadVmRegCtx ();
 
-	DATA_SCN VMCS* 	Vmcs 		= 0;
-
+	DATA_SCN VMCS* Vmcs = 0;
 #ifdef __cplusplus
 }
 #endif
