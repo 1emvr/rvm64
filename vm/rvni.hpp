@@ -8,21 +8,26 @@
 #include "vmrwx.hpp"
 #include "vmmu.hpp"
 
-constexpr const char *C_OPEN = "_open";
-constexpr const char *C_READ = "_read";
-constexpr const char *C_WRITE = "_write";
-constexpr const char *C_CLOSE = "_close";
-constexpr const char *C_LSEEK = "_lseek";
-constexpr const char *C_STAT64 = "_stat64";
-constexpr const char *C_MALLOC = "malloc";
-constexpr const char *C_FREE = "free";
-constexpr const char *C_MEMCPY = "memcpy";
-constexpr const char *C_MEMSET = "memset";
-constexpr const char *C_STRLEN = "strlen";
-constexpr const char *C_STRCPY = "strcpy";
-constexpr const char *C_MMAP = "mmap";
-constexpr const char *C_MUNMAP = "munmap";
-constexpr const char *C_MPROTECT = "mprotect";
+
+VM_CALL VOID NativeCall (VOID);
+NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName);
+
+
+constexpr const char *C_OPEN 		= "_open";
+constexpr const char *C_READ 		= "_read";
+constexpr const char *C_WRITE 		= "_write";
+constexpr const char *C_CLOSE 		= "_close";
+constexpr const char *C_LSEEK 		= "_lseek";
+constexpr const char *C_STAT64 		= "_stat64";
+constexpr const char *C_MALLOC 		= "malloc";
+constexpr const char *C_FREE 		= "free";
+constexpr const char *C_MEMCPY 		= "memcpy";
+constexpr const char *C_MEMSET 		= "memset";
+constexpr const char *C_STRLEN 		= "strlen";
+constexpr const char *C_STRCPY 		= "strcpy";
+constexpr const char *C_MMAP 		= "mmap";
+constexpr const char *C_MUNMAP 		= "munmap";
+constexpr const char *C_MPROTECT 	= "mprotect";
 
 
 VM_DATA UCRT_ALIAS AliasTable [] = {
@@ -31,7 +36,7 @@ VM_DATA UCRT_ALIAS AliasTable [] = {
 	{ "write", "_write" }, 
 	{ "close", "_close" }, 
 	{ "exit",  "_exit"  }, 
-	{ "mmap", "VirtualAlloc" }, 
+	{ "mmap", 	"VirtualAlloc" }, 
 	{ "munmap", "VirtualFree" }, 
 	{ "mprotect", "VirtualProtect" }, 
 };
@@ -107,7 +112,8 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 		}
 	}
 
-	LPVOID Native = (LPVOID) GetProcAddress (Vmcs->Module.Ucrt, AliasName);
+	LPVOID Native = (LPVOID) GetProcAddress (Vmcs->Module.Ucrt, AliasName); // resolve by the win32 equivalent. 
+
 	if (! Native) {
 		Native = (LPVOID) GetProcAddress (Vmcs->Module.Kernel32, AliasName);
 
@@ -145,7 +151,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 }
 
 
-VMCALL VOID NativeCall () {
+VM_CALL VOID NativeCall () {
 	UCRT_FUNCTION *Api = nullptr;
 
 	for (auto &f : FunctionTable) {

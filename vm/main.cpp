@@ -5,12 +5,15 @@
 
 #include "vmentry.hpp"
 
-NATIVE_CALL INT32 VmMain (_In_ const UINT64 Magic1, _In_ const UINT64 Magic2) {
+NATIVE_CALL INT32 VmMain (
+		_In_ const UINT64 Magic1, 
+		_In_ const UINT64 Magic2) 
+{
 	SaveHostContext ();
 
-	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: init memory, modules.
-	LoadImage 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize);
-	PatchAndSetEntry ();
+	MemoryInit 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: init memory/modules.
+	LoadImage 	(Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // NOTE: load risc-v image.
+	PatchAndSetEntry (); 									// NOTE: patch plt -> entrypoint
 
 	if (setjmp (Vmcs->ExitHandler)) {
 		goto defer;	
