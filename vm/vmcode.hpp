@@ -46,7 +46,7 @@ DATA_SCN OPCODE EncodingTable [] = {
 };
 
 
-VMCALL VOID Decode (_In_ const UINT32 Opcode) {
+VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Decoded = 0;
 	UINT8 Opcode7 = Opcode & 0x7F;
 
@@ -499,7 +499,7 @@ VMCALL VOID Decode (_In_ const UINT32 Opcode) {
 	}
 }
 
-VMCALL void lrw () {
+VM_CALL void lrw () {
 	UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT32 value = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -511,7 +511,7 @@ VMCALL void lrw () {
 	RegWrite (INT32, _rd, value);
 }
 
-VMCALL void lrd () {
+VM_CALL void lrd () {
 	UINT8 _rd = 0, _rs1 = 0; UINT_PTR address = 0; INT64 value = 0;
 };
 
@@ -524,7 +524,7 @@ VMCALL void lrd () {
 	RegWrite (INT64, _rd, value);
 }
 
-VMCALL void fmv_d_x () {
+VM_CALL void fmv_d_x () {
 	UINT8 _rd = 0, _rs1 = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -534,7 +534,7 @@ VMCALL void fmv_d_x () {
 	RegWrite (INT64, _rd, v1);
 }
 
-VMCALL void fcvt_s_d () {
+VM_CALL void fcvt_s_d () {
 	UINT8 _rd = 0, _rs1 = 0; float v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -544,7 +544,7 @@ VMCALL void fcvt_s_d () {
 	RegWrite (float, _rd, v1);
 }
 
-VMCALL void fcvt_d_s () {
+VM_CALL void fcvt_d_s () {
 	UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -554,7 +554,7 @@ VMCALL void fcvt_d_s () {
 	RegWrite (double, _rd, v1);
 }
 
-VMCALL void fcvt_w_d () {
+VM_CALL void fcvt_w_d () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -564,7 +564,7 @@ VMCALL void fcvt_w_d () {
 	RegWrite (INT32, _rd, v1);
 }
 
-VMCALL void fcvt_wu_d () {
+VM_CALL void fcvt_wu_d () {
 	UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -574,7 +574,7 @@ VMCALL void fcvt_wu_d () {
 	RegWrite (UINT32, _rd, v1);
 }
 
-VMCALL void fcvt_d_w () {
+VM_CALL void fcvt_d_w () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -584,7 +584,7 @@ VMCALL void fcvt_d_w () {
 	RegWrite (double, _rd, v1);
 }
 
-VMCALL void fcvt_d_wu () {
+VM_CALL void fcvt_d_wu () {
 	UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -595,7 +595,7 @@ VMCALL void fcvt_d_wu () {
 }
 
 		// NOTE: maybe not even real...
-VMCALL void fclass_d () {
+VM_CALL void fclass_d () {
 	UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -646,7 +646,7 @@ VMCALL void fclass_d () {
 }
 
 // NOTE: immediates are always signed unless there's a bitwise operation
-VMCALL void addi () {
+VM_CALL void addi () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -657,7 +657,7 @@ VMCALL void addi () {
 	RegWrite (INT64, _rd, (v1 + _imm));
 }
 
-VMCALL void slti () {
+VM_CALL void slti () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -668,7 +668,7 @@ VMCALL void slti () {
 	RegWrite (INT64, _rd, ((v1 < _imm) ? 1 : 0));
 }
 
-VMCALL void sltiu () {
+VM_CALL void sltiu () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -679,7 +679,7 @@ VMCALL void sltiu () {
 	RegWrite (UINT64, _rd, ((v1 < (UINT32)_imm) ? 1 : 0));
 }
 
-VMCALL void xori () {
+VM_CALL void xori () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -690,7 +690,7 @@ VMCALL void xori () {
 	RegWrite (INT64, _rd, (v1 ^ _imm));
 }
 
-VMCALL void ori () {
+VM_CALL void ori () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -701,7 +701,7 @@ VMCALL void ori () {
 	RegWrite (INT64, _rd, (v1 | _imm));
 }
 
-VMCALL void andi () {
+VM_CALL void andi () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -712,7 +712,7 @@ VMCALL void andi () {
 	RegWrite (INT64, _rd, (v1 & _imm));
 }
 
-VMCALL void slli () {
+VM_CALL void slli () {
 	UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -723,7 +723,7 @@ VMCALL void slli () {
 	RegWrite (UINT64, _rd, (v1 << (_shamt & 0x1F)));
 }
 
-VMCALL void srli () {
+VM_CALL void srli () {
 	UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; UINT64 v1 = 0; 
 
 	ScrRead (UINT8, _rd, rd);
@@ -734,7 +734,7 @@ VMCALL void srli () {
 	RegWrite (UINT64, _rd, v1 >> (_shamt & 0x1F));
 }
 
-VMCALL void srai () {
+VM_CALL void srai () {
 	UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; UINT64 v1 = 0; 
 
 	ScrRead (UINT8, _rd, rd);
@@ -745,7 +745,7 @@ VMCALL void srai () {
 	RegWrite (UINT64, _rd, v1 >> (_shamt & 0x1F));
 }
 
-VMCALL void addiw () {
+VM_CALL void addiw () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; INT32 _imm = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -756,7 +756,7 @@ VMCALL void addiw () {
 	RegWrite (INT32, _rd, v1 + _imm);
 }
 
-VMCALL void slliw () {
+VM_CALL void slliw () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; UINT32 _shamt = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -772,7 +772,7 @@ VMCALL void slliw () {
 	RegWrite (INT32, _rd, v1 << (_shamt & 0x1F));
 }
 
-VMCALL void srliw () {
+VM_CALL void srliw () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; UINT32 _shamt = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -788,7 +788,7 @@ VMCALL void srliw () {
 	RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
 }
 
-VMCALL void sraiw () {
+VM_CALL void sraiw () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; UINT32 _shamt = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -804,7 +804,7 @@ VMCALL void sraiw () {
 	RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
 }
 
-VMCALL void lb () {
+VM_CALL void lb () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT8 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -818,7 +818,7 @@ VMCALL void lb () {
 	RegWrite (INT8, _rd, v1);
 }
 
-VMCALL void lh () {
+VM_CALL void lh () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT16 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -832,7 +832,7 @@ VMCALL void lh () {
 	RegWrite (INT16, _rd, v1);
 }
 
-VMCALL void lw () {
+VM_CALL void lw () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT32 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -846,7 +846,7 @@ VMCALL void lw () {
 	RegWrite (INT32, _rd, v1);
 }
 
-VMCALL void lbu () {
+VM_CALL void lbu () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT8 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -860,7 +860,7 @@ VMCALL void lbu () {
 	RegWrite (UINT8, _rd, v1);
 }
 
-VMCALL void lhu () {
+VM_CALL void lhu () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT16 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -874,7 +874,7 @@ VMCALL void lhu () {
 	RegWrite (UINT16, _rd, v1);
 }
 
-VMCALL void lwu () {
+VM_CALL void lwu () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT32 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -888,7 +888,7 @@ VMCALL void lwu () {
 	RegWrite (UINT32, _rd, v1);
 }
 
-VMCALL void ld () {
+VM_CALL void ld () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0; INT64 v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -902,7 +902,7 @@ VMCALL void ld () {
 	RegWrite (INT64, _rd, v1);
 }
 
-VMCALL void jalr () {
+VM_CALL void jalr () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT_PTR address = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -925,19 +925,19 @@ VMCALL void jalr () {
 	}
 }
 
-VMCALL void flq () {
+VM_CALL void flq () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void fence () {
+VM_CALL void fence () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void fence_i () {
+VM_CALL void fence_i () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void ecall () {
+VM_CALL void ecall () {
 	/*
 	   Description
 	   Make a request to the supporting execution environment.
@@ -951,7 +951,7 @@ VMCALL void ecall () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void ebreak () {
+VM_CALL void ebreak () {
 	/*
 	   Description
 	   Used by debuggers to cause control to be transferred back to a debugging environment.
@@ -964,7 +964,7 @@ VMCALL void ebreak () {
 }
 
 		// NOTE: csr operations aren't needed rn.
-VMCALL void csrrw () {
+VM_CALL void csrrw () {
 	/*
 	   Description
 	   Atomically swaps values in the CSRs and integer registers.
@@ -978,7 +978,7 @@ VMCALL void csrrw () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void csrrs () {
+VM_CALL void csrrs () {
 	/*
 	   Description
 	   Reads the value of the CSR, zero-extends the value to XLEN bits, and writes it to integer register _rd.
@@ -992,7 +992,7 @@ VMCALL void csrrs () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void csrrc () {
+VM_CALL void csrrc () {
 	/*
 	   Description
 	   Reads the value of the CSR, zero-extends the value to XLEN bits, and writes it to integer register _rd.
@@ -1006,7 +1006,7 @@ VMCALL void csrrc () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void csrrwi () {
+VM_CALL void csrrwi () {
 	/*
 	   Description
 	   Update the CSR using an XLEN-bit value obtained by zero-extending a 5-bit unsigned immediate (uimm[4:0]) field encoded in the _rs1 field.
@@ -1017,7 +1017,7 @@ VMCALL void csrrwi () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void csrrsi () {
+VM_CALL void csrrsi () {
 	/*
 	   Description
 	   Set CSR bit using an XLEN-bit value obtained by zero-extending a 5-bit unsigned immediate (uimm[4:0]) field encoded in the _rs1 field.
@@ -1028,7 +1028,7 @@ VMCALL void csrrsi () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void csrrci () {
+VM_CALL void csrrci () {
 	/*
 	   Description
 	   Clear CSR bit using an XLEN-bit value obtained by zero-extending a 5-bit unsigned immediate (uimm[4:0]) field encoded in the _rs1 field.
@@ -1039,7 +1039,7 @@ VMCALL void csrrci () {
 	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1);
 }
 
-VMCALL void scw () {
+VM_CALL void scw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 value = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1061,7 +1061,7 @@ VMCALL void scw () {
 	}
 }
 
-VMCALL void scd () {
+VM_CALL void scd () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 value = 0; UINT_PTR address = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1084,7 +1084,7 @@ VMCALL void scd () {
 	}
 }
 
-VMCALL void fadd_d () {
+VM_CALL void fadd_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1097,7 +1097,7 @@ VMCALL void fadd_d () {
 	RegWrite (float, _rd, (v1 + v2));
 }
 
-VMCALL void fsub_d () {
+VM_CALL void fsub_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1110,7 +1110,7 @@ VMCALL void fsub_d () {
 	RegWrite (float, _rd, (v1 - v2));
 }
 
-VMCALL void fmul_d () {
+VM_CALL void fmul_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1123,7 +1123,7 @@ VMCALL void fmul_d () {
 	RegWrite (float, _rd, (v1 * v2));
 }
 
-VMCALL void fdiv_d () {
+VM_CALL void fdiv_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; float v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1136,7 +1136,7 @@ VMCALL void fdiv_d () {
 	RegWrite (float, _rd, (v1 / v2));
 }
 
-VMCALL void fsgnj_d () {
+VM_CALL void fsgnj_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1154,7 +1154,7 @@ VMCALL void fsgnj_d () {
 	RegWrite (INT64, _rd, v1);
 }
 
-VMCALL void fsgnjn_d () {
+VM_CALL void fsgnjn_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1172,7 +1172,7 @@ VMCALL void fsgnjn_d () {
 	RegWrite (INT64, _rd, v1);
 }
 
-VMCALL void fsgnjx_d () {
+VM_CALL void fsgnjx_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1191,7 +1191,7 @@ VMCALL void fsgnjx_d () {
 	RegWrite (INT64, _rd, v1);
 }
 
-VMCALL void fmin_d () {
+VM_CALL void fmin_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1210,7 +1210,7 @@ VMCALL void fmin_d () {
 	}
 }
 
-VMCALL void fmax_d () {
+VM_CALL void fmax_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1229,7 +1229,7 @@ VMCALL void fmax_d () {
 	}
 }
 
-VMCALL void feq_d () {
+VM_CALL void feq_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1247,7 +1247,7 @@ VMCALL void feq_d () {
 	RegWrite (bool, _rd, (v1 == v2));
 }
 
-VMCALL void flt_d () {
+VM_CALL void flt_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1265,7 +1265,7 @@ VMCALL void flt_d () {
 	RegWrite (bool, _rd, (v1 < v2));
 }
 
-VMCALL void fle_d () {
+VM_CALL void fle_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; double v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1283,7 +1283,7 @@ VMCALL void fle_d () {
 	RegWrite (bool, _rd, (v1 <= v2));
 }
 
-VMCALL void addw () {
+VM_CALL void addw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1296,7 +1296,7 @@ VMCALL void addw () {
 	RegWrite (INT64, _rd, (INT64)(v1 + v2));
 }
 
-VMCALL void subw () {
+VM_CALL void subw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1309,7 +1309,7 @@ VMCALL void subw () {
 	RegWrite (INT64, _rd, (INT64)(v1 - v2));
 }
 
-VMCALL void mulw () {
+VM_CALL void mulw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1322,7 +1322,7 @@ VMCALL void mulw () {
 	RegWrite (INT64, _rd, (INT64)(v1 * v2));
 }
 
-VMCALL void srlw () {
+VM_CALL void srlw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1335,7 +1335,7 @@ VMCALL void srlw () {
 	RegWrite (INT32, _rd, (v1 >> (v2 & 0x1F)));
 }
 
-VMCALL void sraw () {
+VM_CALL void sraw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1348,7 +1348,7 @@ VMCALL void sraw () {
 	RegWrite (INT32, _rd, (v1 >> (v2 & 0x1F)));
 }
 
-VMCALL void divuw () {
+VM_CALL void divuw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1361,7 +1361,7 @@ VMCALL void divuw () {
 	RegWrite (UINT32, _rd, (v1 / v2));
 }
 
-VMCALL void sllw () {
+VM_CALL void sllw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1374,7 +1374,7 @@ VMCALL void sllw () {
 	RegWrite (INT32, _rd, (v1 << (v2 & 0x1F)));
 }
 
-VMCALL void divw () {
+VM_CALL void divw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1387,7 +1387,7 @@ VMCALL void divw () {
 	RegWrite (INT32, _rd, (v1 / v2));
 }
 
-VMCALL void remw () {
+VM_CALL void remw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1400,7 +1400,7 @@ VMCALL void remw () {
 	RegWrite (INT32, _rd, (v1 % v2));
 }
 
-VMCALL void remuw () {
+VM_CALL void remuw () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1413,7 +1413,7 @@ VMCALL void remuw () {
 	RegWrite (UINT32, _rd, (v1 % v2));
 }
 
-VMCALL void add () {
+VM_CALL void add () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1426,7 +1426,7 @@ VMCALL void add () {
 	RegWrite (INT32, _rd, (v1 + v2));
 }
 
-VMCALL void sub () {
+VM_CALL void sub () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1439,7 +1439,7 @@ VMCALL void sub () {
 	RegWrite (INT32, _rd, (v1 - v2));
 }
 
-VMCALL void mul () {
+VM_CALL void mul () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1452,7 +1452,7 @@ VMCALL void mul () {
 	RegWrite (INT32, _rd, (v1 * v2));
 }
 
-VMCALL void sll () {
+VM_CALL void sll () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT32 v1 = 0; UINT32 v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1465,7 +1465,7 @@ VMCALL void sll () {
 	RegWrite (INT32, _rd, (v1 << (v2 & 0x1F)));
 }
 
-VMCALL void mulh () {
+VM_CALL void mulh () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1486,7 +1486,7 @@ VMCALL void mulh () {
 #endif
 }
 
-VMCALL void slt () {
+VM_CALL void slt () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1499,7 +1499,7 @@ VMCALL void slt () {
 	RegWrite (INT_PTR, _rd, ((v1 < v2) ? 1 : 0));
 }
 
-VMCALL void mulhsu () {
+VM_CALL void mulhsu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0; UINT_PTR v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1519,7 +1519,7 @@ VMCALL void mulhsu () {
 #endif
 }
 
-VMCALL void sltu () {
+VM_CALL void sltu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1532,7 +1532,7 @@ VMCALL void sltu () {
 	RegWrite (UINT_PTR, _rd, ((v1 < v2) ? 1 : 0));
 }
 
-VMCALL void mulhu () {
+VM_CALL void mulhu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1551,7 +1551,7 @@ VMCALL void mulhu () {
 #endif
 }
 
-VMCALL void xor () {
+VM_CALL void xor () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1564,7 +1564,7 @@ VMCALL void xor () {
 	RegWrite (UINT_PTR, _rd, (v1 ^ v2));
 }
 
-VMCALL void div () {
+VM_CALL void div () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1577,7 +1577,7 @@ VMCALL void div () {
 	RegWrite (UINT_PTR, _rd, (v1 / v2));
 }
 environment_call_native
-VMCALL void srl () {
+VM_CALL void srl () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0; UINT32 v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1590,7 +1590,7 @@ VMCALL void srl () {
 	RegWrite (UINT_PTR, _rd, (v1 >> (v2 & 0x1F)));
 }
 
-VMCALL void sra () {
+VM_CALL void sra () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0; UINT32 v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1603,7 +1603,7 @@ VMCALL void sra () {
 	RegWrite (INT_PTR, _rd, (v1 >> (v2 & 0x1F)));
 }
 
-VMCALL void divu () {
+VM_CALL void divu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1620,7 +1620,7 @@ VMCALL void divu () {
 	}
 }
 
-VMCALL void or () {
+VM_CALL void or () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1633,7 +1633,7 @@ VMCALL void or () {
 	RegWrite (INT_PTR, _rd, (v1 | v2));
 }
 
-VMCALL void rem () {
+VM_CALL void rem () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1650,7 +1650,7 @@ VMCALL void rem () {
 	}
 }
 
-VMCALL void and () {
+VM_CALL void and () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1663,7 +1663,7 @@ VMCALL void and () {
 	RegWrite (UINT_PTR, _rd, (v1 & v2));
 }
 
-VMCALL void remu () {
+VM_CALL void remu () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1680,7 +1680,7 @@ VMCALL void remu () {
 	}
 }
 
-VMCALL void amoswap_d () {
+VM_CALL void amoswap_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1696,7 +1696,7 @@ VMCALL void amoswap_d () {
 
 }
 
-VMCALL void amoadd_d () {
+VM_CALL void amoadd_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1713,7 +1713,7 @@ VMCALL void amoadd_d () {
 
 }
 
-VMCALL void amoxor_d () {
+VM_CALL void amoxor_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1730,7 +1730,7 @@ VMCALL void amoxor_d () {
 
 }
 
-VMCALL void amoand_d () {
+VM_CALL void amoand_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1747,7 +1747,7 @@ VMCALL void amoand_d () {
 
 }
 
-VMCALL void amoor_d () {
+VM_CALL void amoor_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1764,7 +1764,7 @@ VMCALL void amoor_d () {
 
 }
 
-VMCALL void amomin_d () {
+VM_CALL void amomin_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1781,7 +1781,7 @@ VMCALL void amomin_d () {
 
 }
 
-VMCALL void amomax_d () {
+VM_CALL void amomax_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1798,7 +1798,7 @@ VMCALL void amomax_d () {
 
 }
 
-VMCALL void amominu_d () {
+VM_CALL void amominu_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1815,7 +1815,7 @@ VMCALL void amominu_d () {
 
 }
 
-VMCALL void amomaxu_d () {
+VM_CALL void amomaxu_d () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT64 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1831,7 +1831,7 @@ VMCALL void amomaxu_d () {
 	RegWrite (UINT64, _rd, v1);
 }
 
-VMCALL void amoswap_w () {
+VM_CALL void amoswap_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1847,7 +1847,7 @@ VMCALL void amoswap_w () {
 	RegWrite (INT32, _rd, v1);
 }
 
-VMCALL void amoadd_w () {
+VM_CALL void amoadd_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1863,7 +1863,7 @@ VMCALL void amoadd_w () {
 	RegWrite (INT32, _rd, v1);
 }
 
-VMCALL void amoxor_w () {
+VM_CALL void amoxor_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1879,7 +1879,7 @@ VMCALL void amoxor_w () {
 	RegWrite (INT32, _rd, v1);
 }
 
-VMCALL void amoand_w () {
+VM_CALL void amoand_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1896,7 +1896,7 @@ VMCALL void amoand_w () {
 
 }
 
-VMCALL void amoor_w () {
+VM_CALL void amoor_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1913,7 +1913,7 @@ VMCALL void amoor_w () {
 
 }
 
-VMCALL void amomin_w () {
+VM_CALL void amomin_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1930,7 +1930,7 @@ VMCALL void amomin_w () {
 
 }
 
-VMCALL void amomax_w () {
+VM_CALL void amomax_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1947,7 +1947,7 @@ VMCALL void amomax_w () {
 
 }
 
-VMCALL void amominu_w () {
+VM_CALL void amominu_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1964,7 +1964,7 @@ VMCALL void amominu_w () {
 
 }
 
-VMCALL void amomaxu_w () {
+VM_CALL void amomaxu_w () {
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; UINT32 v1 = 0, v2 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1981,7 +1981,7 @@ VMCALL void amomaxu_w () {
 
 }
 
-VMCALL void lui () {
+VM_CALL void lui () {
 	UINT8 _rd = 0; INT32 _imm = 0;
 
 	ScrRead (UINT32, _rd, rd);
@@ -1989,7 +1989,7 @@ VMCALL void lui () {
 	RegWrite (INT32, _rd, _imm);
 }
 
-VMCALL void auipc () {
+VM_CALL void auipc () {
 	UINT8 _rd = 0; INT32 _imm = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1997,7 +1997,7 @@ VMCALL void auipc () {
 	RegWrite (INT64, _rd, (INT64)Vmcs->Hdw.Pc + _imm);
 }
 
-VMCALL void jal () {
+VM_CALL void jal () {
 	UINT8 _rd = 0; INT_PTR offset = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -2008,7 +2008,7 @@ VMCALL void jal () {
 	SetCsrTrap (nullptr, EnvBranch, 0, 0, 0);
 }
 
-VMCALL void beq () {
+VM_CALL void beq () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2024,7 +2024,7 @@ VMCALL void beq () {
 	}
 }
 
-VMCALL void bne () {
+VM_CALL void bne () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2040,7 +2040,7 @@ VMCALL void bne () {
 	}
 }
 
-VMCALL void blt () {
+VM_CALL void blt () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2056,7 +2056,7 @@ VMCALL void blt () {
 	}
 }
 
-VMCALL void bge () {
+VM_CALL void bge () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2072,7 +2072,7 @@ VMCALL void bge () {
 	}
 }
 
-VMCALL void bltu () {
+VM_CALL void bltu () {
 	UINT8 _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2088,7 +2088,7 @@ VMCALL void bltu () {
 	}
 }
 
-VMCALL void bgeu () {
+VM_CALL void bgeu () {
 	UINT8 _rs1 = 0, _rs2 = 0; UINT32 v1 = 0, v2 = 0; INT_PTR offset = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2104,7 +2104,7 @@ VMCALL void bgeu () {
 	}
 }
 
-VMCALL void sb () {
+VM_CALL void sb () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT8 v1 = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2118,7 +2118,7 @@ VMCALL void sb () {
 	MemWrite (UINT8, address, v1);
 }
 
-VMCALL void sh () {
+VM_CALL void sh () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT16 v1 = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2132,7 +2132,7 @@ VMCALL void sh () {
 	MemWrite (UINT16, address, v1);
 }
 
-VMCALL void sw () {
+VM_CALL void sw () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT32 v1 = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2146,7 +2146,7 @@ VMCALL void sw () {
 	MemWrite (UINT32, address, v1);
 }
 
-VMCALL void sd () {
+VM_CALL void sd () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; UINT64 v1 = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2160,7 +2160,7 @@ VMCALL void sd () {
 	MemWrite (UINT64, address, v1);
 }
 
-VMCALL void fsw () {
+VM_CALL void fsw () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; float v1 = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
@@ -2174,7 +2174,7 @@ VMCALL void fsw () {
 	MemWrite (float, address, v1);
 }
 
-VMCALL void fsd () {
+VM_CALL void fsd () {
 	UINT8 _rs1 = 0, _rs2 = 0; INT32 _imm = 0; UINT_PTR address = 0; double v1 = 0;
 
 	ScrRead (UINT8, _rs1, rs1);
