@@ -29,7 +29,7 @@ NATIVE_CALL BOOL process_packets (
 	UINT_PTR n_threads = image_base [0]; // number of files prepended to the start of the packet (n_threads), (param/data)...
 	image_base += sizeof (UINT_PTR); 
 
-	if (n_threads == 0) {
+	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
