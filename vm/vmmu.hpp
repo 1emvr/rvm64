@@ -75,6 +75,7 @@ VM_CALL VOID ContextInit (_Inout_ VM_CONTEXT** Context) {
 	if (!Context) {
 		return;
 	}
+
 	*Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	if (! *Context) {
 		SetCsrTrap (0, OutOfMemory, 0, 0, 1);
