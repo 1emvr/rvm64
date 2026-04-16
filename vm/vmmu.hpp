@@ -79,7 +79,9 @@ VM_CALL VOID VmFree () {
 	Vmcs->Context->VehHandle = 0;
 
 	if (Vmcs->Proc.Memory) {
+		MemSet (Vmcs->Proc.Memory, 0, Vmcs->Proc.MemorySize);
 		VirtualFree ((LPVOID)Vmcs->Proc.Memory, 0, MEM_RELEASE);
+
 		Vmcs->Proc.Memory = 0;
 	}
 

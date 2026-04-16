@@ -11,18 +11,22 @@ NATIVE_CALL INT32 VmMain (
 
 	Vmcs->Magic1 = Magic1;
 	Vmcs->Magic2 = Magic2;
+
+	SaveHostRegCtx ();
+	do 
 	{
-		SaveHostRegisterContext ();
-		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); // init memory/modules.
-														   
+		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
+
 		Vmcs->Context->Ready = 1;
 		while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
 			Sleep (10);
 		}
-	}
 
-	LoadImage (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); // load risc-v image written by the supervisor.
-	PatchAndExecute (); 		
+		LoadImage (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
+		PatchAndExecute (Vmcs->Proc.Memory); 		
+
+		VmFree ();
+	} while (true)
 
 	if (setjmp (Vmcs->Context->ExitHandler)) {
 		goto defer;	
@@ -30,7 +34,7 @@ NATIVE_CALL INT32 VmMain (
 
 defer:
 	VmFree ();
-	LoadHostRegisterContext ();
+	LoadHostRegCtx ();
 
 	return Vmcs->Csr.Cause;
 }
