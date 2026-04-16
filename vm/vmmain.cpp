@@ -59,12 +59,9 @@ NATIVE_CALL BOOL process_packets (
 		}
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
-		SIZE_T img_sz  = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
-		
-		// TODO: Each program that is PT_LOAD needs to have space reserved for itself within the arena.
-		// They cannot be stacked end to end. Find a way to make this work.
-		// 
-		// We need to calculate EOF + MoveMemory to account for PT_LOAD space
+
+		SIZE_T img_sz = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
+		SIZE_T needed = 0;
 		{
 			for (int i = 0; i < ehdr->e_phnum; i++) {
 				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
@@ -72,14 +69,12 @@ NATIVE_CALL BOOL process_packets (
 					continue;
 				}
 
-				UINT_PTR sg_end = phdr->v_addr + phdr->p_memsz;
-				if (sg_end > img_sz) {
-					img_sz = sg_end;
+				UINT_PTR vm_sz = phdr->v_addr + phdr->p_memsz;
+				if (vm_sz > img_sz) {
+					img_sz = vm_sz;
 
 					SIZE_T file_sz = image_base + phdr->file_sz; // how does total account for this resize? where do we bounds-check?
-					MoveMemory (image_base + img_sz, file_sz, *data_sz - total);
-					// from here start relocating image data to expand for in-memory code size
-					// everything from sg_end to (*data + *data_sz) gets moved "down" by (image_base + sg_end)
+					needed += vm_sz;
 				}
 			}
 		}
