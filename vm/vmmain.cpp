@@ -21,30 +21,27 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
 	UINT_PTR image_base = *data;
-	UINT_PTR total = 0;
+	static UINT_PTR total = 0;
 	
 	for (int i = 0; i < 8; i++) {
 		UINT_PTR param_size = image_base [0];
-		{
-			if (param_size != 0) {
-				param_size += PARAM_HEADER_SIZE;
-				total += param_size;
 
-				if (total > *data_size) { // find a way to make this easy. not too big or too small of a realloc
-					arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
-					image_base = *data + total;
+		if (param_size != 0) {
+			param_size += PARAM_HEADER_SIZE;
+			total += param_size;
+			{
+				if (total > *data_size) { 
+					arena_realloc (data, data_size, *(data_size) + ARENA_SIZE);
+					image_base = *data + (total - param_size);
 				}
 
-				new_vms->param_offset [i] = image_base; // would be the first address (image-base) since params are prepended to program
+				new_vms->param_offset [i] = image_base; 
 				image_base += param_size;
 			}
 		}
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
-
-		new_vms->image_offset [i] = image_base;
-		new_vms->count += 1;
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
 		SIZE_T prg_size = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
@@ -58,15 +55,18 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers within the 
 			}
 		}
 
-		total_size += prg_size;
-		image_base += prg_size;
+		total += prg_size;
+		{
+			if (total > *data_size) {
+				arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
+				image_base = *data + (total - prg_size);
+			}
 
-		if (total_size > *data_size) {
-			arena_realloc (data, data_size, *(data_size) + DEFAULT_PAGE_SIZE);
-			image_base = *data + total;
+			new_vms->image_offset [i] = image_base;
+			image_base += prg_size;
+
+			new_vms->count += 1;
 		}
-
-		offset += total_size;
 	}
 	return true;
 }
