@@ -27,7 +27,7 @@ NATIVE_CALL INT32 VmMain (
 		PatchAndExecute (Vmcs->Proc.Memory); 		
 
 		MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-		if (setjmp (Vmcs->Context->Shutdown)) { // TODO: When would the user want the vm to shutdown vs halt?
+		if (setjmp (Vmcs->Context->Shutdown)) { 
 			goto defer;	
 		}
 	} while (true);
