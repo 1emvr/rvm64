@@ -164,6 +164,7 @@ struct {
 	INTEL 	VmContext;
 
 	jmp_buf Interrupt;
+	jmp_buf Branch;
 	jmp_buf Shutdown;
 
 	HANDLE 	InterHandle;

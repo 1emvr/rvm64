@@ -563,7 +563,7 @@ static VOID PatchPLT (
 
 		LPVOID target = ResolveUCRTImport (name);
 		if (!target) {
-			SetTrap (nullptr, image_bad_symbol, 0, (UINT_PTR)name, 1);
+			SetCsrTrap (nullptr, image_bad_symbol, 0, (UINT_PTR)name, 1);
 		}
 
 		UINT_PTR where_off = r->r_offset - ElfBase;

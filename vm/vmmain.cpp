@@ -3,6 +3,9 @@
 
 
 NATIVE_CALL VOID VmMain () {
+	if (setjmp (Vmcs->Context->Interrupt)) { 
+		Sleep (10);
+	}
 	do {
 		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
 		Vmcs->Context->Ready = 1;

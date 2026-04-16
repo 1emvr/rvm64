@@ -25,7 +25,12 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 
 	switch (Vmcs->Csr.Cause) {
 		case EnvShutdown: 	longjmp (Vmcs->Context->Shutdown, true);
-		case EnvBranch: 	longjmp (Vmcs->Context->Interrupt, true);
+		case EnvInter:		longjmp (Vmcs->Context->Interrupt, true);
+		case EnvBranch: 	// TODO: Add EnvInter as the interrupt signal.
+		{
+			RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
+			longjmp (Vmcs->Context->Branch, true);
+		}
 		case EnvExecute:
 		{
 			VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw.Pc;
@@ -40,9 +45,6 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 		default: 
 			break;
 	}
-
-	RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
-	longjmp (Vmcs->Context->Interrupt, true); 
 }
 
 
@@ -255,12 +257,12 @@ NATIVE_CALL UINT8* SearchPageTable (
 }
 
 
-#define RegRead (T, dst, reg_idx) 	dst = (T)vmcs->hdw->vregs[(reg_idx)]
-#define ScrRead (T, dst, scr_idx) 	dst = (T)vmcs->hdw->vscratch[(scr_idx)]
+#define RegRead (T, dst, reg_idx) 	dst = (T)Vmcs->Hdw->Regs [(reg_idx)]
+#define ScrRead (T, dst, scr_idx) 	dst = (T)Vmcs->Hdw->Scratch [(scr_idx)]
 #define MemRead (T, retval, addr)  	MemorySecurityCheck (T, addr); retval = *(T *)(addr);
 
-#define RegWrite (T, reg_idx, src) 	if (reg_idx != 0) vmcs->hdw->vregs[(reg_idx)] = (T)(src);
-#define ScrWrite (T, scr_idx, src) 	if (scr_idx <= imm) vmcs->hdw->vscratch[(scr_idx)] = (T)(src);
+#define RegWrite (T, reg_idx, src) 	if (reg_idx != 0) Vmcs->Hdw->Regs [(reg_idx)] = (T)(src);
+#define ScrWrite (T, scr_idx, src) 	if (scr_idx <= imm) Vmcs->Hdw->Scratch [(scr_idx)] = (T)(src);
 #define MemWrite (T, addr, value)  	MemorySecurityCheck (T, addr); *(T *)(addr) = value;
 
 
@@ -274,12 +276,12 @@ VOID MemorySecurityCheck (
 		Address = Host; 													
 	} 																			
 	if ((Address) % sizeof (AccessType) != 0) {                                         		
-		SetTrap (Vmcs->Hdw->Pc, StoreAmoAddressMiss, 0, Address, true);  
+		SetCsrTrap (Vmcs->Hdw->Pc, StoreAmoAddressMiss, 0, Address, true);  
 	}                                                                      		
 	if (! STACK_MEMORY_IN_BOUNDS (Address) && 
 		! PROCESS_MEMORY_IN_BOUNDS (Address)) 
 	{		
-		SetTrap (Vmcs->Hdw->Pc, StoreAmoAccessFault, 0, Address, true);		
+		SetCsrTrap (Vmcs->Hdw->Pc, StoreAmoAccessFault, 0, Address, true);		
 	} 																			
 }
 

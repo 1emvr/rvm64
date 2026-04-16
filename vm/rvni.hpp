@@ -101,7 +101,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 		_In_ const CHAR *SymName) 
 {
 	if (! Vmcs->Module.Kernel32 || ! Vmcs->Module.Ucrt) {
-		SetTrap (nullptr, ImageBadSymbol, 0, 0, 1);
+		SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
 	}
 
 	const CHAR *AliasName = SymName;
@@ -118,7 +118,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 		Native = (LPVOID) GetProcAddress (Vmcs->Module.Kernel32, AliasName);
 
 		if (! Native) {
-			SetTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, 1);
+			SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, true);
 		}
 	}
 
@@ -142,7 +142,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; break;
 				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; break;
 				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; break;
-				default:  SetTrap (nullptr, ImageBadSymbol, 0, 0, 1);
+				default:  SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
 			}
 			break;
 		}
@@ -161,7 +161,7 @@ VM_CALL VOID NativeCall () {
 		}
 	}
 	if (! Api) {
-		SetTrap (Vmcs->Hdw.Pc, ImageBadSymbol, 0, Vmcs->Hdw.Pc, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, ImageBadSymbol, 0, Vmcs->Hdw.Pc, true);
 	}
 
 	switch (Api->Typenum) {
@@ -333,7 +333,7 @@ VM_CALL VOID NativeCall () {
 						nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
 
 				if (! MemoryUnregister ((UINT_PTR*)&Addr, HostMem, Len)) {
-					SetTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, 1);
+					SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
 				}
 
 				RegWrite(UINT_PTR, A0, Addr);
@@ -373,7 +373,7 @@ VM_CALL VOID NativeCall () {
 			}
 		default: 
 			{
-				SetTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Api->Typenum, 1);
+				SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Api->Typenum, true);
 			}
 	}
 }

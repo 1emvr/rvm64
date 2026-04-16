@@ -24,7 +24,7 @@ VM_CALL VOID Decode (_In_ const UINT32);
 
 
 VM_CALL VOID VmExecute () {
-	if (setjmp (Vmcs->Context->Interrupt)) { } 
+	if (setjmp (Vmcs->Context->Branch)) { } 
 	if (Vmcs->Context->Halt) {
 		return;
 	}
@@ -34,7 +34,7 @@ VM_CALL VOID VmExecute () {
 
 		if (Opcode == RV64_RET) {
 			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) {
-				SetTrap (nullptr, EnvExit, 0, 0, 1);
+				SetCsrTrap (nullptr, EnvExit, 0, 0, 1);
 			}
 		}
 
