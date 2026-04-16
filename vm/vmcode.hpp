@@ -602,9 +602,8 @@ VM_CALL void fcvt_d_wu () {
 	RegWrite (double, _rd, v1);
 }
 
-		// NOTE: maybe not even real...
 
-VM_CALL void fclass_d () {
+VM_CALL void fclass_d () { // NOTE: maybe not even real...
 	UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1082,6 +1081,8 @@ VM_CALL void csrrci () {
 
 
 VM_CALL void scw () {
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1); // NOTE: Decomissioned until I implement reserver operations.
+
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; UINT_PTR address = 0; INT32 value = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1105,6 +1106,8 @@ VM_CALL void scw () {
 
 
 VM_CALL void scd () {
+	SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, 0, 1); // NOTE: Decomissioned until I implement reserver operations.
+															//
 	UINT8 _rd = 0, _rs1 = 0, _rs2 = 0; INT64 value = 0; UINT_PTR address = 0;
 
 	ScrRead (UINT8, _rd, rd);
@@ -1576,7 +1579,7 @@ VM_CALL void mulhsu () {
 
 	ScrRead (UINT8, _rd, rd);
 	ScrRead (UINT8, _rs1, rs1);
-	ScrRead (UINT8, _rs2, rs2);environment_call_native
+	ScrRead (UINT8, _rs2, rs2);
 
 	RegRead (INT_PTR, v1, _rs1);
 	RegRead (UINT_PTR, v2, _rs2);
