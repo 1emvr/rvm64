@@ -59,20 +59,23 @@ NATIVE_CALL BOOL process_packets (
 		}
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
-		SIZE_T prg_size  = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
+		SIZE_T img_size  = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
 		{
 			for (int i = 0; i < ehdr->e_phnum; i++) {
 				ELF64_PHDR *phdr 	= (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
-				UINT_PTR sg_end 	= phdr->p_offset + phdr->p_filesz;
+				UINT_PTR sg_end 	= phdr->v_addr + phdr->p_memsz;
 
-				if (sg_end > prg_size) {
-					prg_size = sg_end;
+				if (phdr->p_type != PT_LOAD) {
+					continue;
+				}
+				if (sg_end > img_size) {
+					img_size = sg_end;
 				}
 			}
 		}
 
-		total 		+= prg_size; 
-		image_base 	+= prg_size;
+		total 		+= img_size; 
+		image_base 	+= img_size;
 
 		if (total > *data_size) {	// since programs can expand in memory we need to check to make sure we have enough.
 			arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
