@@ -522,9 +522,9 @@ VOID PatchPLT (
 		return;
 	}
 
-	UINT_PTR RelOff   = JmpRelVa - Vmcs->Proc.ImageBase;
-	UINT_PTR SymTabOff = SymVa - Vmcs->Proc.ImageBase;
-	UINT_PTR StrTabOff = StrVa - Vmcs->Proc.ImageBase;
+	UINT_PTR RelOff   	= JmpRelVa - Vmcs->Proc.ImageBase;
+	UINT_PTR SymTabOff 	= SymVa - Vmcs->Proc.ImageBase;
+	UINT_PTR StrTabOff 	= StrVa - Vmcs->Proc.ImageBase;
 
 	if (! InImage  (RelOff, PltRelSz, MemorySize) ||
 		! InImage  (SymTabOff, sizeof (ELF64_SYM), MemorySize) ||
@@ -535,12 +535,10 @@ VOID PatchPLT (
 		StrSz = MemorySize - StrTabOff;
 	}
 
-	SIZE_T n = PltRelSz / sizeof (ELF64_RELA);
-
-	for (SIZE_T i = 0; i < n; ++i) {
+	for (SIZE_T i = 0; i < PltRelSz / sizeof (ELF64_RELA); ++i) {
 		UINT_PTR Off = RelOff + i * sizeof (ELF64_RELA);
 
-		if (!InImage (Off, sizeof (ELF64_RELA), MemorySize)) {
+		if (! InImage (Off, sizeof (ELF64_RELA), MemorySize)) {
 			break;
 		}
 
@@ -551,7 +549,7 @@ VOID PatchPLT (
 			continue;
 		}
 
-		const UINT32 SymIdx 	= (UINT32)ELF64_R_SYM(r->r_info);
+		const UINT32 SymIdx 	= (UINT32)ELF64_R_SYM (r->r_info);
 		const UINT_PTR SymOff 	= SymTabOff + (UINT_PTR)SymIdx * SymEnt;
 
 		if (! InImage (SymOff, sizeof (ELF64_SYM), MemorySize)) {
@@ -594,12 +592,12 @@ NATIVE_CALL VOID PatchAndExecute (
 		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
 
-	ELF64_EHDR *Ehdr 	= (ELF64_EHDR*)(UINT8*)Memory;
+	ELF64_EHDR *Ehdr = (ELF64_EHDR*)(UINT8*)Memory;
 
 	ApplyRelativeOffsets (Memory, MemorySize);
-	PatchPLT (Memory);
+	PatchPLT (Memory, MemorySize);
 
-	const UINT_PTR Entry = FindEntry (Memory);
+	const UINT_PTR Entry = FindEntry (Memory, MemorySize);
 	if (! Entry) {
 		SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)"no entry", 1);
 	}
