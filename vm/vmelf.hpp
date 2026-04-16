@@ -459,10 +459,9 @@ UINT_PTR FindEntry (
 		}
 
 		const CHAR *Name = (const CHAR*)(Memory + StrOff + NameOff);
-		SIZE_T Remain = (SIZE_T)(Strsz - NameOff);
-		const LPVOID Nul = memchr (Name, 0, Remain);
+		const LPVOID Nul = MemChr (Name, 0, Strsz - NameOff);
 
-		if (!nul) {
+		if (! Nul) {
 			continue;
 		}
 		if (StrCmp (Name, "_start") == 0 || Strcmp (Name, "main") == 0) {
@@ -599,7 +598,7 @@ NATIVE_CALL VOID PatchAndExecute (
 
 	const UINT_PTR Entry = FindEntry (Memory, MemorySize);
 	if (! Entry) {
-		SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)"no entry", 1);
+		SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)"noentry", 1);
 	}
 
 	const UINT_PTR PcOff = Entry - Vmcs->Proc.ImageBase; 
