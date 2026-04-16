@@ -41,8 +41,10 @@ NATIVE_CALL VOID process_packets ( // process ELF params and headers
 
 		if (elf_class == ELFCLASS64) {
 			ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
-			// if we want to do bounds checking on the arena for these programs we'll need to pass the arena size.
-			// this way we could also reallocate quickly if we need to.
+			SIZE_T prog_size = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
+
+			total_size += prog_size;
+			if (total_size > arena_size) return;
 		}
 	}
 }
