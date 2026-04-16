@@ -52,46 +52,50 @@ NATIVE_CALL UINT64 elf_runtime_size (
 }
 
 
-#define update_arena_space (o, b, r, sz) 	\
-	o += sz; 								\
-	b += sz; 								\
-	r -= sz;
-
 
 NATIVE_CALL BOOL process_packets ( 
 		_Inout_ 	UINT_PTR* 		data,
 		_Inout_ 	UINT_PTR* 		data_sz,
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
-	UINT8 *image_base = (UINT8*)*data;
-
-	UINT_PTR n_threads 	= image_base [0]; 
+	UINT8 *image_base 	= (UINT8*)*data;
 	UINT_PTR remaining 	= *data_sz;
 	UINT_PTR offset 	= 0;
 
-	update_arena_space (offset, image_base, remaining, sizeof (UINT_PTR));
+#define update_arena_space (sz) 	\
+	if (remaining - sz <= 0)  		\
+	offset 		+= sz; 				\
+	image_base 	+= sz; 				\
+	remaining 	-= sz; 
+
+	UINT_PTR n_threads = image_base [0]; 
+	update_arena_space (sizeof (UINT_PTR));
+
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
-
 	for (int i = 0; i < n_threads; i++) { 
 		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (size/data), (_pt_load_space)], ... 
-											//
+											
 		if (param_sz != 0) {						
-			new_vms->param_offset [i] = offset; 
+			new_vms->param_offset [i] = offset; // param offset starts at the size so that it's quickly available to read
 		}
 
-		update_arena_space (offset, image_base, remaining, sizeof (UINT_PTR) + param_sz);
+		update_arena_space (sizeof (UINT_PTR) + param_sz);
 		new_vms->image_offset [i] = offset; 
 
 		UINT_PTR elf_sz = image_base [0];
-		update_arena_space (offset, image_base, remaining, sizeof (UINT_PTR));
+		update_arena_space (sizeof (UINT_PTR)); // packed elf size for efficiency
 
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
 
 		UINT64 runtime_sz = elf_runtime_size (image_base, nullptr);
+		if (elf_sz < runtime_sz) {
+
+		}
+
 		new_vms->count += 1;
 	}
 	return true;
