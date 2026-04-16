@@ -65,7 +65,6 @@ NATIVE_CALL BOOL process_packets (
 		// They cannot be stacked end to end. Find a way to make this work.
 		// 
 		// We need to calculate EOF + MoveMemory to account for PT_LOAD space
-		
 		{
 			for (int i = 0; i < ehdr->e_phnum; i++) {
 				ELF64_PHDR *phdr 	= (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
@@ -76,6 +75,7 @@ NATIVE_CALL BOOL process_packets (
 				}
 				if (sg_end > img_size) {
 					img_size = sg_end;
+					// from here start relocating image data to expand for in-memory code size
 				}
 			}
 		}
