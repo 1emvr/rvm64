@@ -207,6 +207,7 @@ typedef struct {
 		UINT64 			Memory;
 		UINT64 			MemorySize;
 		UINT64			ImageBase;
+
 		volatile UINT64 Ready;   
 	} Proc;
 } VMCS;

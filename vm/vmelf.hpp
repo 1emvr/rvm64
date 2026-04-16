@@ -9,6 +9,7 @@
 
 #include "rvni.hpp"
 
+
 // Dynamic section tags
 #define DT_NULL         0       
 #define DT_PLTGOT		3		
@@ -22,7 +23,8 @@
 #define DT_RELA         7   
 #define DT_RELASZ       8  
 #define DT_RELAENT      9 
-								
+				
+
 #define EI_MAG0			0   
 #define EI_MAG1			1   
 #define EI_MAG2			2  
@@ -35,8 +37,10 @@
 #define EI_PAD			9   
 #define EI_NIDENT		16 
 
+
 #define ELFCLASS32		1
 #define ELFCLASS64		2
+
 
 #define ET_NONE			0 
 #define ET_REL 			1 
@@ -44,8 +48,10 @@
 #define ET_DYN 			3 
 #define ET_CORE			4 
 
+
 #define EM_NONE			0
 #define EM_RISC			243 
+
 
 #define PT_NULL			0
 #define PT_LOAD			1
@@ -56,6 +62,7 @@
 #define PT_PHDR			6
 #define PT_TLS 			7
 
+
 #define SHT_NULL        0           
 #define SHT_PROGBITS    1           
 #define SHT_SYMTAB      2           
@@ -63,7 +70,8 @@
 #define SHT_RELA        4           
 #define SHT_NOBITS      8           
 #define SHT_DYNSYM      11          
-									
+				
+
 #define SHN_UNDEF 		0	
 #define SHN_LORESERVE   0xff00
 #define SHN_LOPROC      0xff00
@@ -71,6 +79,7 @@
 #define SHN_ABS         0xfff1   
 #define SHN_COMMON      0xfff2   
 #define SHN_HIRESERVE   0xffff
+
 
 #define R_RISCV_NONE          	0
 #define R_RISCV_32             	1   
@@ -119,6 +128,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
+
 typedef struct {
     UINT8  		e_ident [EI_NIDENT]; // ELF magic, class, data, etc.
     UINT16 		e_type;
@@ -136,6 +146,7 @@ typedef struct {
     UINT16 		e_shstrndx;
 } ELF64_EHDR;
 
+
 typedef struct {
     UINT32 		p_type;
     UINT32 		p_flags;
@@ -147,11 +158,13 @@ typedef struct {
     UINT_PTR 	p_align;
 } ELF64_PHDR;
 
+
 typedef struct {
     UINT_PTR  	r_offset;  	// 8 bytes: Where to apply the relocation
     UINT_PTR 	r_info;    	// 8 bytes: Symbol + type
     INTPTR 		r_addend; 	// 8 bytes: Addend to add to symbol value
 } ELF64_RELA;
+
 
 typedef struct {
     UINT32 		st_name;
@@ -161,6 +174,7 @@ typedef struct {
     UINT_PTR 	st_value;
     UINT_PTR 	st_size;
 } ELF64_SYM;
+
 
 typedef struct {
     UINT32 		sh_name;       // Offset to section name in the section header string table
@@ -174,6 +188,7 @@ typedef struct {
     UINT_PTR 	sh_addralign;  // Section alignment
     UINT_PTR 	sh_entsize;    // Entry size if section holds table (e.g., symbol table)
 } ELF64_SHDR;
+
 
 typedef struct {
     int64_t d_tag;
@@ -202,11 +217,13 @@ static inline BOOL InImage (
 
 
 NATIVE_CALL VOID LoadImage (
-		_In_ const UINT_PTR Memory, 
-		_In_ const SIZE_T 	MemorySize) 
+		_In_ UINT8* Memory, 
+		_In_ UINT8* MemorySize) 
 {
 	const UINT8 *File 		= (const UINT8*)Memory;
 	const ELF64_EHDR *Ehdr 	= (const ELF64_EHDR*)File;
+
+	BOOL Success = false;
 
 	UINT_PTR base = UINT64_MAX, end = 0;
 	if (File [0] != 0x7F || 
@@ -223,24 +240,32 @@ NATIVE_CALL VOID LoadImage (
 		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
 	}
 
-	const UINT_PTR VirtualSize = (UINT_PTR)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
+	UINT_PTR VirtualSize = (UINT_PTR)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
+	UINT_PTR End = 0;
+
 	if (VirtualSize > MemorySize) {
-		// TODO: Allocate more memory instead of faulting.
-		SetTrap (nullptr, ImageBadLoad, 0, 0, 1);
+		VirtualFree (Memory, 0, MEM_RELEASE);
+		Memory = VirtualAlloc (nullptr, VirtualSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+		if (!Memory) {
+			goto defer;
+		}
+
+		MemorySize = VirtualSize;
 	}
 
 	const ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
 
-	for (int i = 0; i < Ehdr->e_phnum; ++i) {
+	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
 		const auto& Ph = Fph [i];
 
 		if (Ph.p_type == PT_LOAD) {
-			base = MIN (base, Ph.p_vaddr); // NOTE: what tf is base/end?
-			end  = MAX (end,  Ph.p_vaddr + Ph.p_memsz);
+			Vmcs->Proc.ImageBase = MIN (Vmcs->Proc.ImageBase, Ph.p_vaddr); 
+			End  = MAX (End,  Ph.p_vaddr + Ph.p_memsz);
 		}
 	}
-	if (base == UINT64_MAX || end <= base) {
-		SetTrap (nullptr, ImageBadLoad, 0, 0, 1);
+	if (Vmcs->Proc.ImageBase == UINT64_MAX) {
+		goto defer;
 	}
 
 	UINT_PTR HeaderSpan = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
@@ -252,56 +277,72 @@ NATIVE_CALL VOID LoadImage (
 		HeaderSpan = MemorySize;
 	}
 
-	UINT_PTR need = MAX (HeaderSpan, end - base); // NOTE: what tf is base/end?
-	UINT_PTR img_size = AlignUp (need, 0x1000);
+	UINT_PTR Need = MAX (HeaderSpan, End - Vmcs->Proc.ImageBase); 
+	UINT_PTR AlignNeed = AlignUp (Need, 0x1000);
 
-	UINT8* img = (UINT8*)VirtualAlloc(nullptr, img_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); // TODO: Don't do this. Use the existing memory instead.
-
-	if (!img) {
-		SetTrap (nullptr, ImageBadLoad, 0, 0, 1);
+	UINT8* Buffer = (UINT8*)VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); 
+	if (!Buffer) {
+		goto defer;
 	}
 
-	x_memset(img, 0, img_size);
-	MemCpy(img, File, HeaderSpan);
+	MemSet (Buffer, 0, AlignNeed);
+	MemCpy (Buffer, File, HeaderSpan);
 
 	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
-		const auto& ph = fph [i];
+		const auto& Ph = Fph [i];
 
-		if (ph.p_type != PT_LOAD) {
+		if (Ph.p_type != PT_LOAD) {
 			continue;
 		}
-		if ((UINT_PTR)ph.p_offset + ph.p_Filesz > MemorySize) {
+		if ((UINT_PTR)Ph.p_offset + Ph.p_Filesz > AlignNeed) {
+			goto defer;
+		}
+
+		UINT_PTR Offset = Ph.p_vaddr - Vmcs->Proc.ImageBase;
+
+		if (! InImage (Offset, Ph.p_memsz, AlignNeed)) {
 			VirtualFree (img, 0, MEM_RELEASE);
 			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 		}
-
-		UINT_PTR dest_off = ph.p_vaddr - base;
-
-		if (! InImage (dest_off, ph.p_memsz, img_size)) {
-			VirtualFree (img, 0, MEM_RELEASE);
-			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
-		}
-		if (ph.p_Filesz) {
-			MemCpy(img + dest_off, File + ph.p_offset, ph.p_Filesz);
+		if (Ph.p_Filesz) {
+			MemCpy(Buffer + Offset, File + Ph.p_offset, Ph.p_Filesz);
 		}
 	}
-	if (img_size > Vmcs->Proc.MemorySize) {
-		VirtualFree (img, 0, MEM_RELEASE);
+
+	if (AlignNeed > Vmcs->Proc.MemorySize) {
+		VirtualFree (Buffer, 0, MEM_RELEASE);
+		VirtualFree (Memory, 0, MEM_RELEASE);
+
+		Buffer = VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		Memory = VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+		if (! Buffer || ! Memory) {
+			goto defer;
+		}
+
+		Vmcs->Proc.MemorySize = AlignNeed;
+	}
+
+	MemCpy ((void*)Vmcs->Proc.Memory, Buffer, Vmcs->Proc.MemorySize);
+	VirtualFree (Buffer, 0, MEM_RELEASE);
+
+	Success = true;
+
+defer:
+	if (! Success) {
+		VirtualFree (Vmcs->Proc.Memory, 0, MEM_RELEASE);
+		VirtualFree (Buffer, 0, MEM_RELEASE);
+
 		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
-
-	MemCpy ((void*)vmcs->proc.bufEhdrr, img, img_size);
-	vmcs->proc.MemorySize = img_size;
-	VirtualFree (img, 0, MEM_RELEASE);
-
-	ElfBase = Base;
-	g_img_size = img_size;
 }
 
 
-static void ApplyRelativeOffsets (UINT8* img) {
-	auto* ehdr = (elf64_ehdr*)img;
-	auto* phdr = (elf64_phdr*)(img + ehdr->e_phoff);
+static void ApplyRelativeOffsets (
+		_In_ const UINT8* Memory) 
+{
+	auto* Ehdr = (ELF64_EHDR*)Memory;
+	auto* Phdr = (ELF64_PHDR*)(Memory + Ehdr->e_phoff);
 
 	UINT_PTR DynAddr = 0, dyn_size = 0;
 
