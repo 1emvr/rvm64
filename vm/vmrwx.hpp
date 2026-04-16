@@ -8,30 +8,14 @@
 #endif
 
 
-#define PROCESS_MEMORY_IN_BOUNDS(addr)  								\
-	((addr) >= (uintptr_t)vmcs->proc.buffer && 							\
-	 (addr) < (uintptr_t)(vmcs->proc.buffer + vmcs->proc.size))
+#define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
+	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
+	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
 
 
-#define STACK_MEMORY_IN_BOUNDS(addr) 									\
+#define STACK_MEMORY_IN_BOUNDS (addr) 									\
 	((addr) >= (uintptr_t)vmcs->hdw->vstack && 							\
 	 (addr) < (uintptr_t)(vmcs->hdw->vstack + VSTACK_MAX_CAPACITY))
-
-
-#define mem_read_check(T, addr)  													\
-	do {                                       										\
-		auto m = rvm64::mmu::memory_check(addr);  									\
-		if (m) { 																	\
-			addr = (uintptr_t)m; 													\
-			break; 																	\
-		} 																			\
-		if ((addr) % sizeof(T) != 0) {                                         		\
-			CSR_SET_TRAP(vmcs->hdw->pc, load_address_misaligned, 0, addr, 1);       \
-		}                                                                      		\
-		if (!STACK_MEMORY_IN_BOUNDS(addr) && !PROCESS_MEMORY_IN_BOUNDS(addr)) {		\
-			CSR_SET_TRAP(vmcs->hdw->pc, load_access_fault, 0, addr, 1);      		\
-		} 																			\
-	} while (0)
 
 
 #define mem_write_check(T, addr) 													\

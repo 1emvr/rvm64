@@ -65,12 +65,16 @@ NATIVE_CALL UINT8* MemoryCheck (_In_ const UINT_PTR guest) {
 	return nullptr;
 }
 
-DWORD TranslateLinuxProt (_In_ const UINT32 Prot) {
-	if (Prot == 0) return PAGE_NOACCESS;
+DWORD TranslateLinuxProt (
+		_In_ const UINT32 Prot) 
+{
+	if (Prot == 0) {
+		return PAGE_NOACCESS;
+	}
 
-	bool CanRead  = Prot & PROT_READ;
-	bool CanWrite = Prot & PROT_WRITE;
-	bool CanExec  = Prot & PROT_EXEC;
+	BOOL CanRead  = Prot & PROT_READ;
+	BOOL CanWrite = Prot & PROT_WRITE;
+	BOOL CanExec  = Prot & PROT_EXEC;
 
 	if (CanExec) {
 		if (CanWrite)
@@ -86,5 +90,24 @@ DWORD TranslateLinuxProt (_In_ const UINT32 Prot) {
 	}
 
 	return PAGE_NOACCESS;
+}
+
+
+template <typename T>
+NATIVE_CALL VOID CheckMemory (
+		_In_ 	const T, 
+		_Inout_ UINT_PTR* Address) 
+{
+	UINT_PTR Heap = MemoryCheck (Address); // check if this is v-heap memory. if found in the table, will return the real address.
+	if (Heap) {  																	
+		*Address = (UINT_PTR)Heap; 													
+		return;
+	} 																			
+	if ((*Address) % sizeof (T) != 0) {                                         	
+		CSR_SET_TRAP (Vmcs->hdw->Pc, LoadAddressMiss, 0, *Address, 1);       
+	}                                                                      		
+	if (! STACK_MEMORY_IN_BOUNDS (*Address) && ! PROCESS_MEMORY_IN_BOUNDS (*Address)) {		
+		CSR_SET_TRAP (Vmcs->Hdw->Pc, LoadAccessFault, 0, *Address, 1);      		
+	} 																			
 }
 #endif // VMMU_H

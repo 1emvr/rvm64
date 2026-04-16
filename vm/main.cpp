@@ -8,8 +8,9 @@
 
 VM_CALL VOID VmEntry () {
 	volatile LPVOID Pad0 = 0;
+	
+	if (setjmp (Vmcs->Context->TrapHandler)) { } 
 
-	if (setjmp (Vmcs->Context->TrapHandle)) { } // NOTE: RETURN FROM INTERUPT
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw->Pc;
 
@@ -36,7 +37,8 @@ NATIVE_CALL INT32 VmMain (
 	Vmcs->Magic1 = Magic1;
 	Vmcs->Magic2 = Magic2;
 
-	PatchAndSetEntry (); 									// NOTE: patch plt -> entrypoint
+	PatchImportTable (); 									// NOTE: patch plt -> entrypoint
+	VmEntry ();
 
 	if (setjmp (Vmcs->ExitHandler)) {
 		goto defer;	
