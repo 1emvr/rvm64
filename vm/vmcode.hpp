@@ -17,10 +17,10 @@ VM_CALL VOID VmExecute () {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
 		if (Opcode == RV64_RET) {
-			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) {
+			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { // TODO: Return changes PC from RA. This might work better as an interrupt.
 				SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
 			}
-		}
+		} 
 
 		Decode (Opcode); 
 		Vmcs->Hdw.Pc += 4;
