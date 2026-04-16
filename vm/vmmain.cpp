@@ -3,13 +3,12 @@
 
 
 NATIVE_CALL VOID VmMain () {
-	if (setjmp (Vmcs->Context->Interrupt)) { 
-	}
+	if (setjmp (Vmcs->Context->Interrupt)) {
+	} 
 	do {
 		if (Vmcs->Proc.Memory) {
 			MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
 		}
-
 		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
 		Vmcs->Context->Ready = 1;
 
@@ -24,7 +23,6 @@ NATIVE_CALL VOID VmMain () {
 			goto defer;	
 		}
 	} while (true);
-
 defer:
 	LoadRegisters (&Vmcs->Context->HostContext);
 }
