@@ -240,24 +240,7 @@ NATIVE_CALL VOID LoadImage (
 	}
 
 	SIZE_T VirtualSize 	= (SIZE_T)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
-	{
-		if (VirtualSize > *MemorySize) {
-			VirtualFree (*Memory, 0, MEM_RELEASE);
-			*Memory = (UINT8*) VirtualAlloc (nullptr, VirtualSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-			if (! *Memory) {
-				SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
-			}
-
-			*MemorySize = AlignNeed;
-
-			File 	= *Memory;
-			Ehdr 	= (ELF64_EHDR*)File;
-			Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
-		}
-	}
-
-	UINT_PTR End = UINT64_MAX;
+	UINT_PTR End = 0;
 	{
 		for (INT i = 0; i < Ehdr->e_phnum; ++i) {
 			const auto& Ph = Fph [i];
