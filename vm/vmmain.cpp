@@ -16,7 +16,9 @@ NATIVE_CALL BOOL is_elf (_In_ UINT_PTR base) {
 }
 
 
-NATIVE_CALL BOOL process_packets ( // process packed ELF files and their params for thread creation. everything will be dynamically resolved and addresses relocated in the arena, so it all needs to fit.
+NATIVE_CALL BOOL process_packets ( 
+// Process our packed ELF files and their params for thread creation. 
+// PLT_GOT will be dynamically resolved / addresses relocated in the arena. 
 		_Inout_ 	UINT_PTR* 		data,
 		_Inout_ 	UINT_PTR* 		data_size,
 		_Out_ 		PACKET_SEG* 	new_vms)
@@ -24,7 +26,14 @@ NATIVE_CALL BOOL process_packets ( // process packed ELF files and their params 
 	UINT_PTR image_base = *data;
 	UINT_PTR total = 0;
 	
-	for (int i = 0; i < MAX_VM_THREADS; i++) {
+	UINT_PTR n_threads = image_base [0]; // number of files prepended to the start of the packet (n_threads), (param/data)...
+	image_base += sizeof (UINT_PTR); 
+
+	if (n_threads == 0) {
+		return false;
+	}
+
+	for (int i = 0; i < n_threads; i++) { 
 		UINT_PTR param_size = image_base [0];
 		{
 			if (param_size != 0) {						
@@ -33,6 +42,8 @@ NATIVE_CALL BOOL process_packets ( // process packed ELF files and their params 
 
 			total 		+= sizeof (UINT_PTR) + param_size;
 			image_base 	+= sizeof (UINT_PTR) + param_size;
+
+			new_vms->image_offset [i] = image_base;
 
 			if (total > *data_size) {	
 				arena_realloc (data, data_size, *(data_size) + DEFAULT_ARENA_SIZE);
@@ -44,11 +55,11 @@ NATIVE_CALL BOOL process_packets ( // process packed ELF files and their params 
 		}
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
-		SIZE_T prg_size = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
+		SIZE_T prg_size  = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
 		{
 			for (int i = 0; i < ehdr->e_phnum; i++) {
-				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
-				SIZE_T sg_end = phdr->p_offset + phdr->p_filesz;
+				ELF64_PHDR *phdr 	= (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
+				UINT_PTR sg_end 	= phdr->p_offset + phdr->p_filesz;
 
 				if (sg_end > prg_size) {
 					prg_size = sg_end;
@@ -64,7 +75,6 @@ NATIVE_CALL BOOL process_packets ( // process packed ELF files and their params 
 			}
 		}
 
-		new_vms->image_offset [i] = image_base;
 		new_vms->count += 1;
 	}
 	return true;
