@@ -237,15 +237,17 @@ NATIVE_CALL BOOL MemoryUnregister (
 }
 
 
-NATIVE_CALL UINT8* MemoryCheck (
-		_In_ const UINT_PTR guest) 
+NATIVE_CALL UINT8* SearchPageTable (
+		_In_ const UINT_PTR Guest) 
 {
 	if (Guest == 0) {
 		return nullptr;
 	}
 	for (const auto& Entry : PageTable) {
-		if (Guest >= Entry.GuestAddr && Guest < Entry.GuestAddr + Entry.Length) {
-			uintptr_t Offset = Guest - Entry.GuestAddr;
+		if (Guest >= Entry.GuestAddr && 
+			Guest < Entry.GuestAddr + Entry.Length) 
+		{
+			UINT_PTR Offset = Guest - Entry.GuestAddr;
 			return (UINT8*) Entry.HostAddr + Offset; // risc-v usable address for calculating non-zero offsets (host[n + i])
 		}
 	}
@@ -253,21 +255,31 @@ NATIVE_CALL UINT8* MemoryCheck (
 }
 
 
+#define RegRead (T, dst, reg_idx) 	dst = (T)vmcs->hdw->vregs[(reg_idx)]
+#define ScrRead (T, dst, scr_idx) 	dst = (T)vmcs->hdw->vscratch[(scr_idx)]
+#define MemRead (T, retval, addr)  	MemorySecurityCheck (T, addr); retval = *(T *)(addr);
+
+#define RegWrite (T, reg_idx, src) 	if (reg_idx != 0) vmcs->hdw->vregs[(reg_idx)] = (T)(src);
+#define ScrWrite (T, scr_idx, src) 	if (scr_idx <= imm) vmcs->hdw->vscratch[(scr_idx)] = (T)(src);
+#define MemWrite (T, addr, value)  	MemorySecurityCheck (T, addr); *(T *)(addr) = value;
+
+
 template <typename T>
-NATIVE_CALL VOID CheckMemory (
-		_In_ 	const T		Type, 
-		_Inout_ UINT_PTR* 	Address) 
+VOID MemorySecurityCheck (
+		_In_ const T 	AccessType, 
+		_In_ UINT_PTR* 	Address) 
 {
-	UINT_PTR Heap = MemoryCheck (Address); // check if this is v-heap memory. if found in the table, will return the real address.
-	if (Heap) {  																	
-		*Address = (UINT_PTR)Heap; 													
-		return;
+	UINT_PTR Host = SearchPageTable (Address); 
+	if (Host) {  																	
+		Address = Host; 													
 	} 																			
-	if ((*Address) % sizeof (Type) != 0) {                                         	
-		SetCsrTrap (Vmcs->hdw->Pc, LoadAddressMiss, 0, *Address, 1);       
+	if ((Address) % sizeof (AccessType) != 0) {                                         		
+		SetTrap (Vmcs->Hdw->Pc, StoreAmoAddressMiss, 0, Address, true);  
 	}                                                                      		
-	if (! STACK_MEMORY_IN_BOUNDS (*Address) && ! PROCESS_MEMORY_IN_BOUNDS (*Address)) {		
-		SetCsrTrap (Vmcs->Hdw->Pc, LoadAccessFault, 0, *Address, 1);      		
+	if (! STACK_MEMORY_IN_BOUNDS (Address) && 
+		! PROCESS_MEMORY_IN_BOUNDS (Address)) 
+	{		
+		SetTrap (Vmcs->Hdw->Pc, StoreAmoAccessFault, 0, Address, true);		
 	} 																			
 }
 
