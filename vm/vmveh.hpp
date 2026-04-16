@@ -12,7 +12,7 @@ LONG CALLBACK InteruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
 	CONTEXT *WinCtx = ExceptionInfo->ContextRecord;
 
-	Vmcs->Csr.Cause 	= code;
+	Vmcs->Csr.Cause 	= Code;
 	Vmcs->Csr.Epc 		= WinCtx->Rip;
 
 	if (Code == STATUS_SINGLE_STEP) {
@@ -27,7 +27,7 @@ LONG CALLBACK InteruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 		case EnvBranch: longjmp (Vmcs->TrapHandler, true);
 		case EnvExecute:
 		{
-			VOID (__stdcall *Memory) () = (VOID (__stdcall*) ()) Vmcs->Gpr->Pc;
+			VOID (WINAPI *Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Gpr->Pc;
 			Memory();
 			break;
 		}
@@ -40,7 +40,9 @@ LONG CALLBACK InteruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 			break;
 	}
 
-	RegRead (UINT_PTR, Vmcs->Gpr.pc, regenum::ra); 
+	RegRead (UINT_PTR, Vmcs->Gpr.Pc, Regenum::Ra); 
 	longjmp (Vmcs->TrapHandler, true); 
+	
+	return 0;
 }
 #endif //VMVEH_H
