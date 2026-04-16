@@ -209,25 +209,24 @@ NATIVE_CALL VOID LoadImage (
 	const ELF64_EHDR *Ehdr 	= (const ELF64_EHDR*)File;
 
 	UINT_PTR base = UINT64_MAX, end = 0;
-	if (
-			File [0] != 0x7F || 
-			File [1] !='E' ||
-			File [2] !='L' ||
-			File [3] !='F') 
+	if (File [0] != 0x7F || 
+		File [1] !='E' ||
+		File [2] !='L' ||
+		File [3] !='F') 
 	{
 		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
 	}
-	if (
-			Ehdr->e_ident [EI_CLASS] != ELFCLASS64 || 
-			Ehdr->e_ident [EI_DATA] != 1 || 
-			Ehdr->e_machine != EM_RISC) 
+	if (Ehdr->e_ident [EI_CLASS] != ELFCLASS64 || 
+		Ehdr->e_ident [EI_DATA] != 1 || 
+		Ehdr->e_machine != EM_RISC) 
 	{
 		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
 	}
 
 	const UINT_PTR VirtualSize = (UINT_PTR)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
 	if (VirtualSize > MemorySize) {
-		SetCsrTrap(nullptr, ImageBadLoad, 0, 0, 1);
+		// TODO: Allocate more memory instead of faulting.
+		SetTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
 
 	const ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
@@ -236,34 +235,34 @@ NATIVE_CALL VOID LoadImage (
 		const auto& Ph = Fph [i];
 
 		if (Ph.p_type == PT_LOAD) {
-			base = MIN (base, Ph.p_vaddr); // NOTE: what tf is base?
+			base = MIN (base, Ph.p_vaddr); // NOTE: what tf is base/end?
 			end  = MAX (end,  Ph.p_vaddr + Ph.p_memsz);
 		}
 	}
 	if (base == UINT64_MAX || end <= base) {
-		SetCsrTrap(nullptr, image_bad_load, 0, 0, 1);
+		SetTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
 
-	UINT_PTR header_span = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
+	UINT_PTR HeaderSpan = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
 
-	if (header_span < Ehdr->e_ehsize) {
-		header_span = Ehdr->e_ehsize;
+	if (HeaderSpan < Ehdr->e_ehsize) {
+		HeaderSpan = Ehdr->e_ehsize;
 	}
-	if (header_span > MemorySize) {
-		header_span = MemorySize;
+	if (HeaderSpan > MemorySize) {
+		HeaderSpan = MemorySize;
 	}
 
-	UINT_PTR need = MAX (header_span, end - base);
+	UINT_PTR need = MAX (HeaderSpan, end - base); // NOTE: what tf is base/end?
 	UINT_PTR img_size = AlignUp (need, 0x1000);
 
-	UINT8* img = (UINT8*)VirtualAlloc(nullptr, img_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	UINT8* img = (UINT8*)VirtualAlloc(nullptr, img_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); // TODO: Don't do this. Use the existing memory instead.
 
 	if (!img) {
-		SetCsrTrap(nullptr, image_bad_load, 0, 0, 1);
+		SetTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
 
 	x_memset(img, 0, img_size);
-	MemCpy(img, File, header_span);
+	MemCpy(img, File, HeaderSpan);
 
 	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
 		const auto& ph = fph [i];
@@ -273,22 +272,22 @@ NATIVE_CALL VOID LoadImage (
 		}
 		if ((UINT_PTR)ph.p_offset + ph.p_Filesz > MemorySize) {
 			VirtualFree (img, 0, MEM_RELEASE);
-			SetCsrTrap (nullptr, image_bad_load, 0, 0, 1);
+			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 		}
 
 		UINT_PTR dest_off = ph.p_vaddr - base;
 
 		if (! InImage (dest_off, ph.p_memsz, img_size)) {
 			VirtualFree (img, 0, MEM_RELEASE);
-			SetCsrTrap (nullptr, image_bad_load, 0, 0, 1);
+			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 		}
 		if (ph.p_Filesz) {
 			MemCpy(img + dest_off, File + ph.p_offset, ph.p_Filesz);
 		}
 	}
-	if (img_size > PROCESS_BUFEhdrR_SIZE) {
+	if (img_size > Vmcs->Proc.MemorySize) {
 		VirtualFree (img, 0, MEM_RELEASE);
-		SetCsrTrap (nullptr, image_bad_load, 0, 0, 1);
+		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 	}
 
 	MemCpy ((void*)vmcs->proc.bufEhdrr, img, img_size);
@@ -299,7 +298,7 @@ NATIVE_CALL VOID LoadImage (
 	g_img_size = img_size;
 }
 
-	// ========= reloc + PLT + entry =========
+
 static void ApplyRelativeOffsets (UINT8* img) {
 	auto* ehdr = (elf64_ehdr*)img;
 	auto* phdr = (elf64_phdr*)(img + ehdr->e_phoff);
@@ -523,7 +522,7 @@ static VOID PatchPLT (
 
 		LPVOID target = ResolveUCRTImport (name);
 		if (!target) {
-			SetCsrTrap(nullptr, image_bad_symbol, 0, (UINT_PTR)name, 1);
+			SetTrap (nullptr, image_bad_symbol, 0, (UINT_PTR)name, 1);
 		}
 
 		UINT_PTR where_off = r->r_offset - ElfBase;

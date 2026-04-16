@@ -10,7 +10,7 @@ constexpr UINT_PTR EncryptPtr (
 	return ptr ^ key;
 }
 
-VM_CALL inline UINT_PTR DecryptPtr (
+inline UINT_PTR DecryptPtr (
 		_In_ const UINT_PTR ptr, 
 		_In_ const UINT_PTR key) 
 {
