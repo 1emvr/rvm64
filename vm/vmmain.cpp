@@ -5,7 +5,8 @@
 // TODO: StackSpoof, CreateThread, and interact where it lives.
 
 NATIVE_CALL VOID VmMain () {
-	if (setjmp (Vmcs->Context->Interrupt)) { } 
+	if (setjmp (Vmcs->Context->Interrupt)) { 
+	} 
 	do{
 		if (Vmcs->Proc.Memory) {
 			MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
