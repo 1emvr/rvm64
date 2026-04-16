@@ -8,30 +8,68 @@
 #define PROT_SEM	0x8	
 
 
-VM_CALL VOID MemoryInit () {
-	Vmcs->Self 			= (UINT64) Vmcs;
-	vmcs->Proc.Memory 	= (UINT64) VirtualAlloc(nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
+	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
+	CONTEXT *WinCtx = ExceptionInfo->ContextRecord;
+
+	Vmcs->Csr.Cause 	= Code;
+	Vmcs->Csr.Epc 		= WinCtx->Rip;
+
+	if (Code == STATUS_SINGLE_STEP) {
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	if (Vmcs->Context->Exit || Code != RVM_TRAP_EXCEPTION) {
+		longjmp (Vmcs->ExitHandler, true);
+	}
+
+	switch (Vmcs->Csr.Cause) {
+		case ENV_EXIT: 		longjmp (Vmcs->Context->ExitHandler, true);
+		case ENV_BRANCH: 	longjmp (Vmcs->Context->TrapHandler, true);
+		case ENV_EXECUTE:
+		{
+			VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw->Pc;
+			Memory ();
+			break;
+		}
+		case ENV_NATIVE: 
+		{
+			NativeCall ();
+			break;
+		}
+		default: 
+			break;
+	}
+
+	RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
+	longjmp (Vmcs->TrapHandler, true); 
+}
+
+
+VM_CALL VOID VmInit () {
+	Vmcs->Self 				= (UINT64) Vmcs;
+	Vmcs->Proc.MemorySize 	= (UINT64) DEFAULT_PROC_SIZE;
+	vmcs->Proc.Memory 		= (UINT64) VirtualAlloc (nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 	if (!Vmcs->Proc.Memory) {
-		CSR_SET_TRAP(Vmcs->Gpr->Pc, GetLastError (), 0, 0, 1);
+		SetCsrTrap(Vmcs->Hdw.Pc, GetLastError (), 0, 0, 1);
 		return;
 	}
 
-	Vmcs->Proc.MemorySize   = DEFAULT_PROC_SIZE;
 	Vmcs->Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 	if (!Vmcs->Context) {
-		CSR_SET_TRAP (0, OutOfMemory, 0, 0, 1);
+		SetCsrTrap (0, OutOfMemory, 0, 0, 1);
 	}
 
-	Vmcs->Context->VehHandle 	= AddVectoredExceptionHandler (1, ExceptionHandler);
+	Vmcs->Context->VehHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
 	Vmcs->Context->Halt 		= 0;
+	Vmcs->Context->Ready		= 0;
 
 	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw->Stack + sizeof (Vmcs->Hdw.Stack));
 }
 
 
-VM_CALL VOID MemoryFree () {
+VM_CALL VOID VmFree () {
 	RemoveVectoredExceptionHandler (Vmcs->Context->VehHandle);
 	Vmcs->Context->VehHandle = 0;
 
@@ -45,6 +83,89 @@ VM_CALL VOID MemoryFree () {
 
 	Vmcs->Magic1 = 0;
 	Vmcs->Magic2 = 0;
+}
+
+
+VM_CALL VOID SetLoadRsv (
+		_In_ const INT 		HartId, 
+		_In_ const UINT_PTR Address) 
+{
+	WaitForSingleObject (Vmcs->Context->RWMutex, INFINITE);
+
+	Vmcs->Context->LoadRsvAddress = Address; // vmcs_array[hart_id]->load_rsv_addr = address;
+	Vmcs->Context->LoadRsvValid = true; // vmcs_array[hart_id]->load_rsv_valid = true;
+
+	ReleaseMutex (Vmcs->Context->RWMutex);
+}
+
+
+VM_CALL VOID ClearLoadRsv (_In_ const INT HartId) {
+	WaitForSingleObject (Vmcs->Context->RWMutex, INFINITE);
+
+	Vmcs->LoadRsvAddr = 0LL; // vmcs_array[hart_id]->load_rsv_addr = 0LL;
+	Vmcs->LoadRsvValid = false; // vmcs_array[hart_id]->load_rsv_valid = false;
+
+	ReleaseMutex (Vmcs->Context->RWMutex);
+}
+
+
+VM_CALL BOOL CheckLoadRsv (
+		_In_ const INT 		HartId, 
+		_In_ const UINT_PTR Address) 
+{
+	INT Valid = 0;
+
+	WaitForSingleObject (Vmcs->Context->RWMutex, INFINITE);
+	Valid = (Vmcs->Context->LoadRsvValid && Vmcs->Context->LoadRsvAddress == address); 
+
+	ReleaseMutex (Vmcs->Context->RWMutex);
+	return Valid;
+}
+
+
+BOOL VmWriteProcessMemory (
+		_In_ const 	HANDLE 		Handle, 
+		_In_ const 	UINT_PTR 	Address, 
+		_In_ const 	UINT8*		Buffer, 
+		_In_ const 	SIZE_T 		Length, 
+		_Out_ 		SIZE_T*		Write) 
+{
+	DWORD Oldprot = 0;
+	if (! VirtualProtectEx (Handle, (LPVOID)Address, Length, PAGE_EXECUTE_READWRITE, &Oldprot)) {
+		return false;
+	}
+
+	BOOL Result = WriteProcessMemory (Handle, (LPVOID)Address, Buffer, Length, Write);
+	if (! VirtualProtectEx (Handle, (LPVOID)Address, Length, Oldprot, &Oldprot)) {
+		false;
+	}
+
+	FlushInstructionCache (Handle, (LPCVOID)Address, Length);
+	return Result && *Write == Length;
+}
+
+
+BOOL VmReadProcessMemory (
+		_In_ const 	HANDLE 		Handle, 
+		_In_ const 	UINT_PTR 	Address, 
+		_Inout_ 	UINT8* 		ReadBytes, 
+		_In_ const 	SIZE_T 		Length) 
+{
+	SIZE_T Read = 0;
+	BOOL Result = ReadProcessMemory (Handle, (LPCVOID)Address, (LPVOID)ReadBytes, Length, &Read);
+
+	return Result && Read == Length;
+}
+
+
+// TODO:
+_native void cache_data(uintptr_t data, size_t size) {
+	return;
+}
+
+
+_native void destroy_data(uintptr_t data, size_t size) {
+	return;
 }
 
 
@@ -131,10 +252,10 @@ NATIVE_CALL VOID CheckMemory (
 		return;
 	} 																			
 	if ((*Address) % sizeof (Type) != 0) {                                         	
-		CSR_SET_TRAP (Vmcs->hdw->Pc, LoadAddressMiss, 0, *Address, 1);       
+		SetCsrTrap (Vmcs->hdw->Pc, LoadAddressMiss, 0, *Address, 1);       
 	}                                                                      		
 	if (! STACK_MEMORY_IN_BOUNDS (*Address) && ! PROCESS_MEMORY_IN_BOUNDS (*Address)) {		
-		CSR_SET_TRAP (Vmcs->Hdw->Pc, LoadAccessFault, 0, *Address, 1);      		
+		SetCsrTrap (Vmcs->Hdw->Pc, LoadAccessFault, 0, *Address, 1);      		
 	} 																			
 }
 

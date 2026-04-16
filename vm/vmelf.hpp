@@ -536,7 +536,7 @@ static VOID PatchPLT (
 	}
 }
 
-NATIVE_CALL VOID PatchImage (
+NATIVE_CALL VOID PatchAndExecute (
 		_In_ const UINT_PTR Memory, 
 		_In_ const UINT_PTR MemorySize) 
 {
@@ -547,9 +547,13 @@ NATIVE_CALL VOID PatchImage (
 	UINT8 *Img 			= (UINT8*)Memory;
 	ELF64_EHDR *Ehdr 	= (ELF64_EHDR*)Img;
 
-	if (Ehdr->e_type != ET_EXEC && Ehdr->e_type != ET_DYN) {
+	if (
+			Ehdr->e_type != ET_EXEC && 
+			Ehdr->e_type != ET_DYN) 
+	{
 		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
 	}
+
 	if (
 			Ehdr->e_ident [0] != 0x7F || 
 			Ehdr->e_ident [1] != 'E' || 
@@ -563,7 +567,7 @@ NATIVE_CALL VOID PatchImage (
 	PatchPLT (Img);
 
 	const UINT_PTR Entry = FindEntry (Img);
-	const UINT_PTR PcOff = Entry - Base; // NOTE: where tf is Base??
+	const UINT_PTR PcOff = Entry - Vmcs->Proc.ImageBase; // NOTE: where tf is Base??
 
 	if (! Entry) {
 		SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)"no entry", 1);
@@ -573,5 +577,6 @@ NATIVE_CALL VOID PatchImage (
 	}
 
 	Vmcs->Hdw.Pc = (UINT_PTR)(Img + PcOff);
+	VmExecute ();
 }
 #endif // VMELF_H

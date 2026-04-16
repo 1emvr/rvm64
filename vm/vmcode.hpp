@@ -2325,12 +2325,31 @@ DATA_SCN const UINT_PTR DispatchTable [256] = {
     ENCRYPT (jal)
 
 
-
-VOID Opcall (_In_ const UINT32 TableIndex) {
+VOID Opcall (
+		_In_ const UINT32 TableIndex) 
+{
 	UINT_PTR a = ((UINT_PTR*)DispatchTable) [TableIndex];					
 	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
 
 	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)()) b;											
 	operation ();													
+}
+
+
+VM_CALL VOID VmExecute () {
+	if (setjmp (Vmcs->Context->TrapHandler)) { } 
+
+	while (true) {
+		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
+
+		if (Opcode == RV64_RET) {
+			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) {
+				SetTrap (nullptr, EnvExit, 0, 0, 1);
+			}
+		}
+
+		VmDecode (Opcode); 
+		Vmcs->Hdw.Pc += 4;
+	}
 }
 #endif // VMCODE_H

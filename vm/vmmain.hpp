@@ -271,7 +271,23 @@ DATA_SCN const UINT_PTR DispatchTable [256] = {
     ENCRYPT (_JAL)
 #undef ENCRYPT
 
-#include "vmport.hpp"
+
+VM_CALL VOID SetCsrTrap (
+		_In_ const INT Epc, 
+		_In_ const INT Cause, 
+		_In_ const INT Stat, 
+		_In_ const INT Tval, 
+		_In_ const INT Halt) 
+{
+    Vmcs->Csr->Epc 		= (UINT_PTR)Epc;			
+    Vmcs->Csr->Cause 	= Cause;                 	
+    Vmcs->Csr->Status 	= Stat;                 	
+    Vmcs->Csr->Tval 	= Tval;                    
+    Vmcs->Context->Halt = Halt;                    
+
+    RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
+}
+
 
 #ifdef __cplusplus
 extern "C" {
