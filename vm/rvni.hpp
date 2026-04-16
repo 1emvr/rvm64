@@ -175,8 +175,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (INT, Mode, A2);
 
 				INT Result = (Api.Typecaster.open) Api.Address (Pathname, Flags, Mode);
-				RegWrite (INT, A0, Result);
 
+				RegWrite (INT, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::READ: 
@@ -190,8 +190,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (UINT, Count, A2);
 
 				INT Result = (Api.Typecaster.read) Api.Address (Fd, Buf, Count);
-				RegWrite (INT, A0, Result);
 
+				RegWrite (INT, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::WRITE: 
@@ -205,8 +205,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (UINT, Count, A2);
 
 				INT Result = (Api.Typecaster.write) Api.Address (Fd, Buf, Count);
-				RegWrite (INT, A0, Result);
 
+				RegWrite (INT, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::CLOSE: 
@@ -215,8 +215,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (INT, Fd, A0);
 
 				INT Result = (Api.Typecaster.close) Api.Address (Fd);
-				RegWrite (INT, A0, Result);
 
+				RegWrite (INT, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::LSEEK: 
@@ -230,8 +230,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (INT, Whence, A2);
 
 				LONG Result = (Api.Typecaster.lseek) Api.Address (Fd, Offset, Whence);
-				RegWrite (LONG, A0, Result);
 
+				RegWrite (LONG, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::STAT64: 
@@ -243,8 +243,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Statbuf, A1);
 
 				INT Result = (Api.Typecaster.stat64) Api.Address (Pathname, Statbuf);
-				RegWrite (INT, A0, Result);
 
+				RegWrite (INT, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::MALLOC: 
@@ -253,8 +253,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (SIZE_T, Size, A0);
 
 				LPVOID Result = (Api.Typecaster.malloc) Api.Address (SIZE);
-				RegWrite (UINT_PTR, A0, Result);
 
+				RegWrite (UINT_PTR, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::FREE: 
@@ -263,8 +263,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (LPVOID, Ptr, A0);
 
 				(Api.Typecaster.free) Api.Address (Ptr);
-				RegWrite (UINT_PTR, A0, 0);
 
+				RegWrite (UINT_PTR, A0, 0);
 				break;
 			}
 		case UCRT_FUNCTION::MEMCPY: 
@@ -277,8 +277,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (SIZE_T, n, A2);
 
 				LPVOID Result = (Api.Typecaster.memcpy) Api.Address (Dest, Src, n);
-				RegWrite (UINT_PTR, A0, Result);
 
+				RegWrite (UINT_PTR, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::MEMSET: 
@@ -292,8 +292,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (SIZE_T, n, A2);
 
 				LPVOID Result = (Api.Typecaster.memset) Api.Address (Dest, Value, n);
-				RegWrite(UINT64, A0, Result);
 
+				RegWrite(UINT64, A0, Result);
 				break;
 			}
 		case ucrt_function::STRLEN: 
@@ -302,8 +302,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (CHAR*, s, A0);
 
 				SIZE_T Result = (Api.Typecaster.strlen) Api.Address (s);
-				RegWrite (SIZE_T, A0, Result);
 
+				RegWrite (SIZE_T, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::STRCPY: 
@@ -314,8 +314,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (CHAR*, Src, A1);
 
 				CHAR *Result = (Api.Typecaster.strcpy) Api.Address (Dest, Src);
-				RegWrite (UINT_PTR, A0, Result);
 
+				RegWrite (UINT_PTR, A0, Result);
 				break;
 			}
 		case UCRT_FUNCTION::MMAP: 
@@ -371,8 +371,8 @@ VM_CALL VOID NativeCall () {
 				RegRead (DWORD, Prot, A2);
 
 				auto Func = (Api.Typecaster.mprotect) Api.Address (Addr, Len, Prot, &Old);
-				RegWrite (INT, A0, Func ? 0 : -1);
 
+				RegWrite (INT, A0, Func ? 0 : -1);
 				break;
 			}
 		default: 
