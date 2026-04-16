@@ -8,21 +8,15 @@
 namespace rvm64 {
 	NATIVE INT32 VmMain (UINT64 magic1, UINT64 magic2) {
 		SaveHostContext ();
+
 		VmMemoryInit(); 
-
-		while (*(volatile UINT_PTR*) &vmcs->Proc.Ready != (INT32)1) {
-			Sleep (10);
-		}
-
-		*(volatile UINT_PTR*) &vmcs->Proc.Ready = (INT32)0;
-
 		LoadImage (vmcs->Proc.Buffer, vmcs->Proc.WriteSize);
+
 		PatchAndSetEntry ();
 
 		if (setjmp(vmcs->Hdw->ExitHandler)) {
 			goto defer;	
 		}
-
 defer:
 		VmMemoryFree ();
 		RestoreHostContext ();
