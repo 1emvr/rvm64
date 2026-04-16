@@ -29,66 +29,74 @@ NATIVE_CALL BOOL process_packets (
 		_Out_ 		PACKET_SEG* 	new_vms)
 {
 	UINT_PTR image_base = *data;
-	
-	UINT_PTR n_threads = image_base [0]; // number of files prepended to the start of the packet (n_threads), (param/data)...
-	UINT_PTR total = sizeof (UINT_PTR);
+	UINT_PTR n_threads 	= image_base [0]; 
 
-	image_base += total; 
+	UINT_PTR remaining 	= *data_sz;
+	UINT_PTR offset 	= 0;
+
+	offset 		+= sizeof (UINT_PTR);
+	image_base 	+= offset; 
+	remaining 	-= offset; 
 
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
-	for (int i = 0; i < n_threads; i++) { 
-		UINT_PTR param_size = image_base [0]; // packed data is [param (size/data), elf (data)], ... 
-		{
-			if (param_size != 0) {						
-				new_vms->param_offset [i] = image_base - *data; // param_offset points to the header of the param-> (param size), (param data)
-			}
+	while (n_threads != 0) { 
+		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (data)], ... 
 
-			total 		+= sizeof (UINT_PTR) + param_size;
-			image_base 	+= sizeof (UINT_PTR) + param_size;
-
-			new_vms->image_offset [i] = image_base - *data; 
-			// honest to god we really don't need to consider if a parameter is beyond the arena unless it's a malformed packet: then we would have larger problems...
-			// we should be more worried about expanding the ELF data, and that's when I would perform bounds checking.
+		if (param_sz != 0) {						
+			new_vms->param_offset [i] = offset; 
 		}
+
+		offset 		+= sizeof (UINT_PTR) + param_sz;
+		image_base 	+= offset;
+		remaining 	-= offset;
+
+		new_vms->image_offset [i] = offset; 
 
 		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
 			return false;
 		}
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
+		UINT_PTR img_sz = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
 
-		SIZE_T img_sz = ehdr->e_phoff + (ehdr->e_phnum * ehdr->e_phentsize);	
-		SIZE_T needed = 0;
-		{
-			for (int i = 0; i < ehdr->e_phnum; i++) {
-				ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
-				if (phdr->p_type != PT_LOAD) {
-					continue;
+		for (int i = 0; i < ehdr->e_phnum; i++) { 
+			ELF64_PHDR *phdr = (ELF64_PHDR*) (image_base + ehdr->e_phoff + (i * ehdr->e_phentsize));
+
+			if (phdr->p_type != PT_LOAD) {
+				continue;
+			}
+
+			UINT_PTR img_end = phdr->v_addr + phdr->p_memsz;
+
+			if (img_end > img_sz) { // if img_end > img_size it means we need to reserve space and move the next elf forward
+				img_sz = img_end;
+
+				if (image_base + img_sz > remaining) {
+					UINT_PTR expand = DEFAULT_ARENA_SIZE + img_sz; 
+
+					remaining += expand;
+					arena_realloc (data, data_sz, *(data_sz) + expand);
+
+					image_base = *data + offset;
 				}
-
-				UINT_PTR vm_sz = phdr->v_addr + phdr->p_memsz;
-				if (vm_sz > img_sz) {
-					img_sz = vm_sz;
-
-					SIZE_T file_sz = image_base + phdr->file_sz; // how does total account for this resize? where do we bounds-check?
-					needed += vm_sz;
-
-					continue;
-				}
+				// here we move memory of the next elf forward and reserve memory for this one.
 			}
 		}
 
-		total 		+= img_sz; 
-		image_base 	+= img_sz;
+		offset 		+= img_sz;
+		image_base 	+= offset;
+		remaining 	-= offset;
 
-		if (total > *data_sz) {	// since programs can expand in memory we need to check to make sure we have enough.
+		if (total > *data_sz) {	
 			arena_realloc (data, data_sz, *(data_sz) + DEFAULT_ARENA_SIZE);
-			image_base = *data + total;
+			image_base = *data + offset;
 		}
-		new_vms->count += 1;
+
+		new_vms->count 	+= 1;
+		n_threads 		-= 1;
 	}
 	return true;
 }
