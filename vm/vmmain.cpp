@@ -76,23 +76,20 @@ NATIVE_CALL VOID rvm64_main (
 		_In_ const UINT_PTR data,
 		_In_ const SIZE_T	size) 
 {
-	HANDLE threads [8] = { };			
+	HANDLE threads [8] = { };			// might change it to 5 max threads idk
 	PACKET_SEG new_vms = { };
 
-	process_packets (data, &new_vms); // track params (magic, params size, param data)-> nt_head + file size
-									
+	process_packets (&data, &new_vms); // track params (magic, params size, param data)-> nt_head + file size
 	if (new_vms.count == 0) {
 		return;
 	}
 
 	for (UINT8 i = 0; i < new_vms.count; i++) {
-		threads [i] = CreateThread (
-				nullptr, 0, 
-				vm_thread (data, new_vms.files [i]), 
-				new_vms.params [i], 
-				0, nullptr);
-	}
+		UINT_PTR image = data + new_vms.image_offset [i];
+		UINT_PTR params = data + new_vms.params_offset [i];
 
+		threads [i] = CreateThread (nullptr, 0, vm_thread (data, image), params, 0, nullptr);
+	}
 	WaitForMultipleObjects (new_vms.count, &threads, true, 5000);
 }
 
