@@ -16,7 +16,7 @@ NATIVE_CALL INT32 VmMain (
 	SaveHostRegCtx (Vmcs->Context->HostContext);
 
 	do {
-		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); // TODO: Remove context from init. They need to be separate so that SaveRegCtx can happen independently.
+		MemoryInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
 		Vmcs->Context->Ready = 1;
 
 		while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
@@ -27,7 +27,7 @@ NATIVE_CALL INT32 VmMain (
 		PatchAndExecute (Vmcs->Proc.Memory); 		
 
 		MemoryRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
-		if (setjmp (Vmcs->Context->Shutdown)) {
+		if (setjmp (Vmcs->Context->Shutdown)) { // TODO: When would the user want the vm to shutdown vs halt?
 			goto defer;	
 		}
 	} while (true);
