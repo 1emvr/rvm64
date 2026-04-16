@@ -20,6 +20,9 @@ VOID Opcall (
 }
 
 
+VM_CALL VOID Decode (_In_ const UINT32); 
+
+
 VM_CALL VOID VmExecute () {
 	if (setjmp (Vmcs->Context->Interrupt)) { } 
 	if (Vmcs->Context->Halt) {
@@ -35,13 +38,12 @@ VM_CALL VOID VmExecute () {
 			}
 		}
 
-		VmDecode (Opcode); 
+		Decode (Opcode); 
 		Vmcs->Hdw.Pc += 4;
 	}
 }
 
-
-// TODO: Change reg read/write from macros to functions for size.
+// TODO: Opcode randomization
 DATA_SCN OPCODE EncodingTable [] = {
 	{0b1010011, RTYPE}, {0b1000011, RTYPE}, {0b0110011, RTYPE}, {0b1000111, R4TYPE}, {0b1001011, R4TYPE}, {0b1001111, R4TYPE},
 	{0b0000011, ITYPE}, {0b0001111, ITYPE}, {0b1100111, ITYPE}, {0b0010011, ITYPE}, {0b1110011, ITYPE}, {0b0011011, ITYPE},
