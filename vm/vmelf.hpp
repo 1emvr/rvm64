@@ -153,7 +153,7 @@ typedef struct {
     UINT_PTR 	p_offset;   // Offset in File
     UINT_PTR 	p_vaddr;    // Virtual address in memory
     UINT_PTR 	p_paddr;
-    UINT_PTR 	p_Filesz;   // Bytes in File
+    UINT_PTR 	p_filesz;   // Bytes in File
     UINT_PTR 	p_memsz;    // Bytes in memory
     UINT_PTR 	p_align;
 } ELF64_PHDR;
@@ -217,15 +217,12 @@ static inline BOOL InImage (
 
 
 NATIVE_CALL VOID LoadImage (
-		_In_ UINT8* Memory, 
-		_In_ UINT8* MemorySize) 
+		_In_ const UINT8** 	Memory, 
+		_In_ const SIZE_T* 	MemorySize) 
 {
-	const UINT8 *File 		= (const UINT8*)Memory;
-	const ELF64_EHDR *Ehdr 	= (const ELF64_EHDR*)File;
+	UINT8 *File 		= *Memory;
+	ELF64_EHDR *Ehdr 	= (UINT8*)File;
 
-	BOOL Success = false;
-
-	UINT_PTR base = UINT64_MAX, end = 0;
 	if (File [0] != 0x7F || 
 		File [1] !='E' ||
 		File [2] !='L' ||
@@ -233,6 +230,7 @@ NATIVE_CALL VOID LoadImage (
 	{
 		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
 	}
+
 	if (Ehdr->e_ident [EI_CLASS] != ELFCLASS64 || 
 		Ehdr->e_ident [EI_DATA] != 1 || 
 		Ehdr->e_machine != EM_RISC) 
@@ -240,22 +238,22 @@ NATIVE_CALL VOID LoadImage (
 		SetCsrTrap (nullptr, ImageBadType, 0, 0, 1);
 	}
 
-	UINT_PTR VirtualSize = (UINT_PTR)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
-	UINT_PTR End = 0;
+	SIZE_T VirtualSize = (SIZE_T)Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
 
-	if (VirtualSize > MemorySize) {
-		VirtualFree (Memory, 0, MEM_RELEASE);
-		Memory = VirtualAlloc (nullptr, VirtualSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	if (VirtualSize > *MemorySize) {
+		VirtualFree (*Memory, 0, MEM_RELEASE);
+		*Memory = (UINT8*) VirtualAlloc (nullptr, VirtualSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-		if (!Memory) {
-			goto defer;
+		if (! *Memory) {
+			SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
 		}
 
-		MemorySize = VirtualSize;
+		*MemorySize = VirtualSize;
 	}
 
-	const ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
+	ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
 
+	UINT_PTR End = UINT64_MAX;
 	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
 		const auto& Ph = Fph [i];
 
@@ -265,7 +263,7 @@ NATIVE_CALL VOID LoadImage (
 		}
 	}
 	if (Vmcs->Proc.ImageBase == UINT64_MAX) {
-		goto defer;
+		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
 	}
 
 	UINT_PTR HeaderSpan = Ehdr->e_phoff + (UINT_PTR)Ehdr->e_phentsize * Ehdr->e_phnum;
@@ -273,16 +271,28 @@ NATIVE_CALL VOID LoadImage (
 	if (HeaderSpan < Ehdr->e_ehsize) {
 		HeaderSpan = Ehdr->e_ehsize;
 	}
-	if (HeaderSpan > MemorySize) {
-		HeaderSpan = MemorySize;
+
+	SIZE_T Need 		= MAX (HeaderSpan, End - Vmcs->Proc.ImageBase); 
+	SIZE_T AlignNeed 	= AlignUp (Need, 0x1000);
+
+	if (AlignNeed > *MemorySize) {
+		VirtualFree (*Memory, 0, MEM_RELEASE);
+		*Memory = VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+		if (! *Memory) {
+			SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
+		}
+
+		*MemorySize = AlignNeed;
+
+		File 	= *Memory;
+		Ehdr 	= (UINT8*)File;
+		Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 	}
 
-	UINT_PTR Need = MAX (HeaderSpan, End - Vmcs->Proc.ImageBase); 
-	UINT_PTR AlignNeed = AlignUp (Need, 0x1000);
-
 	UINT8* Buffer = (UINT8*)VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); 
-	if (!Buffer) {
-		goto defer;
+	if (! Buffer) {
+		SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
 	}
 
 	MemSet (Buffer, 0, AlignNeed);
@@ -294,47 +304,22 @@ NATIVE_CALL VOID LoadImage (
 		if (Ph.p_type != PT_LOAD) {
 			continue;
 		}
-		if ((UINT_PTR)Ph.p_offset + Ph.p_Filesz > AlignNeed) {
-			goto defer;
+		if ((UINT_PTR)Ph.p_offset + Ph.p_filesz > *MemorySize) {
+			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, true);
 		}
 
 		UINT_PTR Offset = Ph.p_vaddr - Vmcs->Proc.ImageBase;
 
 		if (! InImage (Offset, Ph.p_memsz, AlignNeed)) {
-			VirtualFree (img, 0, MEM_RELEASE);
 			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 		}
-		if (Ph.p_Filesz) {
-			MemCpy(Buffer + Offset, File + Ph.p_offset, Ph.p_Filesz);
+		if (Ph.p_filesz) {
+			MemCpy(Buffer + Offset, File + Ph.p_offset, Ph.p_filesz);
 		}
 	}
 
-	if (AlignNeed > Vmcs->Proc.MemorySize) {
-		VirtualFree (Buffer, 0, MEM_RELEASE);
-		VirtualFree (Memory, 0, MEM_RELEASE);
-
-		Buffer = VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-		Memory = VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-		if (! Buffer || ! Memory) {
-			goto defer;
-		}
-
-		Vmcs->Proc.MemorySize = AlignNeed;
-	}
-
-	MemCpy ((void*)Vmcs->Proc.Memory, Buffer, Vmcs->Proc.MemorySize);
+	MemCpy ((void*) *Memory, Buffer, *AlignNeed);
 	VirtualFree (Buffer, 0, MEM_RELEASE);
-
-	Success = true;
-
-defer:
-	if (! Success) {
-		VirtualFree (Vmcs->Proc.Memory, 0, MEM_RELEASE);
-		VirtualFree (Buffer, 0, MEM_RELEASE);
-
-		SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
-	}
 }
 
 
