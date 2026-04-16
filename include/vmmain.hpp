@@ -14,11 +14,11 @@
 #define VM_DATA     	__attribute__((section(".data")))
 
 enum Screnum {
-    Rd = 0, rs1, rs2, rs3, imm,
+    RD = 0, RS1, RS2, RS3, IMM,
 };
 
 enum Regenum {
-    zr = 0, ra, sp, gp, tp,
+    ZR = 0, RA, SP, GP, TP,
     T0, T1, T2, S0, S1,
     A0, A1, A2, A3, A4, A5, A6, A7,
     S2, S3, S4, S5, S6, S7, S8, S9, S10, S11,
@@ -26,7 +26,7 @@ enum Regenum {
 };
 
 enum Typenum {
-    Rtype = 1, R4type, Itype, Stype, Btype, Utype, Jtype,
+    RTYPE = 1, R4TYPE, ITYPE, STYPE, BTYPE, UTYPE, JTYPE,
 };
 
 enum RiscvIndex : UINT8 {
@@ -102,7 +102,7 @@ enum RiscvIndex : UINT8 {
 #define MIN(a, b) ([](auto _a, auto _b){ return _a < _b ? _a : _b; }((a),(b)))
 #define MAX(a, b) ([](auto _a, auto _b){ return _a > _b ? _a : _b; }((a),(b)))
 
-enum causenum {
+enum Causenum {
     SupervSoftwareInter 	= 0xb11,
     MachineSoftwareInter    = 0xb13,
     SupervTimerInter    	= 0xb15,
@@ -141,9 +141,9 @@ typedef struct {
 } OPCODE;
 
 VM_DATA OPCODE Encoding [] = {
-	{0b1010011, Rtype}, {0b1000011, Rtype}, {0b0110011, Rtype}, {0b1000111, R4type}, {0b1001011, R4type}, {0b1001111, R4type},
-	{0b0000011, Itype}, {0b0001111, Itype}, {0b1100111, Itype}, {0b0010011, Itype}, {0b1110011, Itype}, {0b0011011, Itype},
-	{0b0100011, Stype}, {0b0100111, Stype}, {0b1100011, Btype}, {0b0010111, Utype}, {0b0110111, Utype}, {0b1101111, Jtype},
+	{0b1010011, RTYPE}, {0b1000011, RTYPE}, {0b0110011, RTYPE}, {0b1000111, R4TYPE}, {0b1001011, R4TYPE}, {0b1001111, R4TYPE},
+	{0b0000011, ITYPE}, {0b0001111, ITYPE}, {0b1100111, ITYPE}, {0b0010011, ITYPE}, {0b1110011, ITYPE}, {0b0011011, ITYPE},
+	{0b0100011, STYPE}, {0b0100111, STYPE}, {0b1100011, BTYPE}, {0b0010111, UTYPE}, {0b0110111, UTYPE}, {0b1101111, JTYPE},
 };
 
 typedef struct {
