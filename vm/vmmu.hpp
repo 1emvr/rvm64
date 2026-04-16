@@ -56,7 +56,7 @@ VM_CALL VOID MemoryInit (
 	*Memory 		= (UINT64) VirtualAlloc (nullptr, DEFAULT_PROC_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 	if (! *Memory) {
-		SetCsrTrap (Vmcs->Hdw.Pc, GetLastError (), 0, 0, 1);
+		SetCsrTrap (nullptr, GetLastError (), 0, 0, 1);
 		return;
 	}
 
