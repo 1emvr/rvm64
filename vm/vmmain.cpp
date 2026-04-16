@@ -22,8 +22,6 @@ NATIVE_CALL VOID process_packets ( // process ELF params and headers
 
 	for (UINT8 i = 0; i < 8; i++) {
 		if (is_param (image_base)) {
-			// get the parameter size, add to the image base, and add the param address to the new_vms list 	
-			// then move on to iterate through program headers and calculate the full image size
 			SIZE_T param_size = *(SIZE_T*)image_base + 2;
 
 			new_vms->params [i] = image_base;
@@ -31,6 +29,14 @@ NATIVE_CALL VOID process_packets ( // process ELF params and headers
 		}
 		if (!is_elf (image_base)) {
 			return;
+		}
+
+		UINT8 elf_class = image_base [EI_CLASS];
+
+		if (elf_class == ELFCLASS64) {
+			ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
+			// if we want to do bounds checking on the arena for these programs we'll need to pass the arena size.
+			// this way we could also reallocate quickly if we need to.
 		}
 	}
 }
