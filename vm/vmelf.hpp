@@ -447,18 +447,25 @@ static UINT_PTR FindEntry (
 	// Walk bounded
 	const UINT_PTR MAX_ITERS = 1u << 20;
 
-	for (UINT_PTR i = 0, off = sym_off; i < MAX_ITERS && InImage (off, syment, MemorySize); ++i, off += syment) {
-		const elf64_sym* s = (const elf64_sym*)(Memory + off);
-		if (!s->st_value) continue;
+	for (UINT_PTR i = 0, Off = SymOff; i < MAX_ITERS && InImage (Off, Syment, MemorySize); ++i, Off += Syment) {
+		const ELF64_SYM *s = (const ELF64_SYM*)(Memory + Off);
+		if (!s->st_value) {
+			continue;
+		}
 
-		UINT32 name_off = s->st_name;
-		if (name_off >= strsz) continue;
-		const char* name = (const char*)(Memory + str_off + name_off);
-		size_t remain = (size_t)(strsz - name_off);
-		const void* nul = memchr(name, 0, remain);
-		if (!nul) continue;
+		UINT32 NameOff = s->st_name;
+		if (NameOff >= Strsz) {
+			continue;
+		}
 
-		if (strcmp(name, "_start") == 0 || strcmp(name, "main") == 0) {
+		const CHAR *Name = (const CHAR*)(Memory + StrOff + NameOff);
+		SIZE_T Remain = (SIZE_T)(Strsz - NameOff);
+		const LPVOID Nul = memchr (Name, 0, Remain);
+
+		if (!nul) {
+			continue;
+		}
+		if (StrCmp (Name, "_start") == 0 || Strcmp (Name, "main") == 0) {
 			return s->st_value; // VADDR
 		}
 	}
