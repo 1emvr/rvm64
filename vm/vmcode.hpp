@@ -13,13 +13,16 @@ VM_CALL VOID Decode (_In_ const UINT32);
 
 
 VM_CALL VOID VmExecute () {
+	if (setjmp (Vmcs->Context->Return)) { } 
+
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
 		if (Opcode == RV64_RET) {
-			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { // TODO: Return changes PC from RA. This might work better as an interrupt.
+			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { // TODO: Return changes PC from RA. This might work better as an interrupt or a proper risc-v inst.
 				SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
 			}
+			// SetCsrTrap (nullptr, EnvReturn, 0, 0, false);
 		} 
 
 		Decode (Opcode); 
