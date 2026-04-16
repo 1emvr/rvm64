@@ -74,19 +74,19 @@ VM_CALL VOID VmInit (
 }
 
 
-VM_CALL VOID VmFree () {
+VM_CALL VOID VmRelease (_In_ const UINT_PTR* Memory, _In_ const UINT_PTR* MemorySize) {
 	RemoveVectoredExceptionHandler (Vmcs->Context->VehHandle);
 	Vmcs->Context->VehHandle = 0;
 
-	if (Vmcs->Proc.Memory) {
-		MemSet (Vmcs->Proc.Memory, 0, Vmcs->Proc.MemorySize);
-		VirtualFree ((LPVOID)Vmcs->Proc.Memory, 0, MEM_RELEASE);
+	if (*Memory) {
+		MemSet (*Memory, 0, MemorySize);
+		VirtualFree ((LPVOID)*Memory, 0, MEM_RELEASE);
 
-		Vmcs->Proc.Memory = 0;
+		*Memory = 0;
 	}
 
-	vmcs->Proc.MemorySize   = 0;
-	vmcs->Proc.Ready 		= 0;
+	*MemorySize = 0;
+	Vmcs->Context.Ready = 0;
 
 	Vmcs->Magic1 = 0;
 	Vmcs->Magic2 = 0;

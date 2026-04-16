@@ -13,24 +13,23 @@ NATIVE_CALL INT32 VmMain (
 	Vmcs->Magic2 = Magic2;
 
 	SaveHostRegCtx ();
-	do 
-	{
-		VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
-		Vmcs->Context->Ready = 1;
+	do {
+		{
+			VmInit (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize); 
+			Vmcs->Context->Ready = 1;
 
-		while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
-			Sleep (10);
+			while (Vmcs->Context.Halt) { // machine halts until supervisor triggers.
+				Sleep (10);
+			}
 		}
-
 		LoadImage (Vmcs->Proc.Memory, Vmcs->Proc.MemorySize); 
 		PatchAndExecute (Vmcs->Proc.Memory); 		
 
-		VmFree ();
+		VmRelease (&Vmcs->Proc.Memory, &Vmcs->Proc.MemorySize);
+		if (setjmp (Vmcs->Context->ExitHandler)) {
+			goto defer;	
+		}
 	} while (true);
-
-	if (setjmp (Vmcs->Context->ExitHandler)) {
-		goto defer;	
-	}
 
 defer:
 	VmFree ();
