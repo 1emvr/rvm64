@@ -221,7 +221,7 @@ NATIVE_CALL VOID LoadImage (
 		_In_ const SIZE_T* 	MemorySize) 
 {
 	UINT8 *File 		= *Memory;
-	ELF64_EHDR *Ehdr 	= (UINT8*)File;
+	ELF64_EHDR *Ehdr 	= (ELF64_EHDR*)File;
 
 	if (File [0] != 0x7F || 
 		File [1] !='E' ||
@@ -248,7 +248,11 @@ NATIVE_CALL VOID LoadImage (
 			SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
 		}
 
-		*MemorySize = VirtualSize;
+		*MemorySize = AlignNeed;
+
+		File 	= *Memory;
+		Ehdr 	= (ELF64_EHDR*)File;
+		Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 	}
 
 	ELF64_PHDR *Fph = (const ELF64_PHDR*)(File + Ehdr->e_phoff);
@@ -277,7 +281,7 @@ NATIVE_CALL VOID LoadImage (
 
 	if (AlignNeed > *MemorySize) {
 		VirtualFree (*Memory, 0, MEM_RELEASE);
-		*Memory = VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		*Memory = (UINT8*) VirtualAlloc (nullptr, AlignNeed, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		if (! *Memory) {
 			SetCsrTrap (nullptr, OutOfMemory, 0, 0, true);
@@ -286,7 +290,7 @@ NATIVE_CALL VOID LoadImage (
 		*MemorySize = AlignNeed;
 
 		File 	= *Memory;
-		Ehdr 	= (UINT8*)File;
+		Ehdr 	= (ELF64_EHDR*)File;
 		Fph 	= (ELF64_PHDR*)(File + Ehdr->e_phoff);
 	}
 
@@ -297,7 +301,7 @@ NATIVE_CALL VOID LoadImage (
 
 	MemSet (Buffer, 0, AlignNeed);
 	MemCpy (Buffer, File, HeaderSpan);
-
+ 
 	for (INT i = 0; i < Ehdr->e_phnum; ++i) {
 		const auto& Ph = Fph [i];
 
@@ -314,11 +318,11 @@ NATIVE_CALL VOID LoadImage (
 			SetCsrTrap (nullptr, ImageBadLoad, 0, 0, 1);
 		}
 		if (Ph.p_filesz) {
-			MemCpy(Buffer + Offset, File + Ph.p_offset, Ph.p_filesz);
+			MemCpy (Buffer + Offset, File + Ph.p_offset, Ph.p_filesz);
 		}
 	}
 
-	MemCpy ((void*) *Memory, Buffer, *AlignNeed);
+	MemCpy ((LPVOID) *Memory, Buffer, *AlignNeed);
 	VirtualFree (Buffer, 0, MEM_RELEASE);
 }
 
