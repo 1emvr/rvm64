@@ -115,7 +115,7 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 													default: break;
 												}
 											}
-								default: break;
+								default: break;INT32 value = 0;
 							}
 							break;
 						}
@@ -785,7 +785,7 @@ VM_CALL void slliw () {
 	RegRead (INT32, v1, _rs1);
 
 	if ((_shamt >> 5) != 0) {
-		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw->Scratch, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw.Scratch, 1);
 	}
 	RegWrite (INT32, _rd, v1 << (_shamt & 0x1F));
 }
@@ -801,7 +801,7 @@ VM_CALL void srliw () {
 	RegRead (INT32, v1, _rs1);
 
 	if ((_shamt >> 5) != 0) {
-		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw->Scratch, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw.Scratch, 1);
 	}
 	RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
 }
@@ -817,7 +817,7 @@ VM_CALL void sraiw () {
 	RegRead (INT32, v1, _rs1);
 
 	if ((_shamt >> 5) != 0) {
-		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw->Scratch, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw.Scratch, 1);
 	}
 	// TODO: this may be wrong to mask
 	RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
