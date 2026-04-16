@@ -582,35 +582,35 @@ VM_CALL void fcvt_wu_d () {
 
 
 VM_CALL void fcvt_d_w () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0;
+	INT32 value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (INT32, v1, 	_rs1);
-	RegWrite (double, _rd, 	v1);
+	RegRead (INT32, 	value, 	_rs1);
+	RegWrite (double, 	_rd, 	value);
 }
 
 
 VM_CALL void fcvt_d_wu () {
-	UINT8 _rd = 0, _rs1 = 0; UINT32 v1 = 0;
+	UINT32 value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (UINT32, v1, 	_rs1);
-	RegWrite (double, _rd, 	v1);
+	RegRead (UINT32, 	value, 	_rs1);
+	RegWrite (double, 	_rd, 	value);
 }
 
 
 VM_CALL void fclass_d () { // NOTE: maybe not even real...
-	UINT8 _rd = 0, _rs1 = 0; double v1 = 0;
+	double value = 0; UINT8 _rd = 0, _rs1 = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 
-	RegRead (double, v1, _rs1);
-	converter.d = v1;
+	RegRead (double, value, _rs1);
+	converter.d = value;
 
 	const UINT64 exponent = (converter.u >> 52) & 0x7FF;
 	const UINT64 fraction = converter.u & 0xFFFFFFFFFFFFF;
@@ -656,138 +656,137 @@ VM_CALL void fclass_d () { // NOTE: maybe not even real...
 // NOTE: immediates are always signed unless there's a bitwise operation
 
 VM_CALL void addi () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT64, 	v1, 	_rs1);
-	RegWrite (INT64, 	_rd, 	(v1 + _imm));
+	RegRead (INT64, 	value, 	_rs1);
+	RegWrite (INT64, 	_rd, 	(value + _imm));
 }
 
 
 VM_CALL void slti () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT64, 	v1, 	_rs1);
-	RegWrite (INT64, 	_rd, 	((v1 < _imm) ? 1 : 0));
+	RegRead (INT64, 	value, 	_rs1);
+	RegWrite (INT64, 	_rd, 	((value < _imm) ? 1 : 0));
 }
 
 
 VM_CALL void sltiu () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; UINT64 v1 = 0;
+	UINT64 value = 0; UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; 
 
 	ScrRead (UINT8, _rd, 	RD);
 	ScrRead (UINT8, _rs1, 	RS1);
 	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (UINT64, 	v1, 	_rs1);
-	RegWrite (UINT64, 	_rd, 	((v1 < (UINT32)_imm) ? 1 : 0));
+	RegRead (UINT64, 	value, 	_rs1);
+	RegWrite (UINT64, 	_rd, 	((value < (UINT32)_imm) ? 1 : 0));
 }
 
 
 VM_CALL void xori () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; 
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (INT32, _imm, IMM);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
+	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT64, v1, _rs1);
-	RegWrite (INT64, _rd, (v1 ^ _imm));
+	RegRead (INT64, 	value, 	_rs1);
+	RegWrite (INT64, 	_rd, 	(value ^ _imm));
 }
 
 
 VM_CALL void ori () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; 
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (INT32, _imm, IMM);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
+	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT64, v1, _rs1);
-	RegWrite (INT64, _rd, (v1 | _imm));
+	RegRead (INT64, 	value, 	_rs1);
+	RegWrite (INT64, 	_rd, 	(value | _imm));
 }
 
 
 VM_CALL void andi () {
-	UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; INT64 v1 = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; INT32 _imm = 0; 
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (INT32, _rs1, RS1);
-	ScrRead (INT32, _imm, IMM);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (INT32, _rs1, 	RS1);
+	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT64, v1, _rs1);
-	RegWrite (INT64, _rd, (v1 & _imm));
+	RegRead (INT64, 	value, 	_rs1);
+	RegWrite (INT64, 	_rd, 	(value & _imm));
 }
 
 
 VM_CALL void slli () {
-	UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; INT64 v1 = 0;
+	INT64 value = 0; UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; 
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (UINT32, _shamt, IMM);
+	ScrRead (UINT8, 	_rd, 	RD);
+	ScrRead (UINT8, 	_rs1, 	RS1);
+	ScrRead (UINT32, 	_shamt, IMM);
 
-	RegRead (UINT64, v1, _rs1);
-	RegWrite (UINT64, _rd, (v1 << (_shamt & 0x1F)));
+	RegRead (UINT64, 	value, 	_rs1);
+	RegWrite (UINT64, 	_rd, 	(value << (_shamt & 0x1F)));
 }
 
 
 VM_CALL void srli () {
-	UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; UINT64 v1 = 0; 
+	UINT64 value = 0; UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; 
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (UINT32, _shamt, IMM);
+	ScrRead (UINT8, 	_rd, 	RD);
+	ScrRead (UINT8, 	_rs1, 	RS1);
+	ScrRead (UINT32, 	_shamt, IMM);
 
-	RegRead (UINT64, v1, _rs1);
-	RegWrite (UINT64, _rd, v1 >> (_shamt & 0x1F));
+	RegRead (UINT64, 	value, 	_rs1);
+	RegWrite (UINT64, 	_rd, 	value >> (_shamt & 0x1F));
 }
 
 
 VM_CALL void srai () {
-	UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; UINT64 v1 = 0; 
+	UINT64 value = 0; UINT8 _rd = 0, _rs1 = 0; UINT32 _shamt = 0; 
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (UINT32, _shamt, IMM);
+	ScrRead (UINT8, 	_rd, 	RD);
+	ScrRead (UINT8, 	_rs1, 	RS1);
+	ScrRead (UINT32, 	_shamt, IMM);
 
-	RegRead (UINT64, v1, _rs1);
-	RegWrite (UINT64, _rd, v1 >> (_shamt & 0x1F));
+	RegRead (UINT64, 	value, 	_rs1);
+	RegWrite (UINT64, 	_rd, 	value >> (_shamt & 0x1F));
 }
 
 
 VM_CALL void addiw () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; INT32 _imm = 0;
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (INT32, _imm, IMM);
+	ScrRead (UINT8, _rd, 	RD);
+	ScrRead (UINT8, _rs1, 	RS1);
+	ScrRead (INT32, _imm, 	IMM);
 
-	RegRead (INT32, v1, _rs1);
-	RegWrite (INT32, _rd, v1 + _imm);
+	RegRead (INT32, 	v1, 	_rs1);
+	RegWrite (INT32, 	_rd, 	v1 + _imm);
 }
 
 
 VM_CALL void slliw () {
 	UINT8 _rd = 0, _rs1 = 0; INT32 v1 = 0; UINT32 _shamt = 0;
 
-	ScrRead (UINT8, _rd, RD);
-	ScrRead (UINT8, _rs1, RS1);
-	ScrRead (UINT32, _shamt, IMM);
+	ScrRead (UINT8, 	_rd, 	RD);
+	ScrRead (UINT8, 	_rs1, 	RS1);
+	ScrRead (UINT32, 	_shamt, IMM);
 
 	RegRead (INT32, v1, _rs1);
 
 	if ((_shamt >> 5) != 0) {
 		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw->Scratch, 1);
 	}
-
 	RegWrite (INT32, _rd, v1 << (_shamt & 0x1F));
 }
 
@@ -804,7 +803,6 @@ VM_CALL void srliw () {
 	if ((_shamt >> 5) != 0) {
 		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, (UINT64)Vmcs->Hdw->Scratch, 1);
 	}
-
 	RegWrite (INT32, _rd, v1 >> (_shamt & 0x1F));
 }
 
