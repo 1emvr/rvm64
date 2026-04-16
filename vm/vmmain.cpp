@@ -3,7 +3,7 @@
 
 
 struct PACKET_SEG { 
-	UINT_PTR 	files	[8]; 
+	UINT_PTR 	images	[8]; 
 	UINT_PTR 	params 	[8];
 	SIZE_T 		count; 
 };
@@ -23,7 +23,7 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 	SIZE_T total_size = 0;
 	UINT_PTR image_base = data;
 
-	for (UINT8 i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		// PARAM_MAGIC, 
 		// PARAM_SIZE, 
 		// PARAM_DATA -> ELF
@@ -38,7 +38,7 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 			return false;
 		}
 
-		new_vms->files [i] = (UINT_PTR)image_base;
+		new_vms->images [i] = image_base;
 		new_vms->count += 1;
 
 		ELF64_EHDR *ehdr = (ELF64_EHDR*)image_base;
@@ -57,6 +57,8 @@ NATIVE_CALL BOOL process_packets ( // process ELF params and headers
 		if (total_size > arena_size) {
 			// return false or resize the arena
 		}
+
+		image_base += prg_size;
 	}
 	return true;
 }
