@@ -9,9 +9,11 @@ NATIVE_CALL VOID vm_thread (_In_ const PACKET* packet) {
 }
 
 NATIVE_CALL VOID rvm64_main () {
+	HANDLE threads [8] = { } // max of 8 parallel threads
+							 
 	check_packets ();		
 	for (int i = 0; i < packet_num; i++) {
-		packets [i] = CreateThread (nullptr, 0, vm_thread (new_vm), &params, 0, nullptr);
+		threads [i] = CreateThread (nullptr, 0, vm_thread (new_vm), &params, 0, nullptr);
 	}
 
 	WaitForMultipleObjects (packet_num, &packets, true, 5000);
