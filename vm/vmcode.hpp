@@ -19,7 +19,7 @@ VM_CALL VOID VmExecute () {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
 		if (Opcode == RV64_RET) {
-			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { // TODO: Return changes PC from RA. This might work better as an interrupt or a proper risc-v inst.
+			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { // TODO: Return changes PC from RA. This might work better as an interrupt or thru Decode().
 				SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
 			}
 			// SetCsrTrap (nullptr, EnvReturn, 0, 0, false);
