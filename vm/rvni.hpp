@@ -104,6 +104,7 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 	}
 
 	const CHAR *AliasName = SymName;
+
 	for (auto& i : AliasTable) {
 		if (strcmp (SymName, i.Original) == 0) {
 			AliasName = (const CHAR*) i.Alias;
@@ -126,21 +127,21 @@ NATIVE_CALL LPVOID ResolveRvniImport (
 			f.Address = Native;
 
 			switch (f.Typenum) {
-				case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native; break;
-				case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; break;
-				case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; break;
-				case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; break;
-				case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; break;
-				case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; break;
-				case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; break;
-				case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; break;
-				case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; break;
-				case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; break;
-				case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; break;
-				case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; break;
-				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; break;
-				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; break;
-				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; break;
+				case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native; f.Address.open 		= Native; break;
+				case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; f.Address.read 		= Native; break;
+				case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; f.Address.write 	= Native; break;
+				case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; f.Address.close 	= Native; break;
+				case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; f.Address.lseek 	= Native; break;
+				case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; f.Address.stat64 	= Native; break;
+				case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; f.Address.malloc 	= Native; break;
+				case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; f.Address.free 		= Native; break;
+				case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; f.Address.memcpy 	= Native; break;
+				case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; f.Address.memset 	= Native; break;
+				case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; f.Address.strlen 	= Native; break;
+				case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; f.Address.strcpy 	= Native; break;
+				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; f.Address.mmap 		= Native; break;
+				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; f.Address.munmap 	= Native; break;
+				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; f.Address.mprotect 	= Native; break;
 				default:  SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
 			}
 			break;
