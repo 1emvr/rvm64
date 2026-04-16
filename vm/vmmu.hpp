@@ -27,7 +27,6 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	// TODO: When to "interrupt" and when to "shutdown"?
 	switch (Vmcs->Csr.Cause) {
 		case EnvShutdown: 	longjmp (Vmcs->Context->Shutdown, true);
-		case EnvInter:		longjmp (Vmcs->Context->Interrupt, true);
 		case EnvBranch: 	 
 		{
 			RegRead (UINT_PTR, Vmcs->Hdw.Pc, RA); 
@@ -45,7 +44,7 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 			break;
 		}
 		default: 
-			break;
+			longjmp (Vmcs->Context->Interrupt, true); // NOTE: Anything other than a branch, execute, native call, or shutdown will be treated as a violation.
 	}
 }
 
