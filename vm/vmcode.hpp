@@ -18,12 +18,6 @@ VM_CALL VOID VmExecute () {
 	while (true) {
 		INT32 Opcode = *(INT32*) Vmcs->Hdw.Pc;
 
-		if (Opcode == RV64_RET) {
-			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { // TODO: Return changes PC from RA. This might work better as an interrupt or thru Decode().
-				SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
-			}
-			// SetCsrTrap (nullptr, EnvReturn, 0, 0, false);
-		} 
 
 		Decode (Opcode); 
 		Vmcs->Hdw.Pc += 4;
@@ -54,6 +48,16 @@ DATA_SCN OPCODE EncodingTable [] = {
 VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Decoded = 0;
 	UINT8 Opcode7 = Opcode & 0x7F;
+
+	if (Opcode == RV64_RET) { // NOTE: Instant return/exception.
+		if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { 
+			SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
+		}
+
+		Vmcs->Hdw.Pc = Vmcs->Hdw.Regs [RA];
+		Vmcs->Hdw.Pc -= 4;
+		return;
+	} 
 
 	for (int idx = 0; idx < sizeof (OPCODE); idx++) {
 		if (EncodingTable [idx].Mask == Opcode7) {
