@@ -42,8 +42,9 @@ VM_CALL VOID VmExecute () {
 VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 	UINT8 Decoded = 0;
 	UINT8 Opcode7 = Opcode & 0x7F;
-
-	if (Opcode == RV64_RET) { // NOTE: Instant return/exception.
+	
+	// NOTE: Instant return/exception.
+	if (Opcode == RV64_RET) { 
 		if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { 
 			SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
 		}
