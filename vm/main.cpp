@@ -6,7 +6,7 @@
 #include "vmentry.hpp"
 
 
-VM_CALL VOID VmEntry () {
+VM_CALL VOID VmExecute () {
 	volatile LPVOID Pad0 = 0; // Used to align the function ? Added when making the debugger.
 	
 	if (setjmp (Vmcs->Context->TrapHandler)) { } 
@@ -38,7 +38,7 @@ NATIVE_CALL INT32 VmMain (
 	Vmcs->Magic2 = Magic2;
 
 	PatchImportTable (); 									// patch plt/entrypoint
-	VmEntry ();
+	VmExecute ();
 
 	if (setjmp (Vmcs->Context->ExitHandler)) {
 		goto defer;	
