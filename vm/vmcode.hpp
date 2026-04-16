@@ -2326,9 +2326,9 @@ DATA_SCN const UINT_PTR DispatchTable [256] = {
 
 
 VOID Opcall (
-		_In_ const UINT32 TableIndex) 
+		_In_ const UINT32 Index) 
 {
-	UINT_PTR a = ((UINT_PTR*)DispatchTable) [TableIndex];					
+	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
 	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
 
 	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)()) b;											
