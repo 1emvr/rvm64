@@ -58,7 +58,7 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 		}
 	}
 	if (! Decoded) {
-		SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, opcode, 1);
+		SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, opcode, 1);
 	}
 
 	switch(Decoded) {
@@ -494,7 +494,7 @@ VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
 			}
 
 		default: {
-					 SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Opcode, 1);
+					 SetCsrTrap (Vmcs->Hdw.Pc, InstructionIllegal, 0, Opcode, 1);
 				 }
 	}
 }
