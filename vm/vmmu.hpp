@@ -24,15 +24,15 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 	}
 
 	switch (Vmcs->Csr.Cause) {
-		case ENV_SHUTDOWN: 	longjmp (Vmcs->Context->Shutdown, true);
-		case ENV_BRANCH: 	longjmp (Vmcs->Context->Interrupt, true);
-		case ENV_EXECUTE:
+		case EnvShutdown: 	longjmp (Vmcs->Context->Shutdown, true);
+		case EnvBranch: 	longjmp (Vmcs->Context->Interrupt, true);
+		case EnvExecute:
 		{
 			VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw.Pc;
 			Memory ();
 			break;
 		}
-		case ENV_NATIVE: 
+		case EnvNative: 
 		{
 			NativeCall ();
 			break;
