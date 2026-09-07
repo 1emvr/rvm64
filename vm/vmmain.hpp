@@ -423,7 +423,7 @@ BOOL NATIVE_CALL start_thread (
 }
 
 
-VOID NATIVE_CALL rvm64_main () {
+VOID NATIVE_CALL rvm64_main () { // TODO: keep running forever, waiting for new packets, re-evaluating memory and task ??
 	ARENA *a = g_vmcs->arena;
 
 	UINT_PTR data 		= a->data;
