@@ -402,10 +402,7 @@ BOOL NATIVE_CALL start_thread (
 		_In_ const 	LPTHREAD_START_ROUTINE	call,
 		_In_ const 	LPVOID 					args) 
 {
-	*handle = CreateThread (
-			nullptr, 0, 
-			(LPTHREAD_START_ROUTINE)thread_main, args, 
-			0, nullptr); 
+	*handle = CreateThread (nullptr, 0, call, args, 0, nullptr); 
 
 	if (*handle == nullptr) {
 		return false;
