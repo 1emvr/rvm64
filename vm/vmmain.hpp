@@ -293,14 +293,14 @@ NATIVE_CALL UINT64 elf_runtime_size (
 
 	UINT64 lo = (UINT64)-1, hi = 0, align = 0x1000;
 
-	for (int i = 0; i < ehdr->e_phnum; i++) {
-		if (phdr [i].p_type != PT_LOAD) {
+	for (UINT8 prog_index = 0; prog_index < ehdr->e_phnum; prog_index++) {
+		if (phdr [prog_index].p_type != PT_LOAD) {
 			continue;
 		}
 
-		UINT64 seg_lo 	= phdr [i].p_vaddr;
-		UINT64 seg_hi 	= phdr [i].p_vaddr + phdr [i].p_memsz;
-		UINT64 p_align 	= phdr [i].p_align;
+		UINT64 seg_lo 	= phdr [prog_index].p_vaddr;
+		UINT64 seg_hi 	= phdr [prog_index].p_vaddr + phdr [prog_index].p_memsz;
+		UINT64 p_align 	= phdr [prog_index].p_align;
 
 		if (p_align > align) { align = p_align; }
 		if (seg_lo < lo) 	 { lo = seg_lo; }
@@ -326,23 +326,23 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 
 		const ELF64_PHDR *phdr = (const ELF64_PHDR *)(base + ehdr->e_phoff);
 
-		for (int i = 0; i < ehdr->e_phnum; i++) {
-			UINT64 end = phdr [i]. ph_offset + phdr [i].p_filesz;
+		for (UINT8 prog_index = 0; prog_index < ehdr->e_phnum; prog_index++) {
+			const UINT64 end = phdr [prog_index].ph_offset + phdr [prog_index].p_filesz;
 			if (end > max) max = end;
 		}
 	}
 	if (ehdr->e_shoff) {
-		UINT64 end = ehdr->e_shoff + (UINT64)(ehdr->e_shnum * ehdr->e_shentsize);
+		const UINT64 end = ehdr->e_shoff + (UINT64)(ehdr->e_shnum * ehdr->e_shentsize);
 		if (end > max) max = end;
 
 		const ELF64_SHDR *shdr = (const ELF64_SHDR *)base + ehdr->e_shoff;
 
-		for (int i = 0; i < ehdr->e_shnum; i++) {
-			if (shdr [i].sh_type == SHT_NOBITS) {
+		for (UINT8 seg_index = 0; seg_index < ehdr->e_shnum; seg_index++) {
+			if (shdr [seg_index].sh_type == SHT_NOBITS) {
 				continue;
 			}
 
-			UINT64 real_end = shdr [i].sh_offset + shdr [i].sh_size;
+			const UINT64 real_end = shdr [seg_index].sh_offset + shdr [seg_index].sh_size;
 			if (real_end > max) max = real_end;
 		}
 	}
