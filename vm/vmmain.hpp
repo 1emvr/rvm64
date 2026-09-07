@@ -187,7 +187,7 @@ typedef struct {
 
 
 struct THREAD_ARGS {
-	LPVOID img_base;
+	LPVOID elf_base;
 	LPVOID param_base;
 };
 
@@ -268,7 +268,7 @@ VM_CALL VOID SetCsrTrap (
 
 
 NATIVE_CALL BOOL is_elf (_In_ const UINT8 *base) {
-	return base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
+	return 	base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
 			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
 }
 
@@ -306,6 +306,7 @@ NATIVE_CALL UINT64 elf_runtime_size (
 
 NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 	const ELF64_EHDR *ehdr =  (const ELF64_EHDR *)base;
+
 	UINT64 max = sizeof (ELF64_EHDR);
 
 	if (ehdr->phoff) {		
@@ -405,12 +406,12 @@ VOID NATIVE_CALL rvm64_main (
 	}
 
 	for (SIZE_T i = 0; i < a->count; i++) {
-		UINT_PTR img_base 	= data + entires [i].elf_off;
+		UINT_PTR elf_base 	= data + entires [i].elf_off;
 		UINT_PTR param_base = data + entries [i].param_offset;
 
 		if (param_base [0] == 0) param_base = nullptr;
 
-		g_vmcs->thread_args [i].img_base    = img_base;
+		g_vmcs->thread_args [i].elf_base    = elf_base;
 		g_vmcs->thread_args [i].param_base 	= param_base;
 
 		// TODO: separate one-time / infinite thread handles
@@ -419,9 +420,9 @@ VOID NATIVE_CALL rvm64_main (
 				(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
 				0, nullptr); 
 	}
-
-	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // maybe we don't wait until we're ready to read responses ?
-
+	// maybe we don't wait until we're ready to read responses ?
+	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); 
+																					  
 	for (HANDLE i = 0; i < a->count; i++) {
 		if (g_vmcs->h_thread [i]) {
 
