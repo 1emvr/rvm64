@@ -426,7 +426,7 @@ VOID NATIVE_CALL rvm64_main (
 	if (a->count == 0 || a->count > MAX_VM_THREADS) {
 		goto defer;
 	}
-	/* TODO:
+	/* 
 	if (!relocate_runtime_memory ()) {
 		goto defer;
 	}
