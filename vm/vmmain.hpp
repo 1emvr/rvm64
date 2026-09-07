@@ -347,6 +347,7 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 }
 
 
+// Idea to create 2 arenas: one for program code, the other for heap + create a pseudo-allocator/memory manager (512MB blocks ?)
 ARENA* NATIVE_CALL arena_alloc (SIZE_T size);
 ARENA* NATIVE_CALL arena_realloc (ARENA *a, SIZE_T size);
 
