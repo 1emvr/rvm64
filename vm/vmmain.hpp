@@ -235,8 +235,8 @@ typedef struct {
 		HMODULE kernel32;
 	} modules;
 
-	HANDLE 		s_thread 	[MAX_VM_THREADS];		
-	HANDLE 		i_thread 	[MAX_VM_THREADS];		
+	HANDLE 		one_time_thread 	[MAX_VM_THREADS];		
+	HANDLE 		infinite_thread 	[MAX_VM_THREADS];		
 
 	HANDLE 		t_type 		[MAX_VM_THREADS];		
 	VM_CONTEXT 	t_context 	[MAX_VM_THREADS]; 
@@ -441,23 +441,24 @@ VOID NATIVE_CALL rvm64_main (
 	}
 	 */ 
 	
-	for (SIZE_T i = 0; i < a->count; i++) {
-		UINT_PTR elf_base 	= data + entires [i].elf_off;
-		UINT_PTR param_base = data + entries [i].param_off;
+	for (UINT8 thread_index = 0; i < a->count; i++) {
+		UINT_PTR elf_base 	= data + entires [thread_index].elf_off;
+		UINT_PTR param_base = data + entries [thread_index].param_off;
 
 		if (param_base [0] == 0) param_base = nullptr;
 
-		g_vmcs->t_args [i].elf_base 	= elf_base;
-		g_vmcs->t_args [i].param_base 	= param_base;
+		g_vmcs->t_args [thread_index].elf_base 		= elf_base;
+		g_vmcs->t_args [thread_index].param_base 	= param_base;
 
-		UINT64 type = g_vmcs->t_type [i];
+		UINT64 type = g_vmcs->t_type [thread_index];
+		THREAD_ARGS *args = &g_vmcs->t_args [thread_index];
 
 		if (type == SINGLE EXEC) {
-			if (!start_thread (&g_vmcs->s_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->t_args [i])) {
+			if (!start_thread (&g_vmcs->one_time_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
 				a->count -= 1;
 			}
 		} else if (type == INFINITE_EXEC) {
-			if (!start_thread (&g_vmcs->s_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->t_args [i])) { // how do we access these infinite threads?
+			if (!start_thread (&g_vmcs->infinite_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { // how do we access these infinite threads?
 				a->count -= 1;
 			}
 		} else {
@@ -465,9 +466,9 @@ VOID NATIVE_CALL rvm64_main (
 			// error
 		}
 	}
-	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->s_thread, true, INFINITE); 
+	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->one_time_thread, true, INFINITE); 
 	for (HANDLE i = 0; i < a->count; i++) {
-		if (g_vmcs->s_thread [i]) {
+		if (g_vmcs->one_time_thread [i]) {
 
 			CloseHandle (threads [i]);
 			HeapFree (threads [i]);
