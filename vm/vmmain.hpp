@@ -420,7 +420,6 @@ BOOL NATIVE_CALL calculate_runtime_size () {
 
 	UINT64 offset 		= 0;
 	UINT64 n_threads 	= (UINT64)cursor [0]; 
-	// TODO: determine types of threads
 
 #define update_arena (b, o, sz) \
 	b += sz;					\
@@ -432,6 +431,7 @@ BOOL NATIVE_CALL calculate_runtime_size () {
 	}
 
 	for (int i = 0; i < n_threads; i++) {  
+		// TODO: determine types of threads (here or during relocation)
 		UINT64 param_sz = cursor [0]; 
 
 		update_arena (cursor, offset, sizeof (UINT64) + param_sz);
