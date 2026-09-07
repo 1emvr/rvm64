@@ -13,13 +13,13 @@ VOID VM_CALL decode (_In_ const UINT32);
 
 
 VOID VM_CALL opcall (
-		_In_ const UINT32 Index) 
+		_In_ const UINT32 index) 
 {
-	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
-	UINT_PTR b = DecryptPtr ((UINT_PTR)a, (UINT_PTR)DKEY);	
+	UINT_PTR a = ((UINT_PTR*)dispatch_table) [index];					
+	UINT_PTR b = decrypt_ptr ((UINT_PTR)a, (UINT_PTR)DKEY);	
 
-	VOID (VM_CALL *Operation)() = (VOID (VM_CALL*)()) b;											
-	Operation ();													
+	VOID (VM_CALL *operation)() = (VOID (VM_CALL*)()) b;											
+	operation ();													
 }
 
 

@@ -261,235 +261,238 @@ extern "C" {
 #endif
 
 
-VOID NATIVE_CALL csr_trap (
-		_In_ const UINT8 machine_index,
-		_In_ const INT32 epc, 
-		_in_ const INT32 cause, 
-		_in_ const INT32 stat, 
-		_in_ const INT32 tval, 
-		_in_ const INT32 halt) 
+namespace runtime 
 {
-    g_vmcs->t_hardware [machine_index].csr.epc 		= (UINT_PTR)epc;			
-    g_vmcs->t_hardware [machine_index].csr.cause 	= cause;                 	
-    g_vmcs->t_hardware [machine_index].csr.status 	= stat;                 	
-    g_vmcs->t_hardware [machine_index].csr.tval 	= tval;                    
-    g_vmcs->t_context  [machine_index].halt 		= halt;                    
+	VOID NATIVE_CALL csr_trap (
+			_In_ const UINT8 index,
+			_In_ const INT32 epc, 
+			_in_ const INT32 cause, 
+			_in_ const INT32 stat, 
+			_in_ const INT32 tval, 
+			_in_ const INT32 halt) 
+	{
+		g_vmcs->t_hardware [index].csr.epc 		= (UINT_PTR)epc;			
+		g_vmcs->t_hardware [index].csr.cause 	= cause;                 	
+		g_vmcs->t_hardware [index].csr.status 	= stat;                 	
+		g_vmcs->t_hardware [index].csr.tval 	= tval;                    
+		g_vmcs->t_context  [index].halt 		= halt;                    
 
-    RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
-}
-
-
-NATIVE_CALL BOOL is_elf (_In_ const UINT8 *base) {
-	return 	base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
-			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
-}
-
-
-NATIVE_CALL UINT64 elf_runtime_size (
-		_In_ const 	UINT8  	*base, 
-		_Inout_ 	UINT64 	*out_align)
-{
-	const ELF64_EHDR *ehdr = (const ELF64_EHDR*)base;
-	const ELF64_PHDR *phdr = (const ELF64_PHDR*)(base + ehdr->e_phoff);
-
-	UINT64 lo = (UINT64)-1, hi = 0, align = 0x1000;
-
-	for (UINT8 prog_index = 0; prog_index < ehdr->e_phnum; prog_index++) {
-		if (phdr [prog_index].p_type != PT_LOAD) {
-			continue;
-		}
-
-		UINT64 seg_lo 	= phdr [prog_index].p_vaddr;
-		UINT64 seg_hi 	= phdr [prog_index].p_vaddr + phdr [prog_index].p_memsz;
-		UINT64 p_align 	= phdr [prog_index].p_align;
-
-		if (p_align > align) { align = p_align; }
-		if (seg_lo < lo) 	 { lo = seg_lo; }
-		if (seg_hi > hi) 	 { hi = seg_hi; }
+		RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
 	}
 
-	lo &= ~(align -1);
-	hi = (hi + align -1) & ~(align -1);
 
-	if (out_align) *out_align = align;
-	return hi - lo;
-}
+	NATIVE_CALL BOOL is_elf (_In_ const UINT8 *base) {
+		return 	base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
+			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
+	}
 
 
-NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
-	const ELF64_EHDR *ehdr =  (const ELF64_EHDR *)base;
+	NATIVE_CALL UINT64 elf_runtime_size (
+			_In_ const 	UINT8  	*base, 
+			_Inout_ 	UINT64 	*out_align)
+	{
+		const ELF64_EHDR *ehdr = (const ELF64_EHDR*)base;
+		const ELF64_PHDR *phdr = (const ELF64_PHDR*)(base + ehdr->e_phoff);
 
-	UINT64 max = sizeof (ELF64_EHDR);
-
-	if (ehdr->phoff) {		
-		UINT64 end = ehdr->eh_phoff + (UINT64)(ehde->e_phnum * ehdr->e_phentsize);
-		if (end > max) max = end;
-
-		const ELF64_PHDR *phdr = (const ELF64_PHDR *)(base + ehdr->e_phoff);
+		UINT64 lo = (UINT64)-1, hi = 0, align = 0x1000;
 
 		for (UINT8 prog_index = 0; prog_index < ehdr->e_phnum; prog_index++) {
-			const UINT64 end = phdr [prog_index].ph_offset + phdr [prog_index].p_filesz;
-			if (end > max) max = end;
-		}
-	}
-	if (ehdr->e_shoff) {
-		const UINT64 end = ehdr->e_shoff + (UINT64)(ehdr->e_shnum * ehdr->e_shentsize);
-		if (end > max) max = end;
-
-		const ELF64_SHDR *shdr = (const ELF64_SHDR *)base + ehdr->e_shoff;
-
-		for (UINT8 seg_index = 0; seg_index < ehdr->e_shnum; seg_index++) {
-			if (shdr [seg_index].sh_type == SHT_NOBITS) {
+			if (phdr [prog_index].p_type != PT_LOAD) {
 				continue;
 			}
 
-			const UINT64 real_end = shdr [seg_index].sh_offset + shdr [seg_index].sh_size;
-			if (real_end > max) max = real_end;
+			UINT64 seg_lo 	= phdr [prog_index].p_vaddr;
+			UINT64 seg_hi 	= phdr [prog_index].p_vaddr + phdr [prog_index].p_memsz;
+			UINT64 p_align 	= phdr [prog_index].p_align;
+
+			if (p_align > align) { align = p_align; }
+			if (seg_lo < lo) 	 { lo = seg_lo; }
+			if (seg_hi > hi) 	 { hi = seg_hi; }
 		}
+
+		lo &= ~(align -1);
+		hi = (hi + align -1) & ~(align -1);
+
+		if (out_align) *out_align = align;
+		return hi - lo;
 	}
-	return max;
-}
 
 
-// Idea to create 2 arenas: one for program code, the other for heap + create a pseudo-allocator/memory manager (512MB blocks ?)
-// The arena allocators will be the primary source for memory, then malloc will resolve to a custom allocator.
+	NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
+		const ELF64_EHDR *ehdr =  (const ELF64_EHDR *)base;
 
-BOOL NATIVE_CALL calculate_runtime_size () {
-	UINT8 *cursor 		= g_vmcs->code_arena->data;
-	ElfEntry *entries 	= g_vmcs->code_arena->entries;
+		UINT64 max = sizeof (ELF64_EHDR);
 
-	UINT64 offset 		= 0;
-	UINT64 n_threads 	= (UINT64)cursor [0]; 
+		if (ehdr->phoff) {		
+			UINT64 end = ehdr->eh_phoff + (UINT64)(ehde->e_phnum * ehdr->e_phentsize);
+			if (end > max) max = end;
+
+			const ELF64_PHDR *phdr = (const ELF64_PHDR *)(base + ehdr->e_phoff);
+
+			for (UINT8 prog_index = 0; prog_index < ehdr->e_phnum; prog_index++) {
+				const UINT64 end = phdr [prog_index].ph_offset + phdr [prog_index].p_filesz;
+				if (end > max) max = end;
+			}
+		}
+		if (ehdr->e_shoff) {
+			const UINT64 end = ehdr->e_shoff + (UINT64)(ehdr->e_shnum * ehdr->e_shentsize);
+			if (end > max) max = end;
+
+			const ELF64_SHDR *shdr = (const ELF64_SHDR *)base + ehdr->e_shoff;
+
+			for (UINT8 seg_index = 0; seg_index < ehdr->e_shnum; seg_index++) {
+				if (shdr [seg_index].sh_type == SHT_NOBITS) {
+					continue;
+				}
+
+				const UINT64 real_end = shdr [seg_index].sh_offset + shdr [seg_index].sh_size;
+				if (real_end > max) max = real_end;
+			}
+		}
+		return max;
+	}
+
+
+	// Idea to create 2 arenas: one for program code, the other for heap + create a pseudo-allocator/memory manager (512MB blocks ?)
+	// The arena allocators will be the primary source for memory, then malloc will resolve to a custom allocator.
+
+	BOOL NATIVE_CALL calculate_runtime_size () {
+		UINT8 *cursor 		= g_vmcs->code_arena->data;
+		ElfEntry *entries 	= g_vmcs->code_arena->entries;
+
+		UINT64 offset 		= 0;
+		UINT64 n_threads 	= (UINT64)cursor [0]; 
 
 #define update_arena (b, o, sz) \
-	b += sz;					\
-	o += sz;					
+		b += sz;					\
+		o += sz;					
 
-	update_arena (cursor, offset, sizeof (UINT64)); 
-	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
-		return false;
-	}
-
-	for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {  
-		// TODO: determine types of threads (here or during relocation)
-		UINT64 param_sz = cursor [0]; 
-
-		update_arena (cursor, offset, sizeof (UINT64) + param_sz);
-		if (!is_elf (cursor) || cursor [EI_CLASS] != ELFCLASS64) {
-			return false; 
+		update_arena (cursor, offset, sizeof (UINT64)); 
+		if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
+			return false;
 		}
 
-		entries [thread_index].runtime_sz 	= elf_runtime_size (cursor, nullptr);
-		entries [thread_index].packed_sz 	= elf_image_size (cursor);
+		for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {  
+			// TODO: determine types of threads (here or during relocation)
+			UINT64 param_sz = cursor [0]; 
 
-		update_arena (cursor, offset, entries [thread_index].packed_sz);
+			update_arena (cursor, offset, sizeof (UINT64) + param_sz);
+			if (!is_elf (cursor) || cursor [EI_CLASS] != ELFCLASS64) {
+				return false; 
+			}
+
+			entries [thread_index].runtime_sz 	= elf_runtime_size (cursor, nullptr);
+			entries [thread_index].packed_sz 	= elf_image_size (cursor);
+
+			update_arena (cursor, offset, entries [thread_index].packed_sz);
+		}
+
+		UINT64 total = 0;
+
+		for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {
+			total += entries [thread_index].runtime_sz;
+		}
+		if (total > g_vmcs->code_arena->capacity) {
+			ARENA *new_a = arena_realloc (g_vmcs->code_arena, total);
+
+			g_vmcs->code_arena = new_a;
+			cursor = offset; // unnecessary ??	
+		}
+
+		return true;
 	}
 
-	UINT64 total = 0;
 
-	for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {
-		total += entries [thread_index].runtime_sz;
-	}
-	if (total > g_vmcs->code_arena->capacity) {
-		ARENA *new_a = arena_realloc (g_vmcs->code_arena, total);
-
-		g_vmcs->code_arena = new_a;
-		cursor = offset; // unnecessary ??	
-	}
-
-	return true;
-}
-
-
-VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
-	ThreadArgs *args = (ThreadArgs *)parameters;
+	VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
+		ThreadArgs *args = (ThreadArgs *)parameters;
 		// this is where the machine code FDX cycle will take place
-	return;
-}
-
-
-BOOL NATIVE_CALL start_thread (
-		_Out_ 		HANDLE* 				handle,
-		_In_ const 	LPTHREAD_START_ROUTINE	call,
-		_In_ const 	LPVOID 					args) 
-{
-	*handle = CreateThread (nullptr, 0, call, args, 0, nullptr); 
-
-	if (*handle == nullptr) {
-		return false;
+		return;
 	}
-	return true;
-}
 
 
-VOID NATIVE_CALL rvm64_main () // TODO: keep running forever, waiting for new packets, re-evaluating memory and task ??
-{ 
-	UINT_PTR data 		= g_vmcs->code_arena->data;
-	ElfEntry *entries 	= g_vmcs->code_arena->entries;
-.
-	if (!calculate_runtime_size ()) { // count the number of threads + iterate through headers and find expanded size of all ELF files
-		goto defer;
-	}
-	if (g_vmcs->code_arena->count == 0 || g_vmcs->code_arena->count > MAX_VM_THREADS) {
-		goto defer;
-	}
-	/* 
-	if (!calculate_runtime_memory ()) { // should either move infinite threads to their own memory or memory manager should keep tabs on everything
-		goto defer;
-	}
-	 */ 
-	
-	for (UINT8 thread_index = 0; thread_index < a->count; thread_index++) {
-		UINT_PTR elf_base 	= data + entires [thread_index].elf_off; // elf/param offset doens't actually get evaluated anywhere. Needs calculate_runtime_memory ()
-		UINT_PTR param_base = data + entries [thread_index].param_off;
+	BOOL NATIVE_CALL start_thread (
+			_Out_ 		HANDLE* 				handle,
+			_In_ const 	LPTHREAD_START_ROUTINE	call,
+			_In_ const 	LPVOID 					args) 
+	{
+		*handle = CreateThread (nullptr, 0, call, args, 0, nullptr); 
 
-		if (param_base [0] == 0) param_base = nullptr;
-
-		g_vmcs->t_args [thread_index].elf_base 		= elf_base;
-		g_vmcs->t_args [thread_index].param_base 	= param_base;
-
-		UINT64 type 		= g_vmcs->t_type [thread_index];
-		THREAD_ARGS *args 	= &g_vmcs->t_args [thread_index];
-
-		// separating 
-		if (type == SINGLE EXEC) {
-			if (!start_thread (&g_vmcs->oneshot_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
-				a->count -= 1;
-			}
-		} else if (type == INFINITE_EXEC) {
-			if (!start_thread (&g_vmcs->infinite_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { 
-				a->count -= 1;
-			}
-		} else {
-			return;
-			// error
+		if (*handle == nullptr) {
+			return false;
 		}
+		return true;
 	}
 
-	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->oneshot_thread, true, INFINITE); 
 
-	for (HANDLE handle_index = 0; handle_index < a->count; handle_index++) {
-		if (g_vmcs->oneshot_thread [handle_index]) {
-
-			CloseHandle (threads [handle_index]);
-			HeapFree (threads [handle_index]);
+	VOID NATIVE_CALL rvm64_main () // TODO: keep running forever, waiting for new packets, re-evaluating memory and task ??
+	{ 
+		UINT_PTR data 		= g_vmcs->code_arena->data;
+		ElfEntry *entries 	= g_vmcs->code_arena->entries;
+		.
+			if (!calculate_runtime_size ()) { // count the number of threads + iterate through headers and find expanded size of all ELF files
+				goto defer;
+			}
+		if (g_vmcs->code_arena->count == 0 || g_vmcs->code_arena->count > MAX_VM_THREADS) {
+			goto defer;
 		}
-	}
-	// post_thread_response () ??
+		/* 
+		   if (!calculate_runtime_memory ()) { // should either move infinite threads to their own memory or memory manager should keep tabs on everything
+		   goto defer;
+		   }
+		   */ 
+
+		for (UINT8 thread_index = 0; thread_index < a->count; thread_index++) {
+			UINT_PTR elf_base 	= data + entires [thread_index].elf_off; // elf/param offset doens't actually get evaluated anywhere. Needs calculate_runtime_memory ()
+			UINT_PTR param_base = data + entries [thread_index].param_off;
+
+			if (param_base [0] == 0) param_base = nullptr;
+
+			g_vmcs->t_args [thread_index].elf_base 		= elf_base;
+			g_vmcs->t_args [thread_index].param_base 	= param_base;
+
+			UINT64 type 		= g_vmcs->t_type [thread_index];
+			THREAD_ARGS *args 	= &g_vmcs->t_args [thread_index];
+
+			// separating 
+			if (type == SINGLE EXEC) {
+				if (!start_thread (&g_vmcs->oneshot_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
+					a->count -= 1;
+				}
+			} else if (type == INFINITE_EXEC) {
+				if (!start_thread (&g_vmcs->infinite_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { 
+					a->count -= 1;
+				}
+			} else {
+				return;
+				// error
+			}
+		}
+
+		DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->oneshot_thread, true, INFINITE); 
+
+		for (HANDLE handle_index = 0; handle_index < a->count; handle_index++) {
+			if (g_vmcs->oneshot_thread [handle_index]) {
+
+				CloseHandle (threads [handle_index]);
+				HeapFree (threads [handle_index]);
+			}
+		}
+		// post_thread_response () ??
 defer:
-	return;
-}
+		return;
+	}
 
 
-VOID NATIVE_CALL rvm64_start (
-		_In_ const UINT_PTR* data, 
-		_In_ const UINT_PTR* data_size) 
-{
-	VMCS instance = { };
-	g_vmcs = &instance; 
+	VOID NATIVE_CALL rvm64_start (
+			_In_ const UINT_PTR* data, 
+			_In_ const UINT_PTR* data_size) 
+	{
+		VMCS instance = { };
+		g_vmcs = &instance; 
 
-	rvm64_memory_init (data, data_size); // the problem is we need to continue running and listening for new packets...
-	rvm64_main (); 
+		rvm64_memory_init (data, data_size); // the problem is we need to continue running and listening for new packets...
+		rvm64_main (); 
+	}
 }
 #endif
 #endif //VMCS_H
