@@ -229,11 +229,15 @@ typedef struct {
 
 typedef struct {
 	ARENA 		*arena;
+
 	HANDLE 		s_thread 	[MAX_VM_THREADS];		
 	HANDLE 		m_thread 	[MAX_VM_THREADS];		
-	UINT64 		h_count;
+
+	HANDLE 		thread_type [MAX_VM_THREADS];		
+	UINT64 		thread_count;
 
 	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
+
 	THREAD_HDW 	thread_hdw 	[MAX_VM_THREADS];
 	THREAD_ARGS thread_args [MAX_VM_THREADS];
 } VMCS;
@@ -429,7 +433,6 @@ VOID NATIVE_CALL rvm64_main (
 					(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
 					0, nullptr); 
 		}
-		
 	}
 	// maybe we don't wait until we're ready to read responses ?
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->s_thread, true, INFINITE); 
