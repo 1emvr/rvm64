@@ -260,18 +260,19 @@ extern "C" {
 #endif
 
 
-VM_CALL VOID SetCsrTrap (
+VOID NATIVE_CALL csr_trap (
+		_In_ const UINT8 machine_index,
 		_In_ const INT32 epc, 
 		_in_ const int32 cause, 
 		_in_ const int32 stat, 
 		_in_ const int32 tval, 
 		_in_ const int32 halt) 
 {
-    g_vmcs->csr->epc 		= (UINT_PTR)epc;			
-    g_vmcs->csr->cause 		= cause;                 	
-    g_vmcs->csr->status 	= stat;                 	
-    g_vmcs->csr->tval 		= tval;                    
-    g_vmcs->context->halt 	= halt;                    
+    g_vmcs->t_hardware [machine_index].csr.epc 		= (UINT_PTR)epc;			
+    g_vmcs->t_hardware [machine_index].csr.cause 	= cause;                 	
+    g_vmcs->t_hardware [machine_index].csr.status 	= stat;                 	
+    g_vmcs->t_hardware [machine_index].csr.tval 	= tval;                    
+    g_vmcs->t_context  [machine_index].halt 		= halt;                    
 
     RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
 }
