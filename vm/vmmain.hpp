@@ -28,6 +28,7 @@
 #define INFINITE_EXEC 			0xbbbbbbbb
 
 
+// needs a memory manager to determin vm process bounds
 #define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
 	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
 	 (addr) < 	(UINT_PTR)(Vmcs->Proc.Memory + Vmcs->Proc.MemorySize))
@@ -156,10 +157,10 @@ typedef struct {
 
 
 typedef struct {
-	HANDLE 		Handle;
-	DWORD 		Pid;
-	UINT_PTR 	Address;
-	SIZE_T 		Size;
+	HANDLE 		handle;
+	DWORD 		pid;
+	UINT_PTR 	address;
+	SIZE_T 		size;
 } WIN_PROC;
 
 
@@ -218,10 +219,10 @@ typedef struct {
 	UINT64 stack 	[32];
 
 	struct {
-		UINT_PTR epc;
-		UINT_PTR cause;	
-		UINT_PTR status;
-		UINT_PTR tval;
+		UINT32 epc;
+		UINT32 cause;	
+		UINT32 status;
+		UINT32 tval;
 	} csr;
 } THREAD_HDW;
 
@@ -264,10 +265,10 @@ extern "C" {
 VOID NATIVE_CALL csr_trap (
 		_In_ const UINT8 machine_index,
 		_In_ const INT32 epc, 
-		_in_ const int32 cause, 
-		_in_ const int32 stat, 
-		_in_ const int32 tval, 
-		_in_ const int32 halt) 
+		_in_ const INT32 cause, 
+		_in_ const INT32 stat, 
+		_in_ const INT32 tval, 
+		_in_ const INT32 halt) 
 {
     g_vmcs->t_hardware [machine_index].csr.epc 		= (UINT_PTR)epc;			
     g_vmcs->t_hardware [machine_index].csr.cause 	= cause;                 	
