@@ -338,7 +338,7 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 }
 
 
-NATIVE_CALL BOOL process_packets () {
+NATIVE_CALL BOOL calculate_runtime_size () {
 	UINT8 *cursor 		= g_vmcs->arena->data;
 	ElfEntry *entries 	= g_vmcs->arena->entries;
 
@@ -389,11 +389,14 @@ VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
 
 
 VOID NATIVE_CALL rvm64_main () {
-	if (!process_packets ()) 		goto defer;
-	if (a->count == 0) 				goto defer;
-	if (a->count > MAX_VM_THREADS) 	goto defer;
-
 	ARENA *a = g_vmcs->arena;
+
+	if (!calculate_runtime_size ()) {
+		goto defer;
+	}
+	if (a->count == 0 || a->count > MAX_VM_THREADS) {
+		goto defer;
+	}
 
 	for (SIZE_T i = 0; i < a->count; i++) {
 		 = g_vmcs->arena->data + g_vmcs->arena->entires [i].elf_off;
