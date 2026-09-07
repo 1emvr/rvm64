@@ -181,6 +181,7 @@ struct {
 typedef struct {
 	UINT64 elf_off;
 	UINT64 param_off;
+
 	UINT64 packed_sz;
 	UINT64 runtime_sz;
 } ElfEntry;
@@ -231,15 +232,14 @@ typedef struct {
 	ARENA 		*arena;
 
 	HANDLE 		s_thread 	[MAX_VM_THREADS];		
-	HANDLE 		m_thread 	[MAX_VM_THREADS];		
+	HANDLE 		i_thread 	[MAX_VM_THREADS];		
 
-	HANDLE 		thread_type [MAX_VM_THREADS];		
-	UINT64 		thread_count;
+	HANDLE 		t_type 		[MAX_VM_THREADS];		
+	VM_CONTEXT 	t_context 	[MAX_VM_THREADS]; 
+	UINT64 		t_count;
 
-	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
-
-	THREAD_HDW 	thread_hdw 	[MAX_VM_THREADS];
-	THREAD_ARGS thread_args [MAX_VM_THREADS];
+	THREAD_ARGS t_args 		[MAX_VM_THREADS];
+	THREAD_HDW 	t_hardware 	[MAX_VM_THREADS];
 } VMCS;
 
 
@@ -412,7 +412,7 @@ VOID NATIVE_CALL rvm64_main (
 
 	for (SIZE_T i = 0; i < a->count; i++) {
 		UINT_PTR elf_base 	= data + entires [i].elf_off;
-		UINT_PTR param_base = data + entries [i].param_offset;
+		UINT_PTR param_base = data + entries [i].param_off;
 
 		if (param_base [0] == 0) param_base = nullptr;
 
@@ -428,7 +428,7 @@ VOID NATIVE_CALL rvm64_main (
 					0, nullptr); 
 		} // else
 		{
-			g_vmcs->m_thread [i] = CreateThread ( // this architecture would require us to track memory regions unless we move infinite-threads out of the arena to their own memory.
+			g_vmcs->i_thread [i] = CreateThread ( // this architecture would require us to track memory regions unless we move infinite-threads out of the arena to their own memory.
 					nullptr, 0, 
 					(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
 					0, nullptr); 
