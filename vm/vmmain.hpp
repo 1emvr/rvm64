@@ -427,7 +427,7 @@ VOID NATIVE_CALL rvm64_main (
 		goto defer;
 	}
 	/* TODO:
-	 * if (!relocate_elf_files ()) {
+	 * if (!relocate_runtime_memory ()) {
 	 *		goto defer;
 	 * }
 	 */ 
