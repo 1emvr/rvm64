@@ -341,13 +341,16 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 
 NATIVE_CALL BOOL process_packets () {
 	UINT8 *cursor 		= g_vmcs->arena->data;
+	ElfEntry *entries 	= g_vmcs->arena->entries;
+
+	UINT64 offset 		= 0;
 	UINT64 n_threads 	= (UINT64)cursor [0]; 
-	
+
 #define update_arena (b, o, sz) \
 	b += sz;					\
 	o += sz;					
 
-	update_arena (cursor, g_vmcs->arena->offset, sizeof (UINT64)); // one-time thread count
+	update_arena (cursor, offset, sizeof (UINT64)); // one-time thread count
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
@@ -355,21 +358,21 @@ NATIVE_CALL BOOL process_packets () {
 	for (int i = 0; i < n_threads; i++) {  // calculate size for all threads
 		UINT64 param_sz = cursor [0]; 
 
-		update_arena (cursor, g_vmcs->arena->offset, sizeof (UINT64) + param_sz);
+		update_arena (cursor, offset, sizeof (UINT64) + param_sz);
 		if (!is_elf (cursor) || cursor [EI_CLASS] != ELFCLASS64) {
 			return false; 
 		}
 
-		g_vmcs->arena->entries [i].runtime_sz 	= elf_runtime_size (cursor, nullptr);
-		g_vmcs->arena->entries [i].packed_sz 	= elf_image_size (cursor);
+		entries [i].runtime_sz 	= elf_runtime_size (cursor, nullptr);
+		entries [i].packed_sz 	= elf_image_size (cursor);
 
-		update_arena (cursor, g_vmcs->arena->offset, g_vmcs->entries [i].packed_sz);
+		update_arena (cursor, offset, entries [i].packed_sz);
 	}
 
 	UINT64 total = 0;
 
 	for (int i = 0; i < n_threads; i++) {
-		total += g_vmcs->arena->entries [i].runtime_sz;
+		total += entries [i].runtime_sz;
 	}
 	if (total > g_vmcs->arena->capacity) {
 		// arena_realloc (a, total);
@@ -394,10 +397,13 @@ VOID NATIVE_CALL rvm64_main () {
 	ARENA *a = g_vmcs->arena;
 
 	for (SIZE_T i = 0; i < a->count; i++) {
-		g_vmcs->thread_args [i].img_base 	= a->data + a->entires [i].elf_off;
-		g_vmcs->thread_args [i].param_base 	= a->data + a->entries [i].param_offset;
+		 = g_vmcs->arena->data + g_vmcs->arena->entires [i].elf_off;
+			= g_vmcs->arena->data + g_vmcs->arena->entries [i].param_offset;
 
 		if (param_base [0] == 0) param_base = nullptr;
+
+		g_vmcs->thread_args [i].img_base   ;
+		g_vmcs->thread_args [i].param_base ;
 
 		g_vmcs->threads [i] = CreateThread (
 				nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, 
