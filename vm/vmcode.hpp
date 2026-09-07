@@ -9,10 +9,10 @@
 #include "vmmu.hpp"
 
 
-VM_CALL VOID Decode (_In_ const UINT32); 
+VOID VM_CALL decode (_In_ const UINT32); 
 
 
-VOID Opcall (
+VOID VM_CALL opcall (
 		_In_ const UINT32 Index) 
 {
 	UINT_PTR a = ((UINT_PTR*)DispatchTable) [Index];					
@@ -23,14 +23,15 @@ VOID Opcall (
 }
 
 
-DATA_SCN OPCODE EncodingTable [] = {
+OPCODE DATA_SCN encoding_table [] = {
 	{0b1010011, RTYPE}, {0b1000011, RTYPE}, {0b0110011, RTYPE}, {0b1000111, R4TYPE}, {0b1001011, R4TYPE}, {0b1001111, R4TYPE},
 	{0b0000011, ITYPE}, {0b0001111, ITYPE}, {0b1100111, ITYPE}, {0b0010011, ITYPE}, {0b1110011, ITYPE}, {0b0011011, ITYPE},
 	{0b0100011, STYPE}, {0b0100111, STYPE}, {0b1100011, BTYPE}, {0b0010111, UTYPE}, {0b0110111, UTYPE}, {0b1101111, JTYPE},
 };
 
 
-VM_CALL VOID VmExecute () {
+VOID VM_CALL vm_execute () 
+{
 	while (true) {
 		Decode (*(INT32*)Vmcs->Hdw.Pc); 
 		Vmcs->Hdw.Pc += 4; // TODO: Consider removing this and forcing operator functions to perform the math instead. Would make the binary a bit bigger, but clears up any confusion.
@@ -39,13 +40,14 @@ VM_CALL VOID VmExecute () {
 
 
 // TODO: Opcode randomization for the entire decoding process.  Opcode-7 + Func-3 values can be randomized. Register values could be randomized (carefully).
-VM_CALL VOID Decode (_In_ const UINT32 Opcode) {
-	UINT8 Decoded = 0;
-	UINT8 Opcode7 = Opcode & 0x7F;
+VOID VM_CALL decode (_In_ const UINT32 opcode) 
+{
+	UINT8 decoded = 0;
+	UINT8 opcode7 = opcode & 0x7F;
 	
 	// NOTE: Instant return/exception.
 	{
-		if (Opcode == RV64_RET) { 
+		if (opcode == RV64_RET) { 
 			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { 
 				SetCsrTrap (nullptr, InstructionAccessFault, 0, 0, true);
 			}
