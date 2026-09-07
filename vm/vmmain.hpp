@@ -347,7 +347,11 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 }
 
 
-NATIVE_CALL BOOL calculate_runtime_size () {
+ARENA* NATIVE_CALL arena_alloc (SIZE_T size);
+ARENA* NATIVE_CALL arena_realloc (ARENA *a, SIZE_T size);
+
+
+BOOL NATIVE_CALL calculate_runtime_size () {
 	UINT8 *cursor 		= g_vmcs->arena->data;
 	ElfEntry *entries 	= g_vmcs->arena->entries;
 
