@@ -388,8 +388,14 @@ VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
 }
 
 
-VOID NATIVE_CALL rvm64_main () {
-	ARENA *a = g_vmcs->arena;
+VOID NATIVE_CALL rvm64_main (
+		_In_ const UINT_PTR data, 
+		_In_ const UINT_PTR data_sz) 
+{
+	ARENA *a 			= g_vmcs->arena;
+
+	UINT_PTR data 		= a->data;
+	ElfEntry *entries 	= a->entries;
 
 	if (!calculate_runtime_size ()) {
 		goto defer;
@@ -399,13 +405,13 @@ VOID NATIVE_CALL rvm64_main () {
 	}
 
 	for (SIZE_T i = 0; i < a->count; i++) {
-		 = g_vmcs->arena->data + g_vmcs->arena->entires [i].elf_off;
-			= g_vmcs->arena->data + g_vmcs->arena->entries [i].param_offset;
+		UINT_PTR img_base 	= data + entires [i].elf_off;
+		UINT_PTR param_base = data + entries [i].param_offset;
 
 		if (param_base [0] == 0) param_base = nullptr;
 
-		g_vmcs->thread_args [i].img_base   ;
-		g_vmcs->thread_args [i].param_base ;
+		g_vmcs->thread_args [i].img_base    = img_base;
+		g_vmcs->thread_args [i].param_base 	= param_base;
 
 		g_vmcs->threads [i] = CreateThread (
 				nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, 
