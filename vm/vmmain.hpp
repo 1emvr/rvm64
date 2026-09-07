@@ -402,7 +402,7 @@ BOOL NATIVE_CALL calculate_runtime_size () {
 
 VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
 	ThreadArgs *args = (ThreadArgs *)parameters;
-		// this is where the machine code FDX will take place
+		// this is where the machine code FDX cycle will take place
 	return;
 }
 
