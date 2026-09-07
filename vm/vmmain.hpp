@@ -228,8 +228,8 @@ typedef struct {
 
 
 typedef struct {
-	HANDLE 		oneshot_thread 	[MAX_VM_THREADS];		
-	HANDLE 		infinite_thread [MAX_VM_THREADS];		
+	HANDLE 		one_thread 	[MAX_VM_THREADS];		
+	HANDLE 		inf_thread [MAX_VM_THREADS];		
 
 	HANDLE 		tid 		[MAX_VM_THREADS];		
 	HANDLE 		t_type 		[MAX_VM_THREADS];		
@@ -336,12 +336,12 @@ namespace rvm
 			THREAD_ARGS *args 	= &g_vmcs->t_args [thread_index];
 
 			// separating 
-			if (type == ONESHOT_THREAD) {
-				if (!start_thread (&g_vmcs->oneshot_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
+			if (type == one_thread) {
+				if (!start_thread (&g_vmcs->one_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
 					a->count -= 1;
 				}
-			} else if (type == INFINITE_THREAD) {
-				if (!start_thread (&g_vmcs->infinite_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { 
+			} else if (type == inf_thread) {
+				if (!start_thread (&g_vmcs->inf_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { 
 					a->count -= 1;
 				}
 			} else {
@@ -350,10 +350,10 @@ namespace rvm
 			}
 		}
 
-		DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->oneshot_thread, true, INFINITE); 
+		DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->one_thread, true, INFINITE); 
 
 		for (HANDLE handle_index = 0; handle_index < a->count; handle_index++) {
-			if (g_vmcs->oneshot_thread [handle_index]) {
+			if (g_vmcs->one_thread [handle_index]) {
 
 				CloseHandle (threads [handle_index]);
 				HeapFree (threads [handle_index]);
