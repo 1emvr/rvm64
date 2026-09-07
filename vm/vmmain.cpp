@@ -141,7 +141,7 @@ struct ThreadArgs {
 
 
 VOID NATIVE_CALL thread_main (LPVOID parameters) {
-	ThreadArgs *args = (ThreadArgs *)parameters
+	ThreadArgs *args = *(ThreadArgs **)parameters
 	return;
 }
 
@@ -153,16 +153,15 @@ NATIVE_CALL VOID rvm64_main (_In_ Arena* a) {
 	if (a->count > MAX_VM_THREADS) 	goto defer;
 
 	HANDLE 		threads 	[MAX_VM_THREADS] = { };		
-	ThreadArgs *thread_args [MAX_VM_THREADS] = { };
+	ThreadArgs 	thread_args [MAX_VM_THREADS] = { };
 
 	for (SIZE_T i = 0; i < a->count; i++) {
-		UINT_PTR img_base =  a->data + a->entries [i]. elf_off;
-		UINT_PTR param_base = a->data + a->entries [i]. param_offset;
+		thread_args [i].img_base 	= a->data + a->entires [i].elf_off;
+		thread_args [i].param_base 	= a->data + a->entries [i].param_offset;
 
 		if (param_base [0] == 0) param_base = nullptr;
 
-		thread_args [i] = (ThreadArgs*)HeapAlloc (sizeof (ThreadArgs));
-		threads [i] = CreateThread (nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, thread_args[i], 0, nullptr); // TODO: redesign vmcs to handle multiple threads
+		threads [i] = CreateThread (nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, &thread_args[i], 0, nullptr); // TODO: redesign vmcs to handle multiple threads
 	}
 
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE);
