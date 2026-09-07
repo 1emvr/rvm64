@@ -336,11 +336,11 @@ namespace rvm
 			THREAD_ARGS *args 	= &g_vmcs->t_args [thread_index];
 
 			// separating 
-			if (type == SINGLE EXEC) {
+			if (type == ONESHOT_THREAD) {
 				if (!start_thread (&g_vmcs->oneshot_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
 					a->count -= 1;
 				}
-			} else if (type == INFINITE_EXEC) {
+			} else if (type == INFINITE_THREAD) {
 				if (!start_thread (&g_vmcs->infinite_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { 
 					a->count -= 1;
 				}
