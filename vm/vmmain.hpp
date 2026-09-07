@@ -229,7 +229,8 @@ typedef struct {
 
 typedef struct {
 	ARENA 		*arena;
-	HANDLE 		h_thread 	[MAX_VM_THREADS];		
+	HANDLE 		s_thread 	[MAX_VM_THREADS];		
+	HANDLE 		m_thread 	[MAX_VM_THREADS];		
 	UINT64 		h_count;
 
 	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
@@ -414,17 +415,27 @@ VOID NATIVE_CALL rvm64_main (
 		g_vmcs->thread_args [i].elf_base    = elf_base;
 		g_vmcs->thread_args [i].param_base 	= param_base;
 
-		// TODO: separate one-time / infinite thread handles
-		g_vmcs->thread [i] = CreateThread (
-				nullptr, 0, 
-				(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
-				0, nullptr); 
+		// TODO: separate one-time / infinite thread handles. maybe g_vmcs->single_thread & g_vmcs->infinite_thread
+		// if (g_vmcs->thread_type [i] == SINGLE_EXEC) ??
+		{
+			g_vmcs->s_thread [i] = CreateThread (
+					nullptr, 0, 
+					(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
+					0, nullptr); 
+		} // else
+		{
+			g_vmcs->m_thread [i] = CreateThread ( // this architecture would require us to track memory regions unless we move infinite-threads out of the arena to their own memory.
+					nullptr, 0, 
+					(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
+					0, nullptr); 
+		}
+		
 	}
 	// maybe we don't wait until we're ready to read responses ?
-	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); 
+	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->s_thread, true, INFINITE); 
 																					  
 	for (HANDLE i = 0; i < a->count; i++) {
-		if (g_vmcs->h_thread [i]) {
+		if (g_vmcs->s_thread [i]) {
 
 			CloseHandle (threads [i]);
 			HeapFree (threads [i]);
