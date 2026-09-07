@@ -24,6 +24,9 @@
 #define FRACTION_MASK           0x000FFFFFFFFFFFFFULL
 #define RV64_RET                0x00008067
 
+#define SINGLE_EXEC 			0xaaaaaaaa
+#define INFINITE_EXEC 			0xbbbbbbbb
+
 
 #define PROCESS_MEMORY_IN_BOUNDS (addr)  								\
 	((addr) >= 	(UINT_PTR)(Vmcs->Proc.Memory) && 						\
@@ -92,7 +95,7 @@ enum RiscvIndex : UINT8 {
 	_OR, _REM, _AND, _REMU,
 
 	// STYPE
-	_SB, _SH, _SW, _SD,
+	_SB, _SH, _SW, _SD,E
 	_FSW, _FSD,
 
 	// BTYPE
@@ -394,6 +397,23 @@ VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
 }
 
 
+BOOL NATIVE_CALL start_thread (
+		_Out_ 		HANDLE* 				handle,
+		_In_ const 	LPTHREAD_START_ROUTINE	call,
+		_In_ const 	LPVOID 					args) 
+{
+	*handle = CreateThread (
+			nullptr, 0, 
+			(LPTHREAD_START_ROUTINE)thread_main, args, 
+			0, nullptr); 
+
+	if (*handle == nullptr) {
+		return false;
+	}
+	return true;
+}
+
+
 VOID NATIVE_CALL rvm64_main (
 		_In_ const UINT_PTR data, 
 		_In_ const UINT_PTR data_sz) 
@@ -416,22 +436,18 @@ VOID NATIVE_CALL rvm64_main (
 
 		if (param_base [0] == 0) param_base = nullptr;
 
-		g_vmcs->thread_args [i].elf_base    = elf_base;
-		g_vmcs->thread_args [i].param_base 	= param_base;
+		g_vmcs->t_args [i].elf_base 	= elf_base;
+		g_vmcs->t_args [i].param_base 	= param_base;
 
-		// TODO: separate one-time / infinite thread handles. maybe g_vmcs->single_thread & g_vmcs->infinite_thread
-		// if (g_vmcs->thread_type [i] == SINGLE_EXEC) ??
-		{
-			g_vmcs->s_thread [i] = CreateThread (
-					nullptr, 0, 
-					(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
-					0, nullptr); 
-		} // else
-		{
-			g_vmcs->i_thread [i] = CreateThread ( // this architecture would require us to track memory regions unless we move infinite-threads out of the arena to their own memory.
-					nullptr, 0, 
-					(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
-					0, nullptr); 
+		UINT64 type = g_vmcs->t_type [i];
+
+		if (type == SINGLE EXEC) {
+			start_thread (&g_vmcs->s_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->t_args [i]);
+		} else if (type == INFINITE_EXEC) {
+			start_thread (&g_vmcs->s_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->t_args [i]); // how do we access these infinite threads?
+		} else {
+			return;
+			// error
 		}
 	}
 	// maybe we don't wait until we're ready to read responses ?
