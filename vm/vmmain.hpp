@@ -1,5 +1,5 @@
-#ifndef VMCS_H
-#define VMCS_H
+#ifndef VMMAIN_HPP
+#define VMMAIN_HPP
 #include <windows.h>
 #include <stdint.h>
 #include <setjmp.h>
@@ -44,7 +44,7 @@
 #define max (a, b) ([] (auto _a, auto _b) { return _a > _b ? _a : _b; } ((a),(b)))
 
 
-enum Screnum {
+enum Skenum {
     RD = 0, RS1, RS2, RS3, IMM,
 };
 
@@ -299,7 +299,7 @@ namespace thread
 		}
 		return true;
 	}
-}
+} // namespace thread
 
 
 namespace rvm 
@@ -375,6 +375,6 @@ defer:
 		rvm64_memory_init (data, data_size); // the problem is we need to continue running and listening for new packets...
 		rvm64_main (); 
 	}
-}
+} // namespace rvm
 #endif
-#endif //VMCS_H
+#endif //VMMAIN_HPP
