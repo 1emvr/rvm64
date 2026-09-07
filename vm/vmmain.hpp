@@ -413,13 +413,13 @@ VOID NATIVE_CALL rvm64_main (
 		g_vmcs->thread_args [i].img_base    = img_base;
 		g_vmcs->thread_args [i].param_base 	= param_base;
 
+		// TODO: separate one-time / infinite thread handles
 		g_vmcs->thread [i] = CreateThread (
 				nullptr, 0, 
 				(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
 				0, nullptr); 
 	}
 
-	// TODO: how do I determine what type a thread is? info should be packed in the file data, but need a way to separate
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // maybe we don't wait until we're ready to read responses ?
 
 	for (HANDLE i = 0; i < a->count; i++) {
