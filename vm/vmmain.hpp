@@ -40,8 +40,8 @@
 
 
 
-#define MIN (a, b) ([] (auto _a, auto _b) { return _a < _b ? _a : _b; } ((a),(b)))
-#define MAX (a, b) ([] (auto _a, auto _b) { return _a > _b ? _a : _b; } ((a),(b)))
+#define min (a, b) ([] (auto _a, auto _b) { return _a < _b ? _a : _b; } ((a),(b)))
+#define max (a, b) ([] (auto _a, auto _b) { return _a > _b ? _a : _b; } ((a),(b)))
 
 
 enum Screnum {
@@ -445,7 +445,7 @@ VOID NATIVE_CALL rvm64_main (
 	 */ 
 	
 	for (UINT8 thread_index = 0; thread_index < a->count; thread_index++) {
-		UINT_PTR elf_base 	= data + entires [thread_index].elf_off;
+		UINT_PTR elf_base 	= data + entires [thread_index].elf_off; // elf/param offset doens't actually get evaluated anywhere...
 		UINT_PTR param_base = data + entries [thread_index].param_off;
 
 		if (param_base [0] == 0) param_base = nullptr;
