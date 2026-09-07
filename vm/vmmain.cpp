@@ -23,11 +23,6 @@ typedef struct {
 } Arena;
 
 
-NATIVE_CALL VOID thread_main () {
-	return;
-}
-
-
 NATIVE_CALL BOOL is_elf (_In_ const UINT8 *base) {
 	return base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
 			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
@@ -139,32 +134,48 @@ NATIVE_CALL BOOL process_packets (_Inout_ Arena *a) {
 }
 
 
-NATIVE_CALL VOID rvm64_main (
-		_In_ const UINT_PTR* data, 	// data points to a pre-made arena
-		_In_ const UINT_PTR* data_sz) 
-{
-	Arena a = { };
+struct ThreadArgs {
+	LPVOID img_base;
+	LPVOID param_base;
+};
 
-	if (!process_packets (&a)) goto defer;
-	if (a.count == 0) return;
 
-	HANDLE threads [MAX_VM_THREADS] = { };		
+VOID NATIVE_CALL thread_main (LPVOID parameters) {
+	ThreadArgs *args = (ThreadArgs *)parameters
+	return;
+}
 
-	for (int i = 0; i < a.count; i++) {
-		UINT_PTR img_base =  a.data + a.entries [i]. elf_off;
-		UINT_PTR param_base = a.data + a.entries [i]. param_offset;
 
-		if (param_base [0] == 0) {
-			param_base = nullptr;
-		}
+NATIVE_CALL VOID rvm64_main (_In_ Arena* a) {
 
-		threads [i] = CreateThread (nullptr, 0, vm_thread (img_base), param_base, 0, nullptr); // TODO: redesign vmcs to handle multiple threads
+	if (!process_packets (a)) 		goto defer;
+	if (a->count == 0) 				goto defer;
+	if (a->count > MAX_VM_THREADS) 	goto defer;
+
+	HANDLE 		threads 	[MAX_VM_THREADS] = { };		
+	ThreadArgs *thread_args [MAX_VM_THREADS] = { };
+
+	for (SIZE_T i = 0; i < a->count; i++) {
+		UINT_PTR img_base =  a->data + a->entries [i]. elf_off;
+		UINT_PTR param_base = a->data + a->entries [i]. param_offset;
+
+		if (param_base [0] == 0) param_base = nullptr;
+
+		thread_args [i] = (ThreadArgs*)HeapAlloc (sizeof (ThreadArgs));
+		threads [i] = CreateThread (nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, thread_args[i], 0, nullptr); // TODO: redesign vmcs to handle multiple threads
 	}
 
-	WaitForMultipleObjects (new_vms.count, &threads, true, 5000);
+	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE);
+
+	for (SIZE_T i = 0; i < a->count; i++) {
+		if (threads [i]) {
+			CloseHandle (threads [i]);
+			HeapFree (threads [i]);
+		}
+	}
 	// post_thread_response () ??
 defer:
-	// arena_release () ??
+	return;
 }
 
 
