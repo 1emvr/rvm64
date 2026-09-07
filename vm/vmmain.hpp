@@ -230,11 +230,10 @@ typedef struct {
 
 typedef struct {
 	ARENA 		*arena;
-
-	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
 	HANDLE 		h_thread 	[MAX_VM_THREADS];		
 	UINT64 		h_count;
 
+	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
 	THREAD_HDW 	thread_hdw 	[MAX_VM_THREADS];
 	THREAD_ARGS thread_args [MAX_VM_THREADS];
 } VMCS;

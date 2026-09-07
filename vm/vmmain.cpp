@@ -4,25 +4,6 @@
 // just realized that " forever threads " will need to have their own memory. 
 // we can separate one-time runs from the forever threads. this way there is no deadlock
 
-#define MAX_VM_THREADS 5
-typedef struct {
-	UINT64 elf_off;
-	UINT64 param_off;
-	UINT64 packed_sz;
-	UINT64 runtime_sz;
-} ElfEntry;
-
-
-typedef struct {
-	UINT8 		*data;
-	UINT8		*offset;
-	UINT64 		capacity;
-	UINT64 		used;
-	ElfEntry 	*entries;
-	SIZE_T 		count;
-} Arena;
-
-
 NATIVE_CALL BOOL is_elf (_In_ const UINT8 *base) {
 	return base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
 			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
@@ -135,12 +116,6 @@ NATIVE_CALL BOOL process_packets (_Inout_ Arena *a) {
 }
 
 
-struct ThreadArgs {
-	LPVOID img_base;
-	LPVOID param_base;
-};
-
-
 VOID NATIVE_CALL thread_main (LPVOID parameters) {
 	ThreadArgs *args = *(ThreadArgs **)parameters
 	return;
@@ -148,9 +123,6 @@ VOID NATIVE_CALL thread_main (LPVOID parameters) {
 
 
 VOID NATIVE_CALL rvm64_main (_In_ Arena* a) {
-	HANDLE 		threads 	[MAX_VM_THREADS] = { };		
-	ThreadArgs 	thread_args [MAX_VM_THREADS] = { };
-
 	if (!process_packets (a)) 		goto defer;
 	if (a->count == 0) 				goto defer;
 	if (a->count > MAX_VM_THREADS) 	goto defer;
@@ -178,18 +150,12 @@ defer:
 }
 
 
-NATIVE_CALL VOID rvm64_start (
+VOID NATIVE_CALL rvm64_start (
 		_In_ const UINT_PTR* data,
 		_In_ const UINT_PTR* data_sz) // should rvm64_start handle the arena, or leave it to another module?
 {
 	VMCS instance = { };
-	vmcs = &instance; // a global vmcs instance to track everything (?)
-
-	rvm64_init (&vmcs->ctx); 
-	rvm64_save_reg (&vmcs->ctx->host_ctx);
+	g_vmcs = &instance; // a global vmcs instance to track everything (?)
 
 	rvm64_main (data, data_sz); // TODO: arena_allocate () 
-
-	rvm64_load_reg (&vmcs->ctx->host_ctx);
-	rvm64_release (&vmcs->ctx); // release context
 }
