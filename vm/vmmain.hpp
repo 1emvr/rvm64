@@ -381,7 +381,7 @@ NATIVE_CALL BOOL process_packets (_Inout_ Arena *a) {
 
 
 VOID NATIVE_CALL thread_main (LPVOID parameters) {
-	ThreadArgs *args = *(ThreadArgs **)parameters
+	ThreadArgs *args = (ThreadArgs *)parameters
 	return;
 }
 
