@@ -344,6 +344,7 @@ NATIVE_CALL BOOL process_packets () {
 
 	UINT64 offset 		= 0;
 	UINT64 n_threads 	= (UINT64)cursor [0]; 
+	// TODO: determine types of threads
 
 #define update_arena (b, o, sz) \
 	b += sz;					\
@@ -368,7 +369,6 @@ NATIVE_CALL BOOL process_packets () {
 		update_arena (cursor, offset, entries [i].packed_sz);
 	}
 
-	// TODO: determine types of threads
 	UINT64 total = 0;
 
 	for (int i = 0; i < n_threads; i++) {
