@@ -16,19 +16,21 @@
  * The arena will continue to live until shutdown. Programs will be zeroed and released to the MMU instead of deallocating system memory.
  */
 
-LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
-	DWORD Code 		= ExceptionInfo->ExceptionRecord->ExceptionCode;
-	CONTEXT *WinCtx = ExceptionInfo->ContextRecord;
+LONG CALLBACK InterruptHandler (
+		_In_ const PEXCEPTION_POINTERS 	exception_info, 
+		_In_ const UINT8 				machine_index) 
+{
+	DWORD code 				= exception_info->ExceptionRecord->ExceptionCode;
+	CONTEXT *win_context 	= exception_info->ContextRecord;
 
-	Vmcs->Csr.Cause 	= Code;
-	Vmcs->Csr.Epc 		= WinCtx->Rip;
-	{
-		if (Code == STATUS_SINGLE_STEP) {
-			return EXCEPTION_CONTINUE_SEARCH;
-		}
-		if (Code != RVM_TRAP_EXCEPTION) { 
-			longjmp (Vmcs->Context->Interrupt, true);
-		}
+	g_vmcs->t_hardware [machine_index].csr.cause 	= code;
+	g_vmcs->t_hardware [machine_index].csr.epc 		= win_context->Rip;
+
+	if (code == STATUS_SINGLE_STEP) {
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	if (Code != RVM_TRAP_EXCEPTION) { 
+		longjmp (Vmcs->Context->Interrupt, true);
 	}
 
 	switch (Vmcs->Csr.Cause) {
