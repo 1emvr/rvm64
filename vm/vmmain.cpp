@@ -100,7 +100,7 @@ NATIVE_CALL BOOL process_packets (_Inout_ Arena *a) {
 	
 #define update_arena (b, o, sz) \
 	b += sz;					\
-	o += sz;					\
+	o += sz;					
 
 	update_arena (img_base, a->offset, sizeof (UINT64)); // one-time thread count
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
@@ -122,8 +122,9 @@ NATIVE_CALL BOOL process_packets (_Inout_ Arena *a) {
 	}
 
 	UINT64 total = 0;
+
 	for (int i = 0; i < n_threads; i++) {
-		total += a->entries [i].packed_sz;
+		total += a->entries [i].runtime_sz;
 	}
 	if (total > a->capacity) {
 		// arena_realloc (a, total);
@@ -147,12 +148,12 @@ VOID NATIVE_CALL thread_main (LPVOID parameters) {
 
 
 VOID NATIVE_CALL rvm64_main (_In_ Arena* a) {
+	HANDLE 		threads 	[MAX_VM_THREADS] = { };		
+	ThreadArgs 	thread_args [MAX_VM_THREADS] = { };
+
 	if (!process_packets (a)) 		goto defer;
 	if (a->count == 0) 				goto defer;
 	if (a->count > MAX_VM_THREADS) 	goto defer;
-
-	HANDLE 		threads 	[MAX_VM_THREADS] = { };		
-	ThreadArgs 	thread_args [MAX_VM_THREADS] = { };
 
 	for (SIZE_T i = 0; i < a->count; i++) {
 		thread_args [i].img_base 	= a->data + a->entires [i].elf_off;

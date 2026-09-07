@@ -161,15 +161,15 @@ typedef struct {
 
 
 struct {
-	INTEL 	HostContext;
-	INTEL 	VmContext;
+	INTEL 	host_context;
+	INTEL 	vm_context;
 
-	jmp_buf Interrupt;
-	jmp_buf Branch;
-	jmp_buf Shutdown;
+	jmp_buf interrupt;
+	jmp_buf branch;
+	jmp_buf shutdown;
 
-	HANDLE 	InterHandle;
-	HANDLE 	MutexRW;
+	HANDLE 	h_interupt;
+	HANDLE 	mutex_rw;
 
 	UINT64 	LoadRsvAddr;
 	UINT64 	LoadRsvValid;
@@ -178,40 +178,61 @@ struct {
 } VM_CONTEXT;
 
 
+#define MAX_VM_THREADS 5
 typedef struct {
-    UINT64 Magic1, Magic2;
-	UINT64 Self;
-	UINT64 Pid;
-	UINT64 Tid;
+	UINT64 elf_off;
+	UINT64 param_off;
+	UINT64 packed_sz;
+	UINT64 runtime_sz;
+} ElfEntry;
 
-	VM_CONTEXT* Context;
+
+struct THREAD_ARGS {
+	LPVOID img_base;
+	LPVOID param_base;
+};
+
+
+typedef struct {
+	UINT8 		*data;
+	UINT8		*offset;
+	UINT64 		capacity;
+	UINT64 		used;
+	ElfEntry 	*entries;
+	SIZE_T 		count;
+} Arena;
+
+
+typedef struct {
+    UINT64 magic1, magic2;
+	UINT64 self;
+	UINT64 pid;
+	UINT64 tid;
+
+	HANDLE 		threads 	[MAX_VM_THREADS];		
+	THREAD_ARGS thread_args [MAX_VM_THREADS];
+	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
 
 	struct {
-		HMODULE Ucrtbase;
-		HMODULE Kernel32;
-	} Module;
+		HMODULE ucrtbase;
+		HMODULE kernel32;
+	} modules;
 
 	struct {
-		UINT_PTR Epc;
-		UINT_PTR Cause;
-		UINT_PTR Status;
-		UINT_PTR Tval;
-	} Csr;
+		UINT_PTR epc;
+		UINT_PTR cause;
+		UINT_PTR status;
+		UINT_PTR tval;
+	} csr;
 
 	typedef {
-		UINT64 Pc;
-		UINT64 Scratch 	[8];
-		UINT64 Regs 	[32];
-		UINT64 Stack 	[32];
-	} Hdw;
+		UINT64 pc;
+		UINT64 scratch 	[8];
+		UINT64 regs 	[32];
+		UINT64 stack 	[32];
+	} hdw;
 
-	struct {
-		UINT64 			Memory;
-		UINT64 			MemorySize;
-		UINT64			ImageBase;
-
-		volatile UINT64 Ready;   
-	} Proc;
+	Arena *arena;
 } VMCS;
 
 
