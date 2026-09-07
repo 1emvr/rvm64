@@ -20,36 +20,23 @@ LONG CALLBACK InterruptHandler (
 		_In_ const PEXCEPTION_POINTERS 	exception_info, 
 		_In_ const UINT8 				machine_index) 
 {
-	DWORD code 				= exception_info->ExceptionRecord->ExceptionCode;
+	DWORD trap_code 		= exception_info->ExceptionRecord->ExceptionCode;
 	CONTEXT *win_context 	= exception_info->ContextRecord;
 
-	g_vmcs->t_hardware [machine_index].csr.cause 	= code;
+	g_vmcs->t_hardware [machine_index].csr.cause 	= trap_code;
 	g_vmcs->t_hardware [machine_index].csr.epc 		= win_context->Rip;
 
-	if (code == STATUS_SINGLE_STEP) {
+	if (trap_code == STATUS_SINGLE_STEP) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
-	if (Code != RVM_TRAP_EXCEPTION) { 
-		longjmp (Vmcs->Context->Interrupt, true);
+	if (trap_code != RVM_TRAP_EXCEPTION) { 
+		longjmp (g_vmcs->t_context [machine_index]->interrupt, true);
 	}
 
-	switch (Vmcs->Csr.Cause) {
-		case EnvExecute: 
-			{
-				VOID (WINAPI* Memory) (VOID) = (VOID (WINAPI*) (VOID)) Vmcs->Hdw.Pc;
-				Memory ();
-				break;
-			}
-		case EnvNative: 
-			{
-				NativeCall ();
-				break;
-			}
-		case EnvShutdown: 	
-			longjmp (Vmcs->Context->Shutdown, true);
-
-		default:  			
-			longjmp (Vmcs->Context->Interrupt, true); 
+	switch (g_vmcs->t_hardware [machine_index].csr.cause) {
+		case ENV_NATIVE: 	native_call (); break;
+		case ENV_SHUTDOWN: 	longjmp (g_vmcs->t_context [machine_index].shutdown, true); 	break;
+		default:  			longjmp (g_vmcs->t_context [machine_index].interrupt, true); 	break;
 	}
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
