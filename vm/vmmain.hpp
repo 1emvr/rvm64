@@ -339,55 +339,55 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 }
 
 
-NATIVE_CALL BOOL process_packets (_Inout_ Arena *a) {
-	UINT8 *img_base = a->data;
-	UINT64 n_threads = (UINT64)img_base [0]; 
+NATIVE_CALL BOOL process_packets () {
+	UINT8 *cursor 		= g_vmcs->arena->data;
+	UINT64 n_threads 	= (UINT64)cursor [0]; 
 	
 #define update_arena (b, o, sz) \
 	b += sz;					\
 	o += sz;					
 
-	update_arena (img_base, a->offset, sizeof (UINT64)); // one-time thread count
+	update_arena (cursor, g_vmcs->arena->offset, sizeof (UINT64)); // one-time thread count
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
 	for (int i = 0; i < n_threads; i++) {  // calculate size for all threads
-		UINT64 param_sz = img_base [0]; 
+		UINT64 param_sz = cursor [0]; 
 
-		update_arena (img_base, a->offset, sizeof (UINT64) + param_sz);
-		if (!is_elf (img_base) || img_base [EI_CLASS] != ELFCLASS64) {
+		update_arena (cursor, g_vmcs->arena->offset, sizeof (UINT64) + param_sz);
+		if (!is_elf (cursor) || cursor [EI_CLASS] != ELFCLASS64) {
 			return false; 
 		}
 
-		a->entries [i].runtime_sz 	= elf_runtime_size (img_base, nullptr);
-		a->entries [i].packed_sz 	= elf_image_size (img_base);
+		g_vmcs->arena->entries [i].runtime_sz 	= elf_runtime_size (cursor, nullptr);
+		g_vmcs->arena->entries [i].packed_sz 	= elf_image_size (cursor);
 
-		update_arena (img_base, a->offset, a->entries [i].packed_sz);
+		update_arena (cursor, g_vmcs->arena->offset, g_vmcs->entries [i].packed_sz);
 	}
 
 	UINT64 total = 0;
 
 	for (int i = 0; i < n_threads; i++) {
-		total += a->entries [i].runtime_sz;
+		total += g_vmcs->arena->entries [i].runtime_sz;
 	}
-	if (total > a->capacity) {
+	if (total > g_vmcs->arena->capacity) {
 		// arena_realloc (a, total);
 	}
 
-	a->offset = 0;
+	g_vmcs->arena->offset = 0;
 	return true;
 }
 
 
-VOID NATIVE_CALL thread_main (LPVOID parameters) {
+VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
 	ThreadArgs *args = (ThreadArgs *)parameters
 	return;
 }
 
 
 VOID NATIVE_CALL rvm64_main () {
-	if (!process_packets (a)) 		goto defer;
+	if (!process_packets ()) 		goto defer;
 	if (a->count == 0) 				goto defer;
 	if (a->count > MAX_VM_THREADS) 	goto defer;
 
