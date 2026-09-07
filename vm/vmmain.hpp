@@ -439,7 +439,7 @@ VOID NATIVE_CALL rvm64_main (
 		goto defer;
 	}
 	/* 
-	if (!relocate_runtime_memory ()) { // should either move infinite threads to their own memory or memory manager should keep tabs on everything
+	if (!calculate_runtime_memory ()) { // should either move infinite threads to their own memory or memory manager should keep tabs on everything
 		goto defer;
 	}
 	 */ 
