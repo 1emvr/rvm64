@@ -7,10 +7,6 @@
 #include "vmmu.hpp"
 
 
-VM_CALL VOID NativeCall (VOID);
-NATIVE_CALL LPVOID ResolveRvniImport (_In_ const CHAR *SymName);
-
-
 constexpr const char *C_OPEN 		= "_open";
 constexpr const char *C_READ 		= "_read";
 constexpr const char *C_WRITE 		= "_write";
@@ -28,32 +24,14 @@ constexpr const char *C_MUNMAP 		= "munmap";
 constexpr const char *C_MPROTECT 	= "mprotect";
 
 
-VM_DATA UCRT_ALIAS AliasTable [] = {
-	{ "open",  "_open"  }, 
-	{ "read",  "_read"  }, 
-	{ "write", "_write" }, 
-	{ "close", "_close" }, 
-	{ "exit",  "_exit"  }, 
-	{ "mmap", 	"VirtualAlloc" }, 
-	{ "munmap", "VirtualFree" }, 
-	{ "mprotect", "VirtualProtect" }, 
-};
-
-
-typedef struct {
-	const CHAR* Original;
-	const CHAR* Alias;
-} UCRT_ALIAS;
-
-
 typedef struct _ucrt_function {
-	const CHAR*	Name;
+	const CHAR*	call_name;
 
 	enum {
 		OPEN, READ, WRITE, CLOSE, LSEEK, STAT64, MALLOC, FREE,
 		MEMCPY, MEMSET, STRLEN, STRCPY, MMAP, MUNMAP, MPROTECT,
 		UNKNOWN
-	} Typenum;
+	} typenum;
 
 	union {
 		INT 	(__cdecl* open)			(CHAR*, INT, INT);
@@ -71,12 +49,11 @@ typedef struct _ucrt_function {
 		LPVOID 	(__stdcall* mmap)		(LPVOID, SIZE_T, DWORD, DWORD); 	// aliased to VirtualAlloc
 		BOOL 	(__stdcall* munmap)		(LPVOID, SIZE_T, DWORD); 			// aliased to VirtualFree
 		BOOL 	(__stdcall* mprotect)	(LPVOID, SIZE_T, DWORD, PDWORD); 	// aliased to VirtualProtect
-	} Typecaster;
+	} typecaster;
 } UCRT_FUNCTION;
 
 
-// NOTE: Gets populated during ResolveRvniImport at init.
-DATA_SCN UCRT_FUNCTION FunctionTable [] = {
+UCRT_FUNCTION DATA_SCN FunctionTable [] = {
 	{ .Address = 0, .Name = C_OPEN, 	.Typenum = UCRT_FUNCTION::OPEN		}, 
 	{ .Address = 0, .Name = C_READ, 	.Typenum = UCRT_FUNCTION::READ		}, 
 	{ .Address = 0, .Name = C_WRITE, 	.Typenum = UCRT_FUNCTION::WRITE 	}, 
@@ -95,289 +72,305 @@ DATA_SCN UCRT_FUNCTION FunctionTable [] = {
 };
 
 
-NATIVE_CALL LPVOID ResolveRvniImport (
-		_In_ const CHAR *SymName) 
+typedef struct {
+	const CHAR* org_name;
+	const CHAR* alias;
+} UCRT_ALIAS;
+
+
+UCRT_ALIAS VM_DATA alias_table [] = {
+	{ "open",  "_open"  }, { "read",  "_read"  }, { "write", "_write" }, 
+	{ "close", "_close" }, { "exit",  "_exit"  }, { "mmap", 	"VirtualAlloc" }, 
+	{ "munmap", "VirtualFree" }, { "mprotect", "VirtualProtect" }, 
+};
+
+
+namespace rvni
 {
-	if (! Vmcs->Module.Kernel32 || ! Vmcs->Module.Ucrt) {
-		SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
-	}
-
-	const CHAR *AliasName = SymName;
-
-	for (auto& i : AliasTable) {
-		if (strcmp (SymName, i.Original) == 0) {
-			AliasName = (const CHAR*) i.Alias;
-			break;
+	LPVOID VM_CALL rvni_import (
+			_In_ const CHAR *sym_name) 
+	{
+		if (! g_vmcs->modules.kernel32 || ! g_vmcs->modules.ucrt) {
+			SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
 		}
-	}
 
-	LPVOID Native = (LPVOID) GetProcAddress (Vmcs->Module.Ucrt, AliasName); // resolve by the win32 equivalent. 
+		const CHAR *alias = sym_name;
 
-	if (! Native) {
-		Native = (LPVOID) GetProcAddress (Vmcs->Module.Kernel32, AliasName);
-
-		if (! Native) {
-			SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)AliasName, true);
+		for (auto& i : alias_table) {
+			if (strcmp (sym_name, i.org_name) == 0) {
+				aliasName = (const CHAR*) i.alias;
+				break;
+			}
 		}
-	}
 
-	for (auto& f : FunctionTable) {
-		if (MbsCmp (SymName, f.Name) == 0) {
-			f.Address = Native;
+		LPVOID real_addr = (LPVOID) GetProcAddress (Vmcs->Module.Ucrt, aliasName); // resolve by the win32 equivalent. 
 
-			switch (f.Typenum) {
-				case UCRT_FUNCTION::OPEN:   	f.Typecaster.open 		= (decltype(f.Typecaster.open))		Native;
-				case UCRT_FUNCTION::READ:   	f.Typecaster.read 		= (decltype(f.Typecaster.read))		Native; 
-				case UCRT_FUNCTION::WRITE:  	f.Typecaster.write		= (decltype(f.Typecaster.write))	Native; 
-				case UCRT_FUNCTION::CLOSE:  	f.Typecaster.close 		= (decltype(f.Typecaster.close))	Native; 
-				case UCRT_FUNCTION::LSEEK:  	f.Typecaster.lseek 		= (decltype(f.Typecaster.lseek))	Native; 
-				case UCRT_FUNCTION::STAT64: 	f.Typecaster.stat64 	= (decltype(f.Typecaster.stat64))	Native; 
-				case UCRT_FUNCTION::MALLOC: 	f.Typecaster.malloc 	= (decltype(f.Typecaster.malloc))	Native; 
-				case UCRT_FUNCTION::FREE:   	f.Typecaster.free 		= (decltype(f.Typecaster.free))		Native; 
-				case UCRT_FUNCTION::MEMCPY: 	f.Typecaster.memcpy 	= (decltype(f.Typecaster.memcpy))	Native; 
-				case UCRT_FUNCTION::MEMSET: 	f.Typecaster.memset 	= (decltype(f.Typecaster.memset))	Native; 
-				case UCRT_FUNCTION::STRLEN: 	f.Typecaster.strlen 	= (decltype(f.Typecaster.strlen))	Native; 
-				case UCRT_FUNCTION::STRCPY: 	f.Typecaster.strcpy 	= (decltype(f.Typecaster.strcpy))	Native; 
-				case UCRT_FUNCTION::MMAP: 		f.Typecaster.mmap 		= (decltype(f.Typecaster.mmap))		Native; 
-				case UCRT_FUNCTION::MUNMAP:		f.Typecaster.munmap 	= (decltype(f.Typecaster.munmap))	Native; 
-				case UCRT_FUNCTION::MPROTECT:	f.Typecaster.mprotect 	= (decltype(f.Typecaster.mprotect))	Native; 
-				default:  SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
+		if (! real_addr) {
+			real_addr = (LPVOID) GetProcAddress (Vmcs->Module.Kernel32, aliasName);
+
+			if (! real_addr) {
+				SetCsrTrap (nullptr, ImageBadSymbol, 0, (UINT_PTR)aliasName, true);
 			}
-			break;
 		}
-	}
-	return Native;
-}
 
+		for (auto& f : FunctionTable) {
+			if (MbsCmp (sym_name, f.Name) == 0) {
+				f.Address = real_addr;
 
-VM_CALL VOID NativeCall () {
-	UCRT_FUNCTION *Api = nullptr;
-
-	for (auto &f : FunctionTable) {
-		if (Vmcs->Hdw.Pc == (UINT_PTR)f.Address) {
-			Api = &f;
-			break;
-		}
-	}
-	if (! Api || ! Api->Address) {
-		SetCsrTrap (Vmcs->Hdw.Pc, ImageBadSymbol, 0, Api->Typenum, true);
-	}
-
-	switch (Api->Typenum) {
-		case UCRT_FUNCTION::OPEN: 
-			{
-				CHAR *Pathname = 0;
-				INT Flags = 0, Mode = 0;
-
-				RegRead (CHAR*, Pathname, A0);
-				RegRead (INT, Flags, A1);
-				RegRead (INT, Mode, A2);
-
-				INT Result = Api->Typecaster.open (Pathname, Flags, Mode);
-
-				RegWrite (INT, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::READ: 
-			{
-				INT Fd 		= 0;
-				LPVOID Buf 	= 0;
-				UINT Count 	= 0;
-
-				RegRead (INT, Fd, A0);
-				RegRead (LPVOID, Buf, A1);
-				RegRead (UINT, Count, A2);
-
-				INT Result = Api->Typecaster.read (Fd, Buf, Count);
-
-				RegWrite (INT, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::WRITE: 
-			{
-				INT Fd 		= 0;
-				LPVOID Buf 	= 0;
-				UINT Count 	= 0;
-
-				RegRead (INT, Fd, A0);
-				RegRead (LPVOID, Buf, A1);
-				RegRead (UINT, Count, A2);
-
-				INT Result = Api->Typecaster.write (Fd, Buf, Count);
-
-				RegWrite (INT, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::CLOSE: 
-			{
-				INT Fd = 0;
-				RegRead (INT, Fd, A0);
-
-				INT Result = Api->Typecaster.close (Fd);
-
-				RegWrite (INT, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::LSEEK: 
-			{
-				INT Fd 		= 0;
-				LONG Offset = 0;
-				INT Whence 	= 0;
-
-				RegRead (INT, Fd, A0);
-				RegRead (LONG, Offset, A1);
-				RegRead (INT, Whence, A2);
-
-				LONG Result = Api->Typecaster.lseek (Fd, Offset, Whence);
-
-				RegWrite (LONG, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::STAT64: 
-			{
-				const CHAR *Pathname 	= 0;
-				LPVOID Statbuf 			= 0;
-
-				RegRead (const CHAR*, Pathname, a0);
-				RegRead (LPVOID, Statbuf, A1);
-
-				INT Result = Api->Typecaster.stat64 (Pathname, Statbuf);
-
-				RegWrite (INT, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::MALLOC: 
-			{
-				SIZE_T Size = 0;
-				RegRead (SIZE_T, Size, A0);
-
-				LPVOID Result = Api->Typecaster.malloc (SIZE);
-
-				RegWrite (UINT_PTR, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::FREE: 
-			{
-				LPVOID Ptr = 0;
-				RegRead (LPVOID, Ptr, A0);
-
-				Api->Typecaster.free (Ptr);
-
-				RegWrite (UINT_PTR, A0, 0);
-				break;
-			}
-		case UCRT_FUNCTION::MEMCPY: 
-			{
-				LPVOID Dest = 0, *Src = 0;
-				SIZE_T n = 0;
-
-				RegRead (LPVOID, Dest, A0);
-				RegRead (LPVOID, Src, A1);
-				RegRead (SIZE_T, n, A2);
-
-				LPVOID Result = Api->Typecaster.memcpy (Dest, Src, n);
-
-				RegWrite (UINT_PTR, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::MEMSET: 
-			{
-				LPVOID Dest = 0;
-				INT Value 	= 0;
-				SIZE_T n  	= 0;
-
-				RegRead (LPVOID, Dest, A0);
-				RegRead (INT, Value, A1);
-				RegRead (SIZE_T, n, A2);
-
-				LPVOID Result = Api->Typecaster.memset (Dest, Value, n);
-
-				RegWrite(UINT64, A0, Result);
-				break;
-			}
-		case ucrt_function::STRLEN: 
-			{
-				CHAR *s = 0;
-				RegRead (CHAR*, s, A0);
-
-				SIZE_T Result = Api->Typecaster.strlen (s);
-
-				RegWrite (SIZE_T, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::STRCPY: 
-			{
-				CHAR *Dest = 0, *Src = 0;
-
-				RegRead (CHAR*, Dest, A0);
-				RegRead (CHAR*, Src, A1);
-
-				CHAR *Result = Api->Typecaster.strcpy (Dest, Src);
-
-				RegWrite (UINT_PTR, A0, Result);
-				break;
-			}
-		case UCRT_FUNCTION::MMAP: 
-			{
-				LPVOID Addr = 0;
-				SIZE_T Len 	= 0;
-				DWORD prot 	= 0, Flags = 0;
-
-				RegRead (LPVOID, Addr, A0);
-				RegRead (SIZE_T, Len, A1);
-				RegRead (DWORD, Prot, A2);
-				RegRead (DWORD, Flags, A3);
-
-				LPVOID HostMem = Api->Typecaster.mmap (
-						nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
-
-				if (! MemoryRegister ((UINT_PTR*)&Addr, HostMem, Len)) {
-					SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
+				switch (f.Typenum) {
+					case UCRT_FUNCTION::OPEN:   	f.typecaster.open 		= (decltype(f.typecaster.open))		real_addr;
+					case UCRT_FUNCTION::READ:   	f.typecaster.read 		= (decltype(f.typecaster.read))		real_addr; 
+					case UCRT_FUNCTION::WRITE:  	f.typecaster.write		= (decltype(f.typecaster.write))	real_addr; 
+					case UCRT_FUNCTION::CLOSE:  	f.typecaster.close 		= (decltype(f.typecaster.close))	real_addr; 
+					case UCRT_FUNCTION::LSEEK:  	f.typecaster.lseek 		= (decltype(f.typecaster.lseek))	real_addr; 
+					case UCRT_FUNCTION::STAT64: 	f.typecaster.stat64 	= (decltype(f.typecaster.stat64))	real_addr; 
+					case UCRT_FUNCTION::MALLOC: 	f.typecaster.malloc 	= (decltype(f.typecaster.malloc))	real_addr; 
+					case UCRT_FUNCTION::FREE:   	f.typecaster.free 		= (decltype(f.typecaster.free))		real_addr; 
+					case UCRT_FUNCTION::MEMCPY: 	f.typecaster.memcpy 	= (decltype(f.typecaster.memcpy))	real_addr; 
+					case UCRT_FUNCTION::MEMSET: 	f.typecaster.memset 	= (decltype(f.typecaster.memset))	real_addr; 
+					case UCRT_FUNCTION::STRLEN: 	f.typecaster.strlen 	= (decltype(f.typecaster.strlen))	real_addr; 
+					case UCRT_FUNCTION::STRCPY: 	f.typecaster.strcpy 	= (decltype(f.typecaster.strcpy))	real_addr; 
+					case UCRT_FUNCTION::MMAP: 		f.typecaster.mmap 		= (decltype(f.typecaster.mmap))		real_addr; 
+					case UCRT_FUNCTION::MUNMAP:		f.typecaster.munmap 	= (decltype(f.typecaster.munmap))	real_addr; 
+					case UCRT_FUNCTION::MPROTECT:	f.typecaster.mprotect 	= (decltype(f.typecaster.mprotect))	real_addr; 
+					default:  SetCsrTrap (nullptr, ImageBadSymbol, 0, 0, true);
 				}
-
-				RegWrite(UINT_PTR, A0, Addr);
 				break;
 			}
-		case UCRT_FUNCTION::MUNMAP: 
-			{
-				LPVOID Addr = 0;
-				SIZE_T Len 	= 0;
+		}
+		return real_addr;
+	}
 
-				RegRead (LPVOID, Addr, A0);
-				RegRead (SIZE_T, Len, A1);
 
-				auto GuestMem 	= (UINT_PTR)Addr;
-				LPVOID HostMem 	= MemoryCheck (GuestMem);
-				BOOL Unregister = MemoryUnregister (GuestMem);
+	VOID VM_CALL rvni_exit () {
+		UCRT_FUNCTION *Api = nullptr;
 
-				INT Result = Api->Typecaster.munmap (HostMem, Len, MEM_RELEASE);
+		for (auto &f : FunctionTable) {
+			if (Vmcs->Hdw.Pc == (UINT_PTR)f.Address) {
+				Api = &f;
+				break;
+			}
+		}
+		if (! Api || ! Api->Address) {
+			SetCsrTrap (Vmcs->Hdw.Pc, ImageBadSymbol, 0, Api->Typenum, true);
+		}
 
-				if (! MemoryUnregister ((UINT_PTR)Addr)) {
-					SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
+		switch (Api->Typenum) {
+			case UCRT_FUNCTION::OPEN: 
+				{
+					CHAR *Pathname = 0;
+					INT Flags = 0, Mode = 0;
+
+					reg_read (CHAR*, Pathname, A0);
+					reg_read (INT, Flags, A1);
+					reg_read (INT, Mode, A2);
+
+					INT Result = Api->typecaster.open (Pathname, Flags, Mode);
+
+					reg_write (INT, A0, Result);
+					break;
 				}
+			case UCRT_FUNCTION::READ: 
+				{
+					INT Fd 		= 0;
+					LPVOID Buf 	= 0;
+					UINT Count 	= 0;
 
-				RegWrite (INT, A0, ((Result && Unregister) ? 0 : -1));
-				break;
-			}
-		case UCRT_FUNCTION::MPROTECT: 
-			{
-				LPVOID Addr = 0;
-				SIZE_T Len 	= 0;
-				DWORD Prot 	= 0, Old = 0;
+					reg_read (INT, Fd, A0);
+					reg_read (LPVOID, Buf, A1);
+					reg_read (UINT, Count, A2);
 
-				RegRead (LPVOID, Addr, A0);
-				RegRead (SIZE_T, Len, A1);
-				RegRead (DWORD, Prot, A2);
+					INT Result = Api->typecaster.read (Fd, Buf, Count);
 
-				auto Func = Api->Typecaster.mprotect (Addr, Len, Prot, &Old);
+					reg_write (INT, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::WRITE: 
+				{
+					INT Fd 		= 0;
+					LPVOID Buf 	= 0;
+					UINT Count 	= 0;
 
-				RegWrite (INT, A0, Func ? 0 : -1);
-				break;
-			}
-		default: 
-			{
-				SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Api->Typenum, true);
-			}
+					reg_read (INT, Fd, A0);
+					reg_read (LPVOID, Buf, A1);
+					reg_read (UINT, Count, A2);
+
+					INT Result = Api->typecaster.write (Fd, Buf, Count);
+
+					reg_write (INT, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::CLOSE: 
+				{
+					INT Fd = 0;
+					reg_read (INT, Fd, A0);
+
+					INT Result = Api->typecaster.close (Fd);
+
+					reg_write (INT, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::LSEEK: 
+				{
+					INT Fd 		= 0;
+					LONG Offset = 0;
+					INT Whence 	= 0;
+
+					reg_read (INT, Fd, A0);
+					reg_read (LONG, Offset, A1);
+					reg_read (INT, Whence, A2);
+
+					LONG Result = Api->typecaster.lseek (Fd, Offset, Whence);
+
+					reg_write (LONG, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::STAT64: 
+				{
+					const CHAR *Pathname 	= 0;
+					LPVOID Statbuf 			= 0;
+
+					reg_read (const CHAR*, Pathname, a0);
+					reg_read (LPVOID, Statbuf, A1);
+
+					INT Result = Api->typecaster.stat64 (Pathname, Statbuf);
+
+					reg_write (INT, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::MALLOC: 
+				{
+					SIZE_T Size = 0;
+					reg_read (SIZE_T, Size, A0);
+
+					LPVOID Result = Api->typecaster.malloc (SIZE);
+
+					reg_write (UINT_PTR, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::FREE: 
+				{
+					LPVOID Ptr = 0;
+					reg_read (LPVOID, Ptr, A0);
+
+					Api->typecaster.free (Ptr);
+
+					reg_write (UINT_PTR, A0, 0);
+					break;
+				}
+			case UCRT_FUNCTION::MEMCPY: 
+				{
+					LPVOID Dest = 0, *Src = 0;
+					SIZE_T n = 0;
+
+					reg_read (LPVOID, Dest, A0);
+					reg_read (LPVOID, Src, A1);
+					reg_read (SIZE_T, n, A2);
+
+					LPVOID Result = Api->typecaster.memcpy (Dest, Src, n);
+
+					reg_write (UINT_PTR, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::MEMSET: 
+				{
+					LPVOID Dest = 0;
+					INT Value 	= 0;
+					SIZE_T n  	= 0;
+
+					reg_read (LPVOID, Dest, A0);
+					reg_read (INT, Value, A1);
+					reg_read (SIZE_T, n, A2);
+
+					LPVOID Result = Api->typecaster.memset (Dest, Value, n);
+
+					reg_write(UINT64, A0, Result);
+					break;
+				}
+			case ucrt_function::STRLEN: 
+				{
+					CHAR *s = 0;
+					reg_read (CHAR*, s, A0);
+
+					SIZE_T Result = Api->typecaster.strlen (s);
+
+					reg_write (SIZE_T, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::STRCPY: 
+				{
+					CHAR *Dest = 0, *Src = 0;
+
+					reg_read (CHAR*, Dest, A0);
+					reg_read (CHAR*, Src, A1);
+
+					CHAR *Result = Api->typecaster.strcpy (Dest, Src);
+
+					reg_write (UINT_PTR, A0, Result);
+					break;
+				}
+			case UCRT_FUNCTION::MMAP: 
+				{
+					LPVOID Addr = 0;
+					SIZE_T Len 	= 0;
+					DWORD prot 	= 0, Flags = 0;
+
+					reg_read (LPVOID, Addr, A0);
+					reg_read (SIZE_T, Len, A1);
+					reg_read (DWORD, Prot, A2);
+					reg_read (DWORD, Flags, A3);
+
+					LPVOID HostMem = Api->typecaster.mmap (
+							nullptr, len, MEM_COMMIT | MEM_RESERVE, LINUX_TO_WIN_PROT (prot));
+
+					if (! MemoryRegister ((UINT_PTR*)&Addr, HostMem, Len)) {
+						SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
+					}
+
+					reg_write(UINT_PTR, A0, Addr);
+					break;
+				}
+			case UCRT_FUNCTION::MUNMAP: 
+				{
+					LPVOID Addr = 0;
+					SIZE_T Len 	= 0;
+
+					reg_read (LPVOID, Addr, A0);
+					reg_read (SIZE_T, Len, A1);
+
+					auto GuestMem 	= (UINT_PTR)Addr;
+					LPVOID HostMem 	= MemoryCheck (GuestMem);
+					BOOL Unregister = MemoryUnregister (GuestMem);
+
+					INT Result = Api->typecaster.munmap (HostMem, Len, MEM_RELEASE);
+
+					if (! MemoryUnregister ((UINT_PTR)Addr)) {
+						SetCsrTrap (Vmcs->Hdw.Pc, OutOfMemory, 0, (UINT_PTR)Addr, true);
+					}
+
+					reg_write (INT, A0, ((Result && Unregister) ? 0 : -1));
+					break;
+				}
+			case UCRT_FUNCTION::MPROTECT: 
+				{
+					LPVOID Addr = 0;
+					SIZE_T Len 	= 0;
+					DWORD Prot 	= 0, Old = 0;
+
+					reg_read (LPVOID, Addr, A0);
+					reg_read (SIZE_T, Len, A1);
+					reg_read (DWORD, Prot, A2);
+
+					auto Func = Api->typecaster.mprotect (Addr, Len, Prot, &Old);
+
+					reg_write (INT, A0, Func ? 0 : -1);
+					break;
+				}
+			default: 
+				{
+					SetCsrTrap (Vmcs->Hdw.Pc, IllegalInstruction, 0, Api->Typenum, true);
+				}
+		}
 	}
 }
 #endif // RVNI_H

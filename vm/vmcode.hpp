@@ -165,8 +165,8 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 								case 0b1111001: { opcall (_FMV_D_X); break; }
 								case 0b0100000: 
 												{
-													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
-													switch(FcvtMask) {
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
 														case 0b00001: { opcall (_FCVT_S_D); break; }
 														default: break;
 													}
@@ -174,8 +174,8 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 												}
 								case 0b0100001: 
 												{
-													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
-													switch(FcvtMask) {
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
 														case 0b00000: { opcall (_FCVT_D_S); break; }
 														default: break;
 													}
@@ -183,8 +183,8 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 												}
 								case 0b1100001: 
 												{
-													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
-													switch(FcvtMask) {
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
 														case 0b00000: { opcall (_FCVT_W_D); break; }
 														case 0b00001: { opcall (_FCVT_WU_D); break; }
 														default: break;
@@ -193,8 +193,8 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 												}
 								case 0b1101001: 
 												{
-													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
-													switch(FcvtMask) {
+													UINT8 fcvt_mask = (opcode >> 20) & 0x1F;
+													switch(fcvt_mask) {
 														case 0b00000: { opcall (_FCVT_D_W); break; }
 														case 0b00001: { opcall (_FCVT_D_WU); break; }
 														default: break;

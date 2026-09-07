@@ -199,7 +199,7 @@ typedef struct {
 } ELF64_DYN;
 
 
-static inline UINT_PTR AlignUp (
+static inline UINT_PTR align_up (
 		_In_ const UINT_PTR x, 
 		_In_ const UINT_PTR a) 
 { 
@@ -218,7 +218,7 @@ static inline BOOL InImage (
 
 namespace image_load 
 {
-	NATIVE_CALL VOID LoadImage (
+	NATIVE_CALL VOID load_image (
 			_In_ const UINT8** 	Memory, 
 			_In_ const SIZE_T* 	MemorySize) 
 	{
@@ -264,7 +264,7 @@ namespace image_load
 		}
 
 		SIZE_T Need 		= MAX (HeaderSpan, End - Vmcs->Proc.ImageBase); 
-		SIZE_T AlignNeed 	= AlignUp (Need, 0x1000);
+		SIZE_T AlignNeed 	= align_up (Need, 0x1000);
 		{
 			if (AlignNeed > *MemorySize) {
 				VirtualFree (*Memory, 0, MEM_RELEASE);
