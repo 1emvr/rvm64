@@ -33,16 +33,19 @@ LONG CALLBACK InterruptHandler (
 		longjmp (g_vmcs->t_context [machine_index]->interrupt, true);
 	}
 
-	switch (g_vmcs->t_hardware [machine_index].csr.cause) {
+	switch (g_vmcs->t_hardware [machine_index].csr.cause) { // probably needs to be re-architected
 		case ENV_NATIVE: 	native_call (); break;
 		case ENV_SHUTDOWN: 	longjmp (g_vmcs->t_context [machine_index].shutdown, true); 	break;
-		default:  			longjmp (g_vmcs->t_context [machine_index].interrupt, true); 	break;
+		case ENV_BRANCH:  	longjmp (g_vmcs->t_context [machine_index].interrupt, true); 	break;
+		default: break;
 	}
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 
 
 ARENA* NATIVE_CALL arena_alloc (_In_ const UINT64 size) {
+	if (size <= 0) return nullptr;
+
 	ARENA *a = (ARENA*)VirtualAlloc (nullptr, sizeof (ARENA), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	if (!a) return nullptr; 
 
