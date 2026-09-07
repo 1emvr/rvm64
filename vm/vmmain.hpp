@@ -393,7 +393,6 @@ VOID NATIVE_CALL rvm64_main (
 		_In_ const UINT_PTR data_sz) 
 {
 	ARENA *a 			= g_vmcs->arena;
-	HANDLE *threads 	= &g_vmcs->h_thread;
 
 	UINT_PTR data 		= a->data;
 	ElfEntry *entries 	= a->entries;
@@ -414,7 +413,7 @@ VOID NATIVE_CALL rvm64_main (
 		g_vmcs->thread_args [i].img_base    = img_base;
 		g_vmcs->thread_args [i].param_base 	= param_base;
 
-		g_vmcs->threads [i] = CreateThread (
+		g_vmcs->thread [i] = CreateThread (
 				nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, &g_vmcs->thread_args [i], 0, nullptr); 
 	}
 
@@ -422,7 +421,8 @@ VOID NATIVE_CALL rvm64_main (
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // maybe we don't wait until we're ready to read responses ?
 
 	for (HANDLE i = 0; i < a->count; i++) {
-		if (threads [i]) {
+		if (g_vmcs->h_thread [i]) {
+
 			CloseHandle (threads [i]);
 			HeapFree (threads [i]);
 		}
