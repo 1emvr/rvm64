@@ -330,8 +330,8 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 				continue;
 			}
 
-			UINT64 end2 = shdr [i].sh_offset + shdr [i].sh_size;
-			if (end2 > max) max = end2;
+			UINT64 real_end = shdr [i].sh_offset + shdr [i].sh_size;
+			if (real_end > max) max = real_end;
 		}
 	}
 	return max;
