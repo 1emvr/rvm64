@@ -53,101 +53,118 @@ LONG CALLBACK InterruptHandler (PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 
-VM_CALL VOID rvm64_memory_init ( 
-		_Out_ UINT_PTR* arena, 
-		_Out_ UINT_PTR* arena_size) 
-{
-	vmcs->self 	= (UINT64) &vmcs;
-	*arena 		= (UINT64) ARENA_SIZE; 
-	*arena_size = (UINT64) VirtualAlloc (nullptr, ARENA_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+ARENA* NATIVE_CALL arena_alloc (_In_ const UINT64 size) {
+	ARENA *a = (ARENA*)VirtualAlloc (nullptr, sizeof (ARENA), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	if (!a) return nullptr; 
 
-	if (! *arena) {
-		SetCsrTrap (nullptr, GetLastError (), 0, 0, 1);
+	a->data = (UINT8*)VirtualAlloc (nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+	if (!a->data) {
+		VirtualFree ((LPVOID)a, 0, MEM_RELEASE);
+		return nullptr; 
+	}
+
+	a->capacity = size;
+	a->used 	= 0;
+	a->entries 	= nullptr;
+	a->count 	= 0;
+	return a;
+}
+
+
+ARENA* NATIVE_CALL arena_realloc (
+		_In_ const ARENA *a, 
+		_In_ const UINT64 size) 
+{
+	if (!a || a->capacity > size) {
+		return nullptr;
+	}
+
+	ARENA *new_a = (ARENA*)VirtualAlloc (nullptr, sizeof (ARENA), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	if (!new_a) return nullptr; 
+
+	new_a->data = (UINT8*)VirtualAlloc (nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+	if (!new_a->data) {
+		VirtualFree ((LPVOID)new_a, 0, MEM_RELEASE);
+		return nullptr; 
+	}
+	if (a->data) {
+		MoveMemory ((LPVOID)new_a->data, (const LPVOID)a->data, a->used);
+		VirtualFree ((LPVOID)a->data, 0, MEM_RELEASE);
+	}
+
+	a_new->capacity = size;
+	a_new->used 	= a->used;
+	a_new->entries 	= a->entries;
+	a_new->count 	= a->count;
+
+	VirtualFree ((LPVOID)a, 0, MEM_RELEASE);
+	return a_new;
+}
+
+
+VOID NATIVE_CALL arena_release (_In_ const ARENA *a) {
+	if (!a) return;
+	if (a->data) {
+		VirtualFree ((LPVOID)a->data, 0, MEM_RELEASE);
+	}
+
+	a->capacity = 0;
+	a->used 	= 0;
+	a->entries 	= 0;
+	a->count 	= 0;
+
+	VirtualFree ((LPVOID)a, 0, MEM_RELEASE);
+}
+
+
+VOID NATIVE_CALL rvm64_memory_init () {
+	g_vmcs->code_arena = (UINT64) arena_alloc (DEFAULT_ARENA_SIZE); 
+	g_vmcs->heap_arena = (UINT64) arena_alloc (DEFAULT_ARENA_SIZE); 
+
+	if (!g_vmcs->code_arena || !g_vmcs->heap_arena) {
+		csr_trap (nullptr, GetLastError (), 0, 0, 1);
 		return;
 	}
 
-	vmcs->modules.kernel32 = GetModuleHandle ("kernel32.dll");
-	vmcs->modules.ucrtbase = GetModuleHandle ("ucrtbase.dll");
-
-	Vmcs->Hdw.Regs [SP] = (UINT_PTR)(Vmcs->Hdw.Stack + sizeof (Vmcs->Hdw.Stack));
-	Vmcs->Context.Ready = 1;
+	g_vmcs->modules.kernel32 = GetModuleHandle ("kernel32.dll"); // TODO: switch to dyna-modules
+	g_vmcs->modules.ucrtbase = GetModuleHandle ("ucrtbase.dll");
 }
 
 
-VM_CALL VOID rvm64_context_init (_Inout_ VM_CONTEXT** Context) {
-	if (!Context) {
-		return;
-	}
-
-	*Context = (VM_CONTEXT*) VirtualAlloc (nullptr, sizeof (VM_CONTEXT), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	if (! *Context) {
-		SetCsrTrap (0, OutOfMemory, 0, 0, 1);
-	}
-
-	(*Context)->InterHandle 	= AddVectoredExceptionHandler (1, InterruptHandler);
-	(*Context)->Halt 			= 1;
-	(*Context)->Ready			= 0;
-}
-
-
-VM_CALL VOID MemoryRelease (
-		_In_ UINT_PTR* Memory, 
-		_In_ UINT_PTR* MemorySize) 
+BOOL write_vm_memory (
+		_In_ const 	HANDLE 		handle, 
+		_In_ const 	UINT_PTR 	address, 
+		_In_ const 	UINT8*		buffer, 
+		_In_ const 	SIZE_T 		length, 
+		_Out_ 		SIZE_T*		write) 
 {
-	if (*Memory) {
-		MemSet (*Memory, 0, *MemorySize);
-		VirtualFree ((LPVOID)*Memory, 0, MEM_RELEASE);
-
-		*Memory = 0;
-	}
-
-	*MemorySize = 0;
-	Vmcs->Magic1 = 0;
-	Vmcs->Magic2 = 0;
-}
-
-
-VM_CALL VOID ContextRelease (_In_ VM_CONTEXT** Context) {
-	RemoveVectoredExceptionHandler ((*Context)->InterHandle);
-	(*Context)->InterHandle = 0;
-
-	VirtualFree (*Context, 0, MEM_RELEASE);
-	*Context = 0;
-}
-
-
-BOOL VmWriteProcessMemory (
-		_In_ const 	HANDLE 		Handle, 
-		_In_ const 	UINT_PTR 	Address, 
-		_In_ const 	UINT8*		Buffer, 
-		_In_ const 	SIZE_T 		Length, 
-		_Out_ 		SIZE_T*		Write) 
-{
-	DWORD Oldprot = 0;
-	if (! VirtualProtectEx (Handle, (LPVOID)Address, Length, PAGE_EXECUTE_READWRITE, &Oldprot)) {
+	DWORD oldprot = 0;
+	if (! VirtualProtectEx (handle, (LPVOID)address, length, PAGE_EXECUTE_READWRITE, &oldprot)) { 
 		return false;
 	}
 
-	BOOL Result = WriteProcessMemory (Handle, (LPVOID)Address, Buffer, Length, Write);
-	if (! VirtualProtectEx (Handle, (LPVOID)Address, Length, Oldprot, &Oldprot)) {
+	BOOL result = WriteProcessMemory (handle, (LPVOID)address, buffer, length, write); // absolutely no protections lol
+	if (! VirtualProtectEx (handle, (LPVOID)address, length, oldprot, &oldprot)) {
 		false;
 	}
 
-	FlushInstructionCache (Handle, (LPCVOID)Address, Length);
-	return Result && *Write == Length;
+	FlushInstructionCache (handle, (LPCVOID)address, length);
+	return result && *write == length;
 }
 
 
-BOOL VmReadProcessMemory (
-		_In_ const 	HANDLE 		Handle, 
-		_In_ const 	UINT_PTR 	Address, 
-		_Inout_ 	UINT8* 		ReadBytes, 
-		_In_ const 	SIZE_T 		Length) 
+BOOL read_vm_memory (
+		_In_ const 	HANDLE 		handle, 
+		_In_ const 	UINT_PTR 	address, 
+		_Inout_ 	UINT8* 		read_buffer, 
+		_In_ const 	SIZE_T 		length) 
 {
-	SIZE_T Read = 0;
-	BOOL Result = ReadProcessMemory (Handle, (LPCVOID)Address, (LPVOID)ReadBytes, Length, &Read);
+	SIZE_T read = 0;
+	BOOL result = ReadProcessMemory (handle, (LPCVOID)address, (LPVOID)read_buffer, length, &read);
 
-	return Result && Read == Length;
+	return result && read == length;
 }
 
 
