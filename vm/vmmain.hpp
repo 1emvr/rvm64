@@ -450,8 +450,8 @@ VOID NATIVE_CALL rvm64_main (
 		g_vmcs->t_args [thread_index].elf_base 		= elf_base;
 		g_vmcs->t_args [thread_index].param_base 	= param_base;
 
-		UINT64 type = g_vmcs->t_type [thread_index];
-		THREAD_ARGS *args = &g_vmcs->t_args [thread_index];
+		UINT64 type 		= g_vmcs->t_type [thread_index];
+		THREAD_ARGS *args 	= &g_vmcs->t_args [thread_index];
 
 		if (type == SINGLE EXEC) {
 			if (!start_thread (&g_vmcs->one_time_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
