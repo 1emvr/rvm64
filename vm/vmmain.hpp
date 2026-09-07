@@ -466,6 +466,7 @@ VOID NATIVE_CALL rvm64_main (
 			// error
 		}
 	}
+
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->one_time_thread, true, INFINITE); 
 
 	for (HANDLE handle_index = 0; handle_index < a->count; handle_index++) {
