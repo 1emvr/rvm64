@@ -256,6 +256,7 @@ extern "C" {
 
 #ifdef __cplusplus
 }
+#endif
 
 
 VM_CALL VOID SetCsrTrap (
