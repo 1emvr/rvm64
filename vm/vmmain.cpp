@@ -15,6 +15,7 @@ typedef struct {
 
 typedef struct {
 	UINT8 		*data;
+	UINT8		*offset;
 	UINT64 		capacity;
 	UINT64 		used;
 	ElfEntry 	*entries;
@@ -71,8 +72,7 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 	if (ehdr->phoff) {		
 		UINT64 end = ehdr->eh_phoff + (UINT64)(ehde->e_phnum * ehdr->e_phentsize);
 		if (end > max) max = end;
-	}
-	if (ehdr->e_phoff) {
+
 		const ELF64_PHDR *phdr = (const ELF64_PHDR *)(base + ehdr->e_phoff);
 
 		for (int i = 0; i < ehdr->e_phnum; i++) {
@@ -99,32 +99,23 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 }
 
 
-NATIVE_CALL VOID process_packets (Arena *a) {
-	Arena *img_base = a;
-
-	UINT64 offset = 0;
-	UINT64 n_threads = (UINT64)img_base->data [0]; 
-
-	// We can't actually update offsets until we've expanded the arena then moved everything...
-	// But we can still get the sizes.
+NATIVE_CALL VOID process_packets (_Inout_ Arena *a) {
+	UINT8 *img_base = a->data;
+	UINT64 n_threads = (UINT64)img_base [0]; 
 	
-#define update_arena (r, sz) 	\
-	r->data += sz; 				\
-	r->used += sz; 					
+#define update_arena (b, o, sz) \
+	b += sz;					\
+	o += sz;					\
 
-	update_arena (img_base, sizeof (UINT64));
-	offset += sizeof (UINT_PTR);
-
+	update_arena (img_base, a->offset, sizeof (UINT64)); // one-time thread count
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
-	for (int i = 0; i < n_threads; i++) { 
-		UINT64 param_sz = img_base->data [0]; 
+	for (int i = 0; i < n_threads; i++) {  // calculate size for all threads
+		UINT64 param_sz = img_base [0]; 
 
-		update_arena (img_base, sizeof (UINT64) + param_sz);
-		offset += sizeof (UINT64) + param_sz;
-
+		update_arena (img_base, a->offset, sizeof (UINT64) + param_sz);
 		if (!is_elf (img_base) || img_base [EI_CLASS] != ELFCLASS64) {
 			return; 
 		}
@@ -132,20 +123,11 @@ NATIVE_CALL VOID process_packets (Arena *a) {
 		a->entries [i].runtime_sz 	= elf_runtime_size (img_base->data, nullptr);
 		a->entries [i].packed_sz 	= elf_image_size (img_base->data);
 
-		UINT64 rt = a->entries [i].runtime_sz;
-		UINT64 pk = a->entries [i].packed_sz;
-
-		UINT64 needed = (rt > pk) ? (rt - pk) : 0;
-		if (needed != 0) { 
-			offset += rt;
-		} else {
-			offset += pk;
-		}
-
-		if (img_base->data + offset >= img_base->data + img_base->capacity) {
-			// expand arena
-		}
+		update_arena (img_base, a->offset, a->entries [i].packed_sz);
 	}
+
+	a->offset = 0;
+	return;
 }
 
 
