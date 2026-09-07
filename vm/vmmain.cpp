@@ -163,7 +163,7 @@ VOID NATIVE_CALL rvm64_main (_In_ Arena* a) {
 		threads [i] = CreateThread (nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, &thread_args[i], 0, nullptr); // TODO: redesign vmcs to handle multiple threads
 	}
 
-	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE);
+	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // infinite branch where nothing should loop
 
 	for (SIZE_T i = 0; i < a->count; i++) {
 		if (threads [i]) {
