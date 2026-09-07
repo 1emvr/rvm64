@@ -44,8 +44,6 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 {
 	UINT8 decoded = 0;
 	UINT8 opcode7 = opcode & 0x7F;
-	
-	// NOTE: Instant return/exception.
 	{
 		if (opcode == RV64_RET) { 
 			if (! PROCESS_MEMORY_IN_BOUNDS (Vmcs->Hdw.Regs [RA])) { 
@@ -56,8 +54,6 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 			Vmcs->Hdw.Pc -= 4;
 			return;
 		} 
-
-		// NOTE: ???
 		for (int idx = 0; idx < 18; idx++) {
 			if (encoding_table [idx].mask == opcode7) {
 				decoded = encoding_table [idx].type;
@@ -151,7 +147,6 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				}
 				break;
 			}
-
 		case RTYPE: 
 			{
 				sk_write (UINT8, RD, (opcode >> 7) & 0x1F);
@@ -423,7 +418,6 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				}
 				break;
 			}
-
 		case STYPE: 
 			{
 				UINT8 func3 = (opcode >> 12) & 0x7;
@@ -457,7 +451,6 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				}
 				break;
 			}
-
 		case BTYPE: 
 			{
 				UINT8 func3 = (opcode >> 12) & 0x7;
@@ -477,7 +470,6 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				}
 				break;
 			}
-
 		case UTYPE: 
 			{
 				sk_write (UINT8, RD, (opcode >> 7) & 0x1F);
@@ -490,7 +482,6 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				}
 				break;
 			}
-
 		case JTYPE:
 			{
 				sk_write (UINT8, RD, (opcode >> 7) & 0x1F);
@@ -502,10 +493,10 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				}
 				break;
 			}
-
-		default: {
-					 csr_trap (Vmcs->Hdw.Pc, InstructionIllegal, 0, opcode, 1);
-				 }
+		default: 
+			{
+				csr_trap (Vmcs->Hdw.Pc, InstructionIllegal, 0, opcode, 1);
+			}
 	}
 }
 
