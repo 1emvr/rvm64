@@ -228,14 +228,6 @@ typedef struct {
 
 
 typedef struct {
-	ARENA *code_arena;
-	ARENA *heap_arena;
-
-	struct {
-		HMODULE ucrtbase;
-		HMODULE kernel32;
-	} modules;
-
 	HANDLE 		oneshot_thread 	[MAX_VM_THREADS];		
 	HANDLE 		infinite_thread [MAX_VM_THREADS];		
 
@@ -246,17 +238,24 @@ typedef struct {
 
 	THREAD_ARGS t_args 		[MAX_VM_THREADS];
 	THREAD_HDW 	t_hardware 	[MAX_VM_THREADS];
+
+	ARENA *code_arena;
+	ARENA *heap_arena;
+
+	struct {
+		HMODULE ucrtbase;
+		HMODULE kernel32;
+	} modules;
 } VMCS;
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-	VOID save_registers (CPU_CONTEXT* context);
-	VOID load_registers (CPU_CONTEXT* context);
+	VOID save_registers (_In_ const CPU_CONTEXT* context);
+	VOID load_registers (_In_ const CPU_CONTEXT* context);
 
-	DATA_SCN VMCS* g_vmcs = 0;
-
+	VMCS* DATA_SCN g_vmcs = 0;
 #ifdef __cplusplus
 }
 #endif
