@@ -413,7 +413,7 @@ VOID NATIVE_CALL rvm64_main () {
 	}
 
 	// TODO: how do I determine what type a thread is? info should be packed in the file data, but need a way to separate
-	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // infinite branch where nothing should loop
+	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // maybe we don't wait until we're ready to read responses ?
 
 	for (SIZE_T i = 0; i < a->count; i++) {
 		if (threads [i]) {
