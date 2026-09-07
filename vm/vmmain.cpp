@@ -5,21 +5,31 @@
 // we can separate one-time runs from the forever threads. this way there is no deadlock
 
 #define MAX_VM_THREADS 5
-struct PACKET_SEG { 
-	UINT_PTR 	image_offset [MAX_VM_THREADS]; 
-	UINT_PTR 	param_offset [MAX_VM_THREADS];
-	SIZE_T 		count; 
-};
+typedef struct {
+	UINT64 elf_off;
+	UINT64 param_off;
+	UINT64 packed_sz;
+	UINT64 runtime_sz;
+} ElfEntry;
 
 
-NATIVE_CALL BOOL is_elf (_In_ UINT_PTR base) {
-	return base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
-			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
-}
+typedef struct {
+	UINT8 		*data;
+	UINT64 		capacity;
+	UINT64 		used;
+	ElfEntry 	*entries;
+	SIZE_T 		count;
+} Arena;
 
 
 NATIVE_CALL VOID thread_main () {
 	return;
+}
+
+
+NATIVE_CALL BOOL is_elf (_In_ const UINT8 *base) {
+	return base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
+			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
 }
 
 
@@ -54,52 +64,86 @@ NATIVE_CALL UINT64 elf_runtime_size (
 }
 
 
+NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
+	const ELF64_EHDR *ehdr =  (const ELF64_EHDR *)base;
+	UINT64 max = sizeof (ELF64_EHDR);
 
-NATIVE_CALL BOOL process_packets ( 
-		_Inout_ 	UINT_PTR* 		data,
-		_Inout_ 	UINT_PTR* 		data_sz,
-		_Out_ 		PACKET_SEG* 	new_vms)
-{
-	UINT8 *image_base 	= (UINT8*)*data;
-	UINT_PTR remaining 	= *data_sz;
-	UINT_PTR offset 	= 0;
+	if (ehdr->phoff) {		
+		UINT64 end = ehdr->eh_phoff + (UINT64)(ehde->e_phnum * ehdr->e_phentsize);
+		if (end > max) max = end;
+	}
+	if (ehdr->e_phoff) {
+		const ELF64_PHDR *phdr = (const ELF64_PHDR *)(base + ehdr->e_phoff);
 
-#define update_arena_space (sz) 						\
-	if (remaining - sz <= 0) {/*idk do something...*/}  \
-	offset 		+= sz; 									\
-	image_base 	+= sz; 									\
-	remaining 	-= sz; 
+		for (int i = 0; i < ehdr->e_phnum; i++) {
+			UINT64 end = phdr [i]. ph_offset + phdr [i].p_filesz;
+			if (end > max) max = end;
+		}
+	}
+	if (ehdr->e_shoff) {
+		UINT64 end = ehdr->e_shoff + (UINT64)(ehdr->e_shnum * ehdr->e_shentsize);
+		if (end > max) max = end;
 
-	UINT_PTR n_threads = image_base [0]; 
-	update_arena_space (sizeof (UINT_PTR));
+		const ELF64_SHDR *shdr = (const ELF64_SHDR *)base + ehdr->e_shoff;
+
+		for (int i = 0; i < ehdr->e_shnum; i++) {
+			if (shdr [i].sh_type == SHT_NOBITS) {
+				continue;
+			}
+
+			UINT64 end2 = shdr [i].sh_offset + shdr [i].sh_size;
+			if (end2 > max) max = end2;
+		}
+	}
+	return max;
+}
+
+
+NATIVE_CALL VOID process_packets (Arena *a) {
+	Arena *img_base = a;
+
+	UINT_PTR offset = 0;
+	UINT_PTR n_threads = (UINT_PTR) img_base->data [0]; 
+
+	// We can't actually update offsets until we've expanded the arena then moved everything...
+	// But we can still get the sizes.
+#define update_arena (r, sz) 	\
+	r->data += sz; 				\
+	r->used += sz; 					
+
+	update_arena (img_base, sizeof (UINT_PTR));
+	offset += sizeof (UINT_PTR);
 
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 	for (int i = 0; i < n_threads; i++) { 
-		UINT_PTR param_sz = image_base [0]; // packed data is [param (size/data), elf (size/data), (_pt_load_space)], ... 
-											
-		if (param_sz != 0) {						
-			new_vms->param_offset [i] = offset; // param offset starts at the size so that it's quickly available to read
+		UINT_PTR param_sz = img_base->data [0]; 
+
+		update_arena (img_base, sizeof (UINT_PTR) + param_sz);
+		offset += sizeof (UINT_PTR) + param_sz;
+
+		if (!is_elf (img_base) || img_base [EI_CLASS] != ELFCLASS64) {
+			return; // or not.
 		}
 
-		update_arena_space (sizeof (UINT_PTR) + param_sz);
-		new_vms->image_offset [i] = offset; 
+		a->entries [i].runtime_sz 	= elf_runtime_size (img_base->data, nullptr);
+		a->entries [i].packed_sz 	= elf_image_size (img_base->data);
 
-		UINT_PTR elf_sz = image_base [0];
-		update_arena_space (sizeof (UINT_PTR)); // packed elf size for efficiency
+		UINT64 rt = a->entries [i].runtime_sz;
+		UINT64 pk = a->entries [i].packed_sz;
 
-		if (!is_elf (image_base) || image_base [EI_CLASS] != ELFCLASS64) {
-			return false;
+		UINT64 needed = (rt > pk) ? (rt - pk) : 0;
+		if (needed != 0) { 
+			offset += rt;
+		} else {
+			offset += pk;
 		}
 
-		UINT64 runtime_sz = elf_runtime_size (image_base, nullptr);
-		if (elf_sz < runtime_sz) {
-
+		if (img_base->data + offset >= img_base->data + img_base->capacity) {
+			// expand arena
 		}
-		new_vms->count += 1;
 	}
-	return true;
 }
 
 
@@ -118,14 +162,14 @@ NATIVE_CALL VOID rvm64_main (
 	}
 
 	for (int i = 0; i < new_vms.count; i++) {
-		UINT_PTR image_base = *data + new_vms.image_offset [i];
+		UINT_PTR img_base = *data + new_vms.image_offset [i];
 		UINT_PTR param_base = *data + new_vms.param_offset [i];
 
 		if (param_base [0] == 0) {
 			param_base = nullptr;
 		}
 
-		threads [i] = CreateThread (nullptr, 0, vm_thread (image_base), param_base, 0, nullptr); // TODO: redesign vmcs to handle multiple threads
+		threads [i] = CreateThread (nullptr, 0, vm_thread (img_base), param_base, 0, nullptr); // TODO: redesign vmcs to handle multiple threads
 	}
 
 	WaitForMultipleObjects (new_vms.count, &threads, true, 5000);
