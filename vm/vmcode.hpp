@@ -59,49 +59,49 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 
 		// NOTE: ???
 		for (int idx = 0; idx < 18; idx++) {
-			if (EncodingTable [idx].Mask == opcode7) {
-				Decoded = EncodingTable [idx].Type;
+			if (encoding_table [idx].mask == opcode7) {
+				decoded = encoding_table [idx].type;
 				break;
 			}
 		}
-		if (! Decoded) {
+		if (! decoded) {
 			csr_trap (Vmcs->Hdw.Pc, InstructionIllegal, 0, opcode, 1);
 		}
 	}
 
-	switch(Decoded) {
+	switch(decoded) {
 		case ITYPE: 
 			{
-				UINT8 Func3 = (opcode >> 12) & 0x7;
+				UINT8 func3 = (opcode >> 12) & 0x7;
 				sk_write (UINT8, RD, (opcode >> 7) & 0x1F);
 				sk_write (UINT8, RS1, (opcode >> 15) & 0x1F);
 
 				switch(opcode7) {
 					case 0b1110011:
 						{
-							auto Imm = imm_i (opcode);
-							switch (Imm) {
-								case 0b000000000000: { Opcall (_ECALL); break; }
-								case 0b000000000001: { Opcall (_EBREAK); break; }
+							auto imm = imm_i (opcode);
+							switch (imm) {
+								case 0b000000000000: { opcall (_ECALL); break; }
+								case 0b000000000001: { opcall (_EBREAK); break; }
 								default: break;
 							}
 							break;
 						}
 					case 0b0010011: 
 						{
-							switch(Func3) {
-								case 0b000: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_ADDI); break; }
-								case 0b010: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_SLTI); break; }
-								case 0b011: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_SLTIU); break; }
-								case 0b100: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_XORI); break; }
-								case 0b110: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_ORI);  break; }
-								case 0b111: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_ANDI); break; }
-								case 0b001: { sk_write (INT32, Imm, shamt_i (opcode)); Opcall (_SLLI); break; }
+							switch(func3) {
+								case 0b000: { sk_write (INT32, imm, imm_i (opcode)); opcall (_ADDI); break; }
+								case 0b010: { sk_write (INT32, imm, imm_i (opcode)); opcall (_SLTI); break; }
+								case 0b011: { sk_write (INT32, imm, imm_i (opcode)); opcall (_SLTIU); break; }
+								case 0b100: { sk_write (INT32, imm, imm_i (opcode)); opcall (_XORI); break; }
+								case 0b110: { sk_write (INT32, imm, imm_i (opcode)); opcall (_ORI);  break; }
+								case 0b111: { sk_write (INT32, imm, imm_i (opcode)); opcall (_ANDI); break; }
+								case 0b001: { sk_write (INT32, imm, shamt_i (opcode)); opcall (_SLLI); break; }
 								case 0b101: {
-												UINT8 Msb = (opcode >> 25) & 0x7F; 
-												switch(Msb) {
-													case 0b0000000: { sk_write (INT32, Imm, shamt_i (opcode)); Opcall (_SRLI); break; }
-													case 0b0100000: { sk_write (INT32, Imm, shamt_i (opcode)); Opcall (_SRAI); break; }
+												UINT8 msb = (opcode >> 25) & 0x7F; 
+												switch(msb) {
+													case 0b0000000: { sk_write (INT32, imm, shamt_i (opcode)); opcall (_SRLI); break; }
+													case 0b0100000: { sk_write (INT32, imm, shamt_i (opcode)); opcall (_SRAI); break; }
 													default: break;
 												}
 											}
@@ -112,14 +112,14 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 					case 0b0011011: 
 						{
 							switch(func3) {
-								case 0b000: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_ADDIW); break; }
-								case 0b001: { sk_write (INT32, Imm, shamt_i (opcode)); Opcall (_SLLIW); break; }
+								case 0b000: { sk_write (INT32, imm, imm_i (opcode)); opcall (_ADDIW); break; }
+								case 0b001: { sk_write (INT32, imm, shamt_i (opcode)); opcall (_SLLIW); break; }
 								case 0b101: 
 											{
-												UINT8 Msb = (opcode >> 25) & 0x7F;
-												switch(Msb) {
-													case 0b0000000: { sk_write (INT32, Imm, shamt_i (opcode)); Opcall (_SRLIW); break; }
-													case 0b0100000: { sk_write (INT32, Imm, shamt_i (opcode)); Opcall (_SRAIW); break; }
+												UINT8 msb = (opcode >> 25) & 0x7F;
+												switch(msb) {
+													case 0b0000000: { sk_write (INT32, imm, shamt_i (opcode)); opcall (_SRLIW); break; }
+													case 0b0100000: { sk_write (INT32, imm, shamt_i (opcode)); opcall (_SRAIW); break; }
 													default: break;
 												}
 											}
@@ -129,22 +129,22 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 						}
 					case 0b0000011: 
 						{
-							switch(Func3) {
-								case 0b000: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_LB); break;  }
-								case 0b001: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_LH); break;  }
-								case 0b010: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_LW); break;  }
-								case 0b100: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_LBU); break; }
-								case 0b101: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_LHU); break; }
-								case 0b110: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_LWU); break; }
-								case 0b011: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_LD); break;  }
+							switch(func3) {
+								case 0b000: { sk_write (INT32, imm, imm_i (opcode)); opcall (_LB); break;  }
+								case 0b001: { sk_write (INT32, imm, imm_i (opcode)); opcall (_LH); break;  }
+								case 0b010: { sk_write (INT32, imm, imm_i (opcode)); opcall (_LW); break;  }
+								case 0b100: { sk_write (INT32, imm, imm_i (opcode)); opcall (_LBU); break; }
+								case 0b101: { sk_write (INT32, imm, imm_i (opcode)); opcall (_LHU); break; }
+								case 0b110: { sk_write (INT32, imm, imm_i (opcode)); opcall (_LWU); break; }
+								case 0b011: { sk_write (INT32, imm, imm_i (opcode)); opcall (_LD); break;  }
 								default: break;
 							}
 							break;
 						}
 					case 0b1100111:
 						{
-							switch(Func3) {
-								case 0b000: { sk_write (INT32, Imm, imm_i (opcode)); Opcall (_JALR); break; }
+							switch(func3) {
+								case 0b000: { sk_write (INT32, imm, imm_i (opcode)); opcall (_JALR); break; }
 							}
 						}
 					default: break;
@@ -161,18 +161,18 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				switch(opcode7) {
 					case 0b1010011: 
 						{
-							UINT8 Func7 = (opcode >> 25) & 0x7F;
-							switch(Func7) {
-								case 0b0000001: { Opcall (_FADD_D); break; }
-								case 0b0000101: { Opcall (_FSUB_D); break; }
-								case 0b0001001: { Opcall (_FMUL_D); break; }
-								case 0b0001101: { Opcall (_FDIV_D); break; }
-								case 0b1111001: { Opcall (_FMV_D_X); break; }
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							switch(func7) {
+								case 0b0000001: { opcall (_FADD_D); break; }
+								case 0b0000101: { opcall (_FSUB_D); break; }
+								case 0b0001001: { opcall (_FMUL_D); break; }
+								case 0b0001101: { opcall (_FDIV_D); break; }
+								case 0b1111001: { opcall (_FMV_D_X); break; }
 								case 0b0100000: 
 												{
 													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
 													switch(FcvtMask) {
-														case 0b00001: { Opcall (_FCVT_S_D); break; }
+														case 0b00001: { opcall (_FCVT_S_D); break; }
 														default: break;
 													}
 													break;
@@ -181,7 +181,7 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 												{
 													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
 													switch(FcvtMask) {
-														case 0b00000: { Opcall (_FCVT_D_S); break; }
+														case 0b00000: { opcall (_FCVT_D_S); break; }
 														default: break;
 													}
 													break;
@@ -190,8 +190,8 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 												{
 													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
 													switch(FcvtMask) {
-														case 0b00000: { Opcall (_FCVT_W_D); break; }
-														case 0b00001: { Opcall (_FCVT_WU_D); break; }
+														case 0b00000: { opcall (_FCVT_W_D); break; }
+														case 0b00001: { opcall (_FCVT_WU_D); break; }
 														default: break;
 													}
 													break;
@@ -200,49 +200,49 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 												{
 													UINT8 FcvtMask = (opcode >> 20) & 0x1F;
 													switch(FcvtMask) {
-														case 0b00000: { Opcall (_FCVT_D_W); break; }
-														case 0b00001: { Opcall (_FCVT_D_WU); break; }
+														case 0b00000: { opcall (_FCVT_D_W); break; }
+														case 0b00001: { opcall (_FCVT_D_WU); break; }
 														default: break;
 													}
 													break;
 												}
 								case 0b0010001: 
 												{
-													UINT8 Func3 = (opcode >> 12) & 0x7;
-													switch(Func3) {
-														case 0b000: { Opcall (_FSGNJ_D); break; }
-														case 0b001: { Opcall (_FSGNJN_D); break; }
-														case 0b010: { Opcall (_FSGNJX_D); break; }
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b000: { opcall (_FSGNJ_D); break; }
+														case 0b001: { opcall (_FSGNJN_D); break; }
+														case 0b010: { opcall (_FSGNJX_D); break; }
 														default: break;
 													}
 													break;
 												}
 								case 0b0010101: 
 												{
-													UINT8 Func3 = (opcode >> 12) & 0x7;
-													switch(Func3) {
-														case 0b000: { Opcall (_FMIN_D); break; }
-														case 0b001: { Opcall (_FMAX_D); break; }
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b000: { opcall (_FMIN_D); break; }
+														case 0b001: { opcall (_FMAX_D); break; }
 														default: break;
 													}
 													break;
 												}
 								case 0b1010001: 
 												{
-													UINT8 Func3 = (opcode >> 12) & 0x7;
-													switch(Func3) {
-														case 0b010: { Opcall (_FEQ_D); break; }
-														case 0b001: { Opcall (_FLT_D); break; }
-														case 0b000: { Opcall (_FLE_D); break; }
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b010: { opcall (_FEQ_D); break; }
+														case 0b001: { opcall (_FLT_D); break; }
+														case 0b000: { opcall (_FLE_D); break; }
 														default: break;
 													}
 													break;
 												}
 								case 0b1110001: 
 												{
-													UINT8 Func3 = (opcode >> 12) & 0x7;
-													switch(Func3) {
-														case 0b001: { Opcall (_FCLASS_D); break; }
+													UINT8 func3 = (opcode >> 12) & 0x7;
+													switch(func3) {
+														case 0b001: { opcall (_FCLASS_D); break; }
 														default: break;
 													}
 													break;
@@ -253,43 +253,43 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 						}
 					case 0b0101111: 
 						{
-							UINT8 Func7 = (opcode >> 25) & 0x7F;
-							UINT8 Func5 = (Func7 >> 2) & 0x1F;
-							UINT8 Func3 = (opcode >> 12) & 0x7;
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							UINT8 func5 = (func7 >> 2) & 0x1F;
+							UINT8 func3 = (opcode >> 12) & 0x7;
 
-							switch(Func3) {
+							switch(func3) {
 								case 0b010: 
 									{
-										switch(Func5) {
-											case 0b00010: { Opcall (_LRW); break; }
-											case 0b00011: { Opcall (_SCW); break; }
-											case 0b00001: { Opcall (_AMOSWAP_W); break; }
-											case 0b00000: { Opcall (_AMOADD_W); break; }
-											case 0b00100: { Opcall (_AMOXOR_W); break; }
-											case 0b01100: { Opcall (_AMOAND_W); break; }
-											case 0b01000: { Opcall (_AMOOR_W); break; }
-											case 0b10000: { Opcall (_AMOMIN_W); break; }
-											case 0b10100: { Opcall (_AMOMAX_W); break; }
-											case 0b11000: { Opcall (_AMOMINU_W); break; }
-											case 0b11100: { Opcall (_AMOMAXU_W); break; }
+										switch(func5) {
+											case 0b00010: { opcall (_LRW); break; }
+											case 0b00011: { opcall (_SCW); break; }
+											case 0b00001: { opcall (_AMOSWAP_W); break; }
+											case 0b00000: { opcall (_AMOADD_W); break; }
+											case 0b00100: { opcall (_AMOXOR_W); break; }
+											case 0b01100: { opcall (_AMOAND_W); break; }
+											case 0b01000: { opcall (_AMOOR_W); break; }
+											case 0b10000: { opcall (_AMOMIN_W); break; }
+											case 0b10100: { opcall (_AMOMAX_W); break; }
+											case 0b11000: { opcall (_AMOMINU_W); break; }
+											case 0b11100: { opcall (_AMOMAXU_W); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b011: 
 									{
-										switch(Func5) {
-											case 0b00010: { Opcall (_LRD); break; }
-											case 0b00011: { Opcall (_SCD); break; }
-											case 0b00001: { Opcall (_AMOSWAP_D); break; }
-											case 0b00000: { Opcall (_AMOADD_D); break; }
-											case 0b00100: { Opcall (_AMOXOR_D); break; }
-											case 0b01100: { Opcall (_AMOAND_D); break; }
-											case 0b01000: { Opcall (_AMOOR_D); break; }
-											case 0b10000: { Opcall (_AMOMIN_D); break; }
-											case 0b10100: { Opcall (_AMOMAX_D); break; }
-											case 0b11000: { Opcall (_AMOMINU_D); break; }
-											case 0b11100: { Opcall (_AMOMAXU_D); break; }
+										switch(func5) {
+											case 0b00010: { opcall (_LRD); break; }
+											case 0b00011: { opcall (_SCD); break; }
+											case 0b00001: { opcall (_AMOSWAP_D); break; }
+											case 0b00000: { opcall (_AMOADD_D); break; }
+											case 0b00100: { opcall (_AMOXOR_D); break; }
+											case 0b01100: { opcall (_AMOAND_D); break; }
+											case 0b01000: { opcall (_AMOOR_D); break; }
+											case 0b10000: { opcall (_AMOMIN_D); break; }
+											case 0b10100: { opcall (_AMOMAX_D); break; }
+											case 0b11000: { opcall (_AMOMINU_D); break; }
+											case 0b11100: { opcall (_AMOMAXU_D); break; }
 											default: break;
 										}
 										break;
@@ -300,115 +300,115 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 						}
 					case 0b0111011: 
 						{
-							UINT8 Func7 = (opcode >> 25) & 0x7F;
-							UINT8 Func3 = (opcode >> 12) & 0x7;
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							UINT8 func3 = (opcode >> 12) & 0x7;
 
-							switch(Func3) {
+							switch(func3) {
 								case 0b000: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_ADDW); break; }
-											case 0b0100000: { Opcall (_SUBW); break; }
-											case 0b0000001: { Opcall (_MULW); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_ADDW); break; }
+											case 0b0100000: { opcall (_SUBW); break; }
+											case 0b0000001: { opcall (_MULW); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b101: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_SRLW); break; }
-											case 0b0100000: { Opcall (_SRAW); break; }
-											case 0b0000001: { Opcall (_DIVUW); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_SRLW); break; }
+											case 0b0100000: { opcall (_SRAW); break; }
+											case 0b0000001: { opcall (_DIVUW); break; }
 											default: break;
 										}
 										break;
 									}
-								case 0b001: { Opcall (_SLLW); break; }
-								case 0b100: { Opcall (_DIVW); break; }
-								case 0b110: { Opcall (_REMW); break; }
-								case 0b111: { Opcall (_REMUW); break; }
+								case 0b001: { opcall (_SLLW); break; }
+								case 0b100: { opcall (_DIVW); break; }
+								case 0b110: { opcall (_REMW); break; }
+								case 0b111: { opcall (_REMUW); break; }
 								default: break;
 							}
 							break;
 						}
 					case 0b0110011: 
 						{
-							UINT8 Func7 = (opcode >> 25) & 0x7F;
-							UINT8 Func3 = (opcode >> 12) & 0x7;
+							UINT8 func7 = (opcode >> 25) & 0x7F;
+							UINT8 func3 = (opcode >> 12) & 0x7;
 
-							switch(Func3) {
+							switch(func3) {
 								case 0b000: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_ADD); break; }
-											case 0b0100000: { Opcall (_SUB); break; }
-											case 0b0000001: { Opcall (_MUL); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_ADD); break; }
+											case 0b0100000: { opcall (_SUB); break; }
+											case 0b0000001: { opcall (_MUL); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b001: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_SLL); break; }
-											case 0b0000001: { Opcall (_MULH); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_SLL); break; }
+											case 0b0000001: { opcall (_MULH); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b010: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_SLT); break; }
-											case 0b0000001: { Opcall (_MULHSU); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_SLT); break; }
+											case 0b0000001: { opcall (_MULHSU); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b011: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_SLTU); break; }
-											case 0b0000001: { Opcall (_MULHU); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_SLTU); break; }
+											case 0b0000001: { opcall (_MULHU); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b100: 
 									{
-										switch(Func7) {
+										switch(func7) {
 
-											case 0b0000000: { Opcall (_XOR); break; }
-											case 0b0000001: { Opcall (_DIV); break; }
+											case 0b0000000: { opcall (_XOR); break; }
+											case 0b0000001: { opcall (_DIV); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b101: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_SRL); break; }
-											case 0b0100000: { Opcall (_SRA); break; }
-											case 0b0000001: { Opcall (_DIVU); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_SRL); break; }
+											case 0b0100000: { opcall (_SRA); break; }
+											case 0b0000001: { opcall (_DIVU); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b110: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_OR); break; }
-											case 0b0000001: { Opcall (_REM); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_OR); break; }
+											case 0b0000001: { opcall (_REM); break; }
 											default: break;
 										}
 										break;
 									}
 								case 0b111: 
 									{
-										switch(Func7) {
-											case 0b0000000: { Opcall (_AND); break; }
-											case 0b0000001: { Opcall (_REMU); break; }
+										switch(func7) {
+											case 0b0000000: { opcall (_AND); break; }
+											case 0b0000001: { opcall (_REMU); break; }
 											default: break;
 										}
 										break;
@@ -426,7 +426,7 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 
 		case STYPE: 
 			{
-				UINT8 Func3 = (opcode >> 12) & 0x7;
+				UINT8 func3 = (opcode >> 12) & 0x7;
 
 				sk_write (UINT8, RS2, (opcode >> 20) & 0x1F);
 				sk_write (UINT8, RS1, (opcode >> 15) & 0x1F);
@@ -435,23 +435,24 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				switch(opcode7) {
 					case 0b0100011: 
 						{
-							switch(Func3) {
-								case 0b000: { Opcall (_SB); break; }
-								case 0b001: { Opcall (_SH); break; }
-								case 0b010: { Opcall (_SW); break; }
-								case 0b011: { Opcall (_SD); break; }
+							switch(func3) {
+								case 0b000: { opcall (_SB); break; }
+								case 0b001: { opcall (_SH); break; }
+								case 0b010: { opcall (_SW); break; }
+								case 0b011: { opcall (_SD); break; }
 								default: break;
 							}
 							break;
 						}
-					case 0b0100111: {
-										switch(Func3) {
-											case 0b010: { Opcall (_FSW); break; }
-											case 0b011: { Opcall (_FSD); break; }
-											default: break;
-										}
-										break;
-									}
+					case 0b0100111: 
+						{
+							switch(func3) {
+								case 0b010: { opcall (_FSW); break; }
+								case 0b011: { opcall (_FSD); break; }
+								default: break;
+							}
+							break;
+						}
 					default: break;
 				}
 				break;
@@ -459,19 +460,19 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 
 		case BTYPE: 
 			{
-				UINT8 Func3 = (opcode >> 12) & 0x7;
+				UINT8 func3 = (opcode >> 12) & 0x7;
 
 				sk_write (UINT8, RS2, (opcode >> 20) & 0x1F);
 				sk_write (UINT8, RS1, (opcode >> 15) & 0x1F);
 				sk_write (INT32, IMM, imm_b (opcode));
 
-				switch(Func3) {
-					case 0b000: { Opcall (_BEQ); break; }
-					case 0b001: { Opcall (_BNE); break; }
-					case 0b100: { Opcall (_BLT); break; }
-					case 0b101: { Opcall (_BGE); break; }
-					case 0b110: { Opcall (_BLTU); break; }
-					case 0b111: { Opcall (_BGEU); break; }
+				switch(func3) {
+					case 0b000: { opcall (_BEQ); break; }
+					case 0b001: { opcall (_BNE); break; }
+					case 0b100: { opcall (_BLT); break; }
+					case 0b101: { opcall (_BGE); break; }
+					case 0b110: { opcall (_BLTU); break; }
+					case 0b111: { opcall (_BGEU); break; }
 					default: break;
 				}
 				break;
@@ -483,8 +484,8 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				sk_write (INT32, IMM, imm_u (opcode));
 
 				switch(opcode7) {
-					case 0b0110111: { Opcall (_LUI); break; }
-					case 0b0010111: { Opcall (_AUIPC); break; }
+					case 0b0110111: { opcall (_LUI); break; }
+					case 0b0010111: { opcall (_AUIPC); break; }
 					default: break;
 				}
 				break;
@@ -496,7 +497,7 @@ VOID VM_CALL decode (_In_ const UINT32 opcode)
 				sk_write (INT32, IMM, imm_j (opcode));
 
 				switch(opcode7) {
-					case 0b1101111: { Opcall (_JAL); break; }
+					case 0b1101111: { opcall (_JAL); break; }
 					default: break;
 				}
 				break;
