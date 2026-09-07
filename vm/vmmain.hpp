@@ -227,7 +227,9 @@ typedef struct {
 
 
 typedef struct {
-	ARENA 		*arena;
+	ARENA 		*code_arena;
+	ARENA 		*heap_arena;
+
 	struct {
 		HMODULE ucrtbase;
 		HMODULE kernel32;
@@ -415,8 +417,8 @@ VOID NATIVE_CALL arena_release (_In_ const ARENA *a) {
 
 
 BOOL NATIVE_CALL calculate_runtime_size () {
-	UINT8 *cursor 		= g_vmcs->arena->data;
-	ElfEntry *entries 	= g_vmcs->arena->entries;
+	UINT8 *cursor 		= g_vmcs->code_arena->data;
+	ElfEntry *entries 	= g_vmcs->code_arena->entries;
 
 	UINT64 offset 		= 0;
 	UINT64 n_threads 	= (UINT64)cursor [0]; 
@@ -450,10 +452,10 @@ BOOL NATIVE_CALL calculate_runtime_size () {
 	for (int i = 0; i < n_threads; i++) {
 		total += entries [i].runtime_sz;
 	}
-	if (total > g_vmcs->arena->capacity) {
-		ARENA *new_a = arena_realloc (g_vmcs->arena, total);
+	if (total > g_vmcs->code_arena->capacity) {
+		ARENA *new_a = arena_realloc (g_vmcs->code_arena, total);
 
-		g_vmcs->arena = new_a;
+		g_vmcs->code_arena = new_a;
 		cursor = offset; // unnecessary ??	
 	}
 
