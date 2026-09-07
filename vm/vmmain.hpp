@@ -369,7 +369,7 @@ BOOL NATIVE_CALL calculate_runtime_size () {
 		return false;
 	}
 
-	for (int i = 0; i < n_threads; i++) {  
+	for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {  
 		// TODO: determine types of threads (here or during relocation)
 		UINT64 param_sz = cursor [0]; 
 
@@ -378,16 +378,16 @@ BOOL NATIVE_CALL calculate_runtime_size () {
 			return false; 
 		}
 
-		entries [i].runtime_sz 	= elf_runtime_size (cursor, nullptr);
-		entries [i].packed_sz 	= elf_image_size (cursor);
+		entries [thread_index].runtime_sz 	= elf_runtime_size (cursor, nullptr);
+		entries [thread_index].packed_sz 	= elf_image_size (cursor);
 
-		update_arena (cursor, offset, entries [i].packed_sz);
+		update_arena (cursor, offset, entries [thread_index].packed_sz);
 	}
 
 	UINT64 total = 0;
 
-	for (int i = 0; i < n_threads; i++) {
-		total += entries [i].runtime_sz;
+	for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {
+		total += entries [thread_index].runtime_sz;
 	}
 	if (total > g_vmcs->code_arena->capacity) {
 		ARENA *new_a = arena_realloc (g_vmcs->code_arena, total);
