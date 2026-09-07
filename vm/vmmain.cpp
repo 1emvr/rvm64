@@ -99,7 +99,7 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 }
 
 
-NATIVE_CALL VOID process_packets (_Inout_ Arena *a) {
+NATIVE_CALL BOOL process_packets (_Inout_ Arena *a) {
 	UINT8 *img_base = a->data;
 	UINT64 n_threads = (UINT64)img_base [0]; 
 	
@@ -117,17 +117,25 @@ NATIVE_CALL VOID process_packets (_Inout_ Arena *a) {
 
 		update_arena (img_base, a->offset, sizeof (UINT64) + param_sz);
 		if (!is_elf (img_base) || img_base [EI_CLASS] != ELFCLASS64) {
-			return; 
+			return false; 
 		}
 
-		a->entries [i].runtime_sz 	= elf_runtime_size (img_base->data, nullptr);
-		a->entries [i].packed_sz 	= elf_image_size (img_base->data);
+		a->entries [i].runtime_sz 	= elf_runtime_size (img_base, nullptr);
+		a->entries [i].packed_sz 	= elf_image_size (img_base);
 
 		update_arena (img_base, a->offset, a->entries [i].packed_sz);
 	}
 
+	UINT64 total = 0;
+	for (int i = 0; i < n_threads; i++) {
+		total += a->entries [i].packed_sz;
+	}
+	if (total > a->capacity) {
+		// arena_realloc (a, total);
+	}
+
 	a->offset = 0;
-	return;
+	return true;
 }
 
 
@@ -135,19 +143,16 @@ NATIVE_CALL VOID rvm64_main (
 		_In_ const UINT_PTR* data, 	// data points to a pre-made arena
 		_In_ const UINT_PTR* data_sz) 
 {
+	Arena a = { };
+
+	if (!process_packets (&a)) goto defer;
+	if (a.count == 0) return;
+
 	HANDLE threads [MAX_VM_THREADS] = { };		
-	PACKET_SEG new_vms = { };
 
-	if (!process_packets (data, data_sz, &new_vms)) { // track param_base / elf data offsets 
-		goto defer;
-	}
-	if (new_vms.count == 0) {
-		return;
-	}
-
-	for (int i = 0; i < new_vms.count; i++) {
-		UINT_PTR img_base = *data + new_vms.image_offset [i];
-		UINT_PTR param_base = *data + new_vms.param_offset [i];
+	for (int i = 0; i < a.count; i++) {
+		UINT_PTR img_base =  a.data + a.entries [i]. elf_off;
+		UINT_PTR param_base = a.data + a.entries [i]. param_offset;
 
 		if (param_base [0] == 0) {
 			param_base = nullptr;
@@ -158,7 +163,6 @@ NATIVE_CALL VOID rvm64_main (
 
 	WaitForMultipleObjects (new_vms.count, &threads, true, 5000);
 	// post_thread_response () ??
-	//
 defer:
 	// arena_release () ??
 }
