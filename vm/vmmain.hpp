@@ -375,7 +375,9 @@ ARENA* NATIVE_CALL arena_realloc (
 		_In_ const ARENA *a, 
 		_In_ const UINT64 size) 
 {
-	if (!a) return nullptr;
+	if (!a || a->capacity > size) {
+		return nullptr;
+	}
 
 	ARENA *new_a = (ARENA*)VirtualAlloc (nullptr, sizeof (ARENA), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	if (!new_a) return nullptr; 
