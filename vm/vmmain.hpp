@@ -436,6 +436,8 @@ VOID NATIVE_CALL rvm64_main (
 		g_vmcs->t_args [i].elf_base 	= elf_base;
 		g_vmcs->t_args [i].param_base 	= param_base;
 
+		// TODO: relocate_elf_files ();
+
 		UINT64 type = g_vmcs->t_type [i];
 
 		if (type == SINGLE EXEC) {
