@@ -423,15 +423,12 @@ BOOL NATIVE_CALL start_thread (
 }
 
 
-VOID NATIVE_CALL rvm64_main (
-		_In_ const UINT_PTR data, 
-		_In_ const UINT_PTR data_sz) 
-{
+VOID NATIVE_CALL rvm64_main () {
 	ARENA *a = g_vmcs->arena;
 
 	UINT_PTR data 		= a->data;
 	ElfEntry *entries 	= a->entries;
-
+.
 	if (!calculate_runtime_size ()) {
 		goto defer;
 	}
@@ -445,7 +442,7 @@ VOID NATIVE_CALL rvm64_main (
 	 */ 
 	
 	for (UINT8 thread_index = 0; thread_index < a->count; thread_index++) {
-		UINT_PTR elf_base 	= data + entires [thread_index].elf_off; // elf/param offset doens't actually get evaluated anywhere...
+		UINT_PTR elf_base 	= data + entires [thread_index].elf_off; // elf/param offset doens't actually get evaluated anywhere. Needs calculate_runtime_memory ()
 		UINT_PTR param_base = data + entries [thread_index].param_off;
 
 		if (param_base [0] == 0) param_base = nullptr;
@@ -487,12 +484,13 @@ defer:
 
 
 VOID NATIVE_CALL rvm64_start (
-		_In_ const UINT_PTR* data,
-		_In_ const UINT_PTR* data_sz) 
+		_In_ const UINT_PTR* data, 
+		_In_ const UINT_PTR* data_size) 
 {
 	VMCS instance = { };
 	g_vmcs = &instance; // a global vmcs instance to track everything (?)
 
+	rvm64_memory_init (data, data_size);
 	rvm64_main (data, data_sz); // TODO: arena_allocate () 
 }
 #endif

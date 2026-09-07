@@ -111,14 +111,19 @@ VOID NATIVE_CALL arena_release (_In_ const ARENA *a) {
 }
 
 
-VOID NATIVE_CALL rvm64_memory_init () {
-	g_vmcs->code_arena = (UINT64) arena_alloc (DEFAULT_ARENA_SIZE); 
+VOID NATIVE_CALL rvm64_memory_init (
+		_In_ const UINT_PTR* data, 
+		_In_ const UINT_PTR* data_size) 
+{
+	g_vmcs->code_arena = (UINT64) arena_alloc (data_size); 
 	g_vmcs->heap_arena = (UINT64) arena_alloc (DEFAULT_ARENA_SIZE); 
 
 	if (!g_vmcs->code_arena || !g_vmcs->heap_arena) {
 		csr_trap (nullptr, GetLastError (), 0, 0, 1);
 		return;
 	}
+
+	CopyMemory (g_vmcs->code_arena, data, data_size);
 
 	g_vmcs->modules.kernel32 = GetModuleHandle ("kernel32.dll"); // TODO: switch to dyna-modules
 	g_vmcs->modules.ucrtbase = GetModuleHandle ("ucrtbase.dll");
