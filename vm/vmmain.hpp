@@ -229,7 +229,7 @@ typedef struct {
 
 typedef struct {
 	HANDLE 		one_thread 	[MAX_VM_THREADS];		
-	HANDLE 		inf_thread [MAX_VM_THREADS];		
+	HANDLE 		inf_thread 	[MAX_VM_THREADS];		
 
 	HANDLE 		tid 		[MAX_VM_THREADS];		
 	HANDLE 		t_type 		[MAX_VM_THREADS];		
