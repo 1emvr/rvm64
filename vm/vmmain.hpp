@@ -442,11 +442,19 @@ VOID NATIVE_CALL rvm64_main (
 		UINT64 type = g_vmcs->t_type [i];
 
 		if (type == SINGLE EXEC) {
-			if (!start_thread (&g_vmcs->s_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->t_args [i])) {
+			if (!start_thread (
+						&g_vmcs->s_thread [i], 
+						(LPTHREAD_START_ROUTINE)thread_main, 
+						(LPVOID)&g_vmcs->t_args [i])) 
+			{
 				a->count -= 1;
 			}
 		} else if (type == INFINITE_EXEC) {
-			if (!start_thread (&g_vmcs->s_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->t_args [i])) { // how do we access these infinite threads?
+			if (!start_thread (
+						&g_vmcs->s_thread [i], 
+						(LPTHREAD_START_ROUTINE)thread_main, 
+						(LPVOID)&g_vmcs->t_args [i])) 
+			{ // how do we access these infinite threads?
 				a->count -= 1;
 			}
 		} else {
@@ -454,8 +462,8 @@ VOID NATIVE_CALL rvm64_main (
 			// error
 		}
 	}
+
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->s_thread, true, INFINITE); 
-																					  
 	for (HANDLE i = 0; i < a->count; i++) {
 		if (g_vmcs->s_thread [i]) {
 
