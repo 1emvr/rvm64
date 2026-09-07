@@ -392,7 +392,7 @@ VOID NATIVE_CALL rvm64_main (
 		_In_ const UINT_PTR data, 
 		_In_ const UINT_PTR data_sz) 
 {
-	ARENA *a 			= g_vmcs->arena;
+	ARENA *a = g_vmcs->arena;
 
 	UINT_PTR data 		= a->data;
 	ElfEntry *entries 	= a->entries;
@@ -414,7 +414,9 @@ VOID NATIVE_CALL rvm64_main (
 		g_vmcs->thread_args [i].param_base 	= param_base;
 
 		g_vmcs->thread [i] = CreateThread (
-				nullptr, 0, (LPTHREAD_START_ROUTINE)vm_thread, &g_vmcs->thread_args [i], 0, nullptr); 
+				nullptr, 0, 
+				(LPTHREAD_START_ROUTINE)thread_main, (LPVOID)&g_vmcs->thread_args [i], 
+				0, nullptr); 
 	}
 
 	// TODO: how do I determine what type a thread is? info should be packed in the file data, but need a way to separate
