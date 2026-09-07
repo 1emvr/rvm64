@@ -212,11 +212,6 @@ typedef struct {
 	UINT64 pid;
 	UINT64 tid;
 
-	struct {
-		HMODULE ucrtbase;
-		HMODULE kernel32;
-	} modules;
-
 	UINT64 pc;
 	UINT64 scratch 	[8];
 	UINT64 regs 	[32];
@@ -233,6 +228,10 @@ typedef struct {
 
 typedef struct {
 	ARENA 		*arena;
+	struct {
+		HMODULE ucrtbase;
+		HMODULE kernel32;
+	} modules;
 
 	HANDLE 		s_thread 	[MAX_VM_THREADS];		
 	HANDLE 		i_thread 	[MAX_VM_THREADS];		
