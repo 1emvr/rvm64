@@ -388,7 +388,6 @@ VOID NATIVE_CALL thread_main (LPVOID parameters) {
 
 VOID NATIVE_CALL rvm64_main () {
 	if (!process_packets (a)) 		goto defer;
-
 	if (a->count == 0) 				goto defer;
 	if (a->count > MAX_VM_THREADS) 	goto defer;
 
@@ -405,6 +404,8 @@ VOID NATIVE_CALL rvm64_main () {
 				&g_vmcs->thread_args [i], 0, nullptr); 
 	}
 
+	// if (g_vmcs->threads [i].type == INFINITE) { CreateThread () } // do not wait for it
+	// how do I actually determine what type a thread is? should be packed in the file data, but need a way to determine
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // infinite branch where nothing should loop
 
 	for (SIZE_T i = 0; i < a->count; i++) {
