@@ -102,29 +102,31 @@ NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
 NATIVE_CALL VOID process_packets (Arena *a) {
 	Arena *img_base = a;
 
-	UINT_PTR offset = 0;
-	UINT_PTR n_threads = (UINT_PTR) img_base->data [0]; 
+	UINT64 offset = 0;
+	UINT64 n_threads = (UINT64)img_base->data [0]; 
 
 	// We can't actually update offsets until we've expanded the arena then moved everything...
 	// But we can still get the sizes.
+	
 #define update_arena (r, sz) 	\
 	r->data += sz; 				\
 	r->used += sz; 					
 
-	update_arena (img_base, sizeof (UINT_PTR));
+	update_arena (img_base, sizeof (UINT64));
 	offset += sizeof (UINT_PTR);
 
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
-	for (int i = 0; i < n_threads; i++) { 
-		UINT_PTR param_sz = img_base->data [0]; 
 
-		update_arena (img_base, sizeof (UINT_PTR) + param_sz);
-		offset += sizeof (UINT_PTR) + param_sz;
+	for (int i = 0; i < n_threads; i++) { 
+		UINT64 param_sz = img_base->data [0]; 
+
+		update_arena (img_base, sizeof (UINT64) + param_sz);
+		offset += sizeof (UINT64) + param_sz;
 
 		if (!is_elf (img_base) || img_base [EI_CLASS] != ELFCLASS64) {
-			return; // or not.
+			return; 
 		}
 
 		a->entries [i].runtime_sz 	= elf_runtime_size (img_base->data, nullptr);
