@@ -426,7 +426,12 @@ VOID NATIVE_CALL rvm64_main (
 	if (a->count == 0 || a->count > MAX_VM_THREADS) {
 		goto defer;
 	}
-
+	/* TODO:
+	 * if (!relocate_elf_files ()) {
+	 *		goto defer;
+	 * }
+	 */ 
+	
 	for (SIZE_T i = 0; i < a->count; i++) {
 		UINT_PTR elf_base 	= data + entires [i].elf_off;
 		UINT_PTR param_base = data + entries [i].param_off;
@@ -436,7 +441,6 @@ VOID NATIVE_CALL rvm64_main (
 		g_vmcs->t_args [i].elf_base 	= elf_base;
 		g_vmcs->t_args [i].param_base 	= param_base;
 
-		// TODO: relocate_elf_files ();
 
 		UINT64 type = g_vmcs->t_type [i];
 
