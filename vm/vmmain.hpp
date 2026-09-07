@@ -350,12 +350,12 @@ NATIVE_CALL BOOL process_packets () {
 	b += sz;					\
 	o += sz;					
 
-	update_arena (cursor, offset, sizeof (UINT64)); // one-time thread count
+	update_arena (cursor, offset, sizeof (UINT64)); 
 	if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
 		return false;
 	}
 
-	for (int i = 0; i < n_threads; i++) {  // calculate size for all threads
+	for (int i = 0; i < n_threads; i++) {  
 		UINT64 param_sz = cursor [0]; 
 
 		update_arena (cursor, offset, sizeof (UINT64) + param_sz);
