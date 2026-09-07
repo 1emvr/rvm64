@@ -228,8 +228,8 @@ typedef struct {
 
 
 typedef struct {
-	ARENA 		*code_arena;
-	ARENA 		*heap_arena;
+	ARENA *code_arena;
+	ARENA *heap_arena;
 
 	struct {
 		HMODULE ucrtbase;
