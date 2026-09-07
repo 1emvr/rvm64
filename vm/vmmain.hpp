@@ -423,16 +423,15 @@ BOOL NATIVE_CALL start_thread (
 }
 
 
-VOID NATIVE_CALL rvm64_main () { // TODO: keep running forever, waiting for new packets, re-evaluating memory and task ??
-	ARENA *a = g_vmcs->arena;
-
-	UINT_PTR data 		= a->data;
-	ElfEntry *entries 	= a->entries;
+VOID NATIVE_CALL rvm64_main () // TODO: keep running forever, waiting for new packets, re-evaluating memory and task ??
+{ 
+	UINT_PTR data 		= g_vmcs->code_arena->data;
+	ElfEntry *entries 	= g_vmcs->code_arena->entries;
 .
 	if (!calculate_runtime_size ()) {
 		goto defer;
 	}
-	if (a->count == 0 || a->count > MAX_VM_THREADS) {
+	if (g_vmcs->code_arena->count == 0 || g_vmcs->code_arena->count > MAX_VM_THREADS) {
 		goto defer;
 	}
 	/* 
