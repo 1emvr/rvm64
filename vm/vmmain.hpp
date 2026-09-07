@@ -404,8 +404,7 @@ VOID NATIVE_CALL rvm64_main () {
 				&g_vmcs->thread_args [i], 0, nullptr); 
 	}
 
-	// if (g_vmcs->threads [i].type == INFINITE) { CreateThread () } // do not wait for it
-	// how do I actually determine what type a thread is? should be packed in the file data, but need a way to determine
+	// TODO: how do I determine what type a thread is? info should be packed in the file data, but need a way to separate
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, threads, true, INFINITE); // infinite branch where nothing should loop
 
 	for (SIZE_T i = 0; i < a->count; i++) {
