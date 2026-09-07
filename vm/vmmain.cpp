@@ -146,8 +146,7 @@ VOID NATIVE_CALL thread_main (LPVOID parameters) {
 }
 
 
-NATIVE_CALL VOID rvm64_main (_In_ Arena* a) {
-
+VOID NATIVE_CALL rvm64_main (_In_ Arena* a) {
 	if (!process_packets (a)) 		goto defer;
 	if (a->count == 0) 				goto defer;
 	if (a->count > MAX_VM_THREADS) 	goto defer;
