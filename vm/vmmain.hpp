@@ -310,10 +310,10 @@ namespace rvm
 	{ 
 		UINT_PTR data 		= g_vmcs->code_arena->data;
 		ElfEntry *entries 	= g_vmcs->code_arena->entries;
-		.
-			if (!calculate_runtime_size ()) { // count the number of threads + iterate through headers and find expanded size of all ELF files
-				goto defer;
-			}
+
+		if (!calculate_runtime_size ()) { // count the number of threads + iterate through headers and find expanded size of all ELF files
+			goto defer;
+		}
 		if (g_vmcs->code_arena->count == 0 || g_vmcs->code_arena->count > MAX_VM_THREADS) {
 			goto defer;
 		}
