@@ -488,10 +488,10 @@ VOID NATIVE_CALL rvm64_start (
 		_In_ const UINT_PTR* data_size) 
 {
 	VMCS instance = { };
-	g_vmcs = &instance; // a global vmcs instance to track everything (?)
+	g_vmcs = &instance; 
 
-	rvm64_memory_init (data, data_size);
-	rvm64_main (data, data_sz); // TODO: arena_allocate () 
+	rvm64_memory_init (data, data_size); // the problem is we need to continue running and listening for new packets...
+	rvm64_main (); 
 }
 #endif
 #endif //VMCS_H
