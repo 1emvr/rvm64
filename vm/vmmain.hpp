@@ -429,7 +429,7 @@ defer:
 
 VOID NATIVE_CALL rvm64_start (
 		_In_ const UINT_PTR* data,
-		_In_ const UINT_PTR* data_sz) // should rvm64_start handle the arena, or leave it to another module?
+		_In_ const UINT_PTR* data_sz) 
 {
 	VMCS instance = { };
 	g_vmcs = &instance; // a global vmcs instance to track everything (?)
