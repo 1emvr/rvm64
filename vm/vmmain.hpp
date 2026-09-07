@@ -171,14 +171,13 @@ struct {
 	HANDLE 	h_interupt;
 	HANDLE 	mutex_rw;
 
-	UINT64 	LoadRsvAddr;
-	UINT64 	LoadRsvValid;
+	UINT64 	load_rsv_addr;
+	UINT64 	load_rsv_valid;
 							   
-	volatile INT Halt;
+	volatile int halt;
 } VM_CONTEXT;
 
 
-#define MAX_VM_THREADS 5
 typedef struct {
 	UINT64 elf_off;
 	UINT64 param_off;
@@ -203,51 +202,56 @@ typedef struct {
 } Arena;
 
 
+#define MAX_VM_THREADS 5
 typedef struct {
     UINT64 magic1, magic2;
 	UINT64 self;
 	UINT64 pid;
 	UINT64 tid;
 
-	HANDLE 		threads 	[MAX_VM_THREADS];		
-	THREAD_ARGS thread_args [MAX_VM_THREADS];
-	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
-
 	struct {
 		HMODULE ucrtbase;
 		HMODULE kernel32;
 	} modules;
 
+	UINT64 pc;
+	UINT64 scratch 	[8];
+	UINT64 regs 	[32];
+	UINT64 stack 	[32];
+
 	struct {
 		UINT_PTR epc;
-		UINT_PTR cause;
+		UINT_PTR cause;	
 		UINT_PTR status;
 		UINT_PTR tval;
 	} csr;
+} THREAD_HDW;
 
-	typedef {
-		UINT64 pc;
-		UINT64 scratch 	[8];
-		UINT64 regs 	[32];
-		UINT64 stack 	[32];
-	} hdw;
 
-	Arena *arena;
+typedef struct {
+	ARENA 		*arena;
+
+	VM_CONTEXT 	context 	[MAX_VM_THREADS]; 
+	HANDLE 		h_thread 	[MAX_VM_THREADS];		
+	UINT64 		h_count;
+
+	THREAD_HDW 	thread_hdw 	[MAX_VM_THREADS];
+	THREAD_ARGS thread_args [MAX_VM_THREADS];
 } VMCS;
 
 
 VM_CALL VOID SetCsrTrap (
-		_In_ const INT32 Epc, 
-		_In_ const INT32 Cause, 
-		_In_ const INT32 Stat, 
-		_In_ const INT32 Tval, 
-		_In_ const INT32 Halt) 
+		_In_ const INT32 epc, 
+		_in_ const int32 cause, 
+		_in_ const int32 stat, 
+		_in_ const int32 tval, 
+		_in_ const int32 halt) 
 {
-    Vmcs->Csr->Epc 		= (UINT_PTR)Epc;			
-    Vmcs->Csr->Cause 	= Cause;                 	
-    Vmcs->Csr->Status 	= Stat;                 	
-    Vmcs->Csr->Tval 	= Tval;                    
-    Vmcs->Context->Halt = Halt;                    
+    g_vmcs->csr->epc 		= (UINT_PTR)epc;			
+    g_vmcs->csr->cause 		= cause;                 	
+    g_vmcs->csr->status 	= stat;                 	
+    g_vmcs->csr->tval 		= tval;                    
+    g_vmcs->context->halt 	= halt;                    
 
     RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
 }
@@ -259,7 +263,7 @@ extern "C" {
 	VOID SaveRegisters (VM_CONTEXT* Context);
 	VOID LoadRegisters (VM_CONTEXT* Context);
 
-	DATA_SCN VMCS* Vmcs = 0;
+	DATA_SCN VMCS* g_vmcs = 0;
 
 #ifdef __cplusplus
 }
