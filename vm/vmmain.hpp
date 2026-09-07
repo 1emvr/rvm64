@@ -287,9 +287,9 @@ NATIVE_CALL UINT64 elf_runtime_size (
 			continue;
 		}
 
-		UINT64 seg_lo = phdr [i].p_vaddr;
-		UINT64 seg_hi = phdr [i].p_vaddr + phdr [i].p_memsz;
-		UINT64 p_align = phdr [i].p_align;
+		UINT64 seg_lo 	= phdr [i].p_vaddr;
+		UINT64 seg_hi 	= phdr [i].p_vaddr + phdr [i].p_memsz;
+		UINT64 p_align 	= phdr [i].p_align;
 
 		if (p_align > align) { align = p_align; }
 		if (seg_lo < lo) 	 { lo = seg_lo; }
@@ -368,6 +368,7 @@ NATIVE_CALL BOOL process_packets () {
 		update_arena (cursor, offset, entries [i].packed_sz);
 	}
 
+	// TODO: determine types of threads
 	UINT64 total = 0;
 
 	for (int i = 0; i < n_threads; i++) {
