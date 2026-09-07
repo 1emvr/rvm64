@@ -145,11 +145,11 @@ typedef struct {
 } OPCODE;
 
 
-typedef struct { // relevant registers for software-based vm
+typedef struct { 
     UINT64 Rip, Rsp, Rax, Rbx, Rsi, Rdi, Rbp;
     UINT64 R12, R13, R14, R15;
     UINT64 Rflags;
-} INTEL;
+} CPU_CONTEXT;
 
 
 typedef struct {
@@ -161,8 +161,8 @@ typedef struct {
 
 
 struct {
-	INTEL 	host_context;
-	INTEL 	vm_context;
+	CPU_CONTEXT host_context;
+	CPU_CONTEXT vm_context;
 
 	jmp_buf interrupt;
 	jmp_buf branch;
@@ -199,7 +199,7 @@ typedef struct {
 	UINT64 		used;
 	ElfEntry 	*entries;
 	SIZE_T 		count;
-} Arena;
+} ARENA;
 
 
 #define MAX_VM_THREADS 5
