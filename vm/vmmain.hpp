@@ -194,7 +194,6 @@ struct THREAD_ARGS {
 
 typedef struct {
 	UINT8 		*data;
-	UINT8		*offset;
 	UINT64 		capacity;
 	UINT64 		used;
 	ElfEntry 	*entries;
@@ -378,7 +377,6 @@ NATIVE_CALL BOOL process_packets () {
 		// arena_realloc (a, total);
 	}
 
-	g_vmcs->arena->offset = 0;
 	return true;
 }
 
