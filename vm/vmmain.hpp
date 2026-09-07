@@ -261,154 +261,31 @@ extern "C" {
 #endif
 
 
-namespace runtime 
+VOID NATIVE_CALL csr_trap (
+		_In_ const UINT8 index,
+		_In_ const INT32 epc, 
+		_in_ const INT32 cause, 
+		_in_ const INT32 stat, 
+		_in_ const INT32 tval, 
+		_in_ const INT32 halt) 
 {
-	VOID NATIVE_CALL csr_trap (
-			_In_ const UINT8 index,
-			_In_ const INT32 epc, 
-			_in_ const INT32 cause, 
-			_in_ const INT32 stat, 
-			_in_ const INT32 tval, 
-			_in_ const INT32 halt) 
-	{
-		g_vmcs->t_hardware [index].csr.epc 		= (UINT_PTR)epc;			
-		g_vmcs->t_hardware [index].csr.cause 	= cause;                 	
-		g_vmcs->t_hardware [index].csr.status 	= stat;                 	
-		g_vmcs->t_hardware [index].csr.tval 	= tval;                    
-		g_vmcs->t_context  [index].halt 		= halt;                    
+	g_vmcs->t_hardware [index].csr.epc 		= (UINT_PTR)epc;			
+	g_vmcs->t_hardware [index].csr.cause 	= cause;                 	
+	g_vmcs->t_hardware [index].csr.status 	= stat;                 	
+	g_vmcs->t_hardware [index].csr.tval 	= tval;                    
+	g_vmcs->t_context  [index].halt 		= halt;                    
 
-		RaiseException (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
-	}
+	raise_exception (RVM_TRAP_EXCEPTION, 0, 0, nullptr); 	
+}
 
 
-	NATIVE_CALL BOOL is_elf (_In_ const UINT8 *base) {
-		return 	base [EI_MAG0] == ELFMAG0 && base [EI_MAG1] == ELFMAG1 && 
-			base [EI_MAG2] == ELFMAG2 && base [EI_MAG3] == ELFMAG3;
-	}
-
-
-	NATIVE_CALL UINT64 elf_runtime_size (
-			_In_ const 	UINT8  	*base, 
-			_Inout_ 	UINT64 	*out_align)
-	{
-		const ELF64_EHDR *ehdr = (const ELF64_EHDR*)base;
-		const ELF64_PHDR *phdr = (const ELF64_PHDR*)(base + ehdr->e_phoff);
-
-		UINT64 lo = (UINT64)-1, hi = 0, align = 0x1000;
-
-		for (UINT8 prog_index = 0; prog_index < ehdr->e_phnum; prog_index++) {
-			if (phdr [prog_index].p_type != PT_LOAD) {
-				continue;
-			}
-
-			UINT64 seg_lo 	= phdr [prog_index].p_vaddr;
-			UINT64 seg_hi 	= phdr [prog_index].p_vaddr + phdr [prog_index].p_memsz;
-			UINT64 p_align 	= phdr [prog_index].p_align;
-
-			if (p_align > align) { align = p_align; }
-			if (seg_lo < lo) 	 { lo = seg_lo; }
-			if (seg_hi > hi) 	 { hi = seg_hi; }
-		}
-
-		lo &= ~(align -1);
-		hi = (hi + align -1) & ~(align -1);
-
-		if (out_align) *out_align = align;
-		return hi - lo;
-	}
-
-
-	NATIVE_CALL UINT64 elf_image_size (_In_ const UINT8 *base) {
-		const ELF64_EHDR *ehdr =  (const ELF64_EHDR *)base;
-
-		UINT64 max = sizeof (ELF64_EHDR);
-
-		if (ehdr->phoff) {		
-			UINT64 end = ehdr->eh_phoff + (UINT64)(ehde->e_phnum * ehdr->e_phentsize);
-			if (end > max) max = end;
-
-			const ELF64_PHDR *phdr = (const ELF64_PHDR *)(base + ehdr->e_phoff);
-
-			for (UINT8 prog_index = 0; prog_index < ehdr->e_phnum; prog_index++) {
-				const UINT64 end = phdr [prog_index].ph_offset + phdr [prog_index].p_filesz;
-				if (end > max) max = end;
-			}
-		}
-		if (ehdr->e_shoff) {
-			const UINT64 end = ehdr->e_shoff + (UINT64)(ehdr->e_shnum * ehdr->e_shentsize);
-			if (end > max) max = end;
-
-			const ELF64_SHDR *shdr = (const ELF64_SHDR *)base + ehdr->e_shoff;
-
-			for (UINT8 seg_index = 0; seg_index < ehdr->e_shnum; seg_index++) {
-				if (shdr [seg_index].sh_type == SHT_NOBITS) {
-					continue;
-				}
-
-				const UINT64 real_end = shdr [seg_index].sh_offset + shdr [seg_index].sh_size;
-				if (real_end > max) max = real_end;
-			}
-		}
-		return max;
-	}
-
-
-	// Idea to create 2 arenas: one for program code, the other for heap + create a pseudo-allocator/memory manager (512MB blocks ?)
-	// The arena allocators will be the primary source for memory, then malloc will resolve to a custom allocator.
-
-	BOOL NATIVE_CALL calculate_runtime_size () {
-		UINT8 *cursor 		= g_vmcs->code_arena->data;
-		ElfEntry *entries 	= g_vmcs->code_arena->entries;
-
-		UINT64 offset 		= 0;
-		UINT64 n_threads 	= (UINT64)cursor [0]; 
-
-#define update_arena (b, o, sz) \
-		b += sz;					\
-		o += sz;					
-
-		update_arena (cursor, offset, sizeof (UINT64)); 
-		if (n_threads == 0 || n_threads > MAX_VM_THREADS) {
-			return false;
-		}
-
-		for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {  
-			// TODO: determine types of threads (here or during relocation)
-			UINT64 param_sz = cursor [0]; 
-
-			update_arena (cursor, offset, sizeof (UINT64) + param_sz);
-			if (!is_elf (cursor) || cursor [EI_CLASS] != ELFCLASS64) {
-				return false; 
-			}
-
-			entries [thread_index].runtime_sz 	= elf_runtime_size (cursor, nullptr);
-			entries [thread_index].packed_sz 	= elf_image_size (cursor);
-
-			update_arena (cursor, offset, entries [thread_index].packed_sz);
-		}
-
-		UINT64 total = 0;
-
-		for (UINT8 thread_index = 0; thread_index < n_threads; thread_index++) {
-			total += entries [thread_index].runtime_sz;
-		}
-		if (total > g_vmcs->code_arena->capacity) {
-			ARENA *new_a = arena_realloc (g_vmcs->code_arena, total);
-
-			g_vmcs->code_arena = new_a;
-			cursor = offset; // unnecessary ??	
-		}
-
-		return true;
-	}
-
-
+namespace thread 
+{
 	VOID NATIVE_CALL thread_main (_In_ const LPVOID parameters) {
 		ThreadArgs *args = (ThreadArgs *)parameters;
 		// this is where the machine code FDX cycle will take place
 		return;
 	}
-
 
 	BOOL NATIVE_CALL start_thread (
 			_Out_ 		HANDLE* 				handle,
@@ -422,7 +299,12 @@ namespace runtime
 		}
 		return true;
 	}
+}
 
+
+namespace rvm 
+{
+	using namespace thread;
 
 	VOID NATIVE_CALL rvm64_main () // TODO: keep running forever, waiting for new packets, re-evaluating memory and task ??
 	{ 
