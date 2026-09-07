@@ -441,7 +441,7 @@ VOID NATIVE_CALL rvm64_main (
 	}
 	 */ 
 	
-	for (UINT8 thread_index = 0; i < a->count; i++) {
+	for (UINT8 thread_index = 0; thread_index < a->count; thread_index++) {
 		UINT_PTR elf_base 	= data + entires [thread_index].elf_off;
 		UINT_PTR param_base = data + entries [thread_index].param_off;
 
@@ -458,7 +458,7 @@ VOID NATIVE_CALL rvm64_main (
 				a->count -= 1;
 			}
 		} else if (type == INFINITE_EXEC) {
-			if (!start_thread (&g_vmcs->infinite_thread [i], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { // how do we access these infinite threads?
+			if (!start_thread (&g_vmcs->infinite_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) { // how do we access these infinite threads?
 				a->count -= 1;
 			}
 		} else {
@@ -467,11 +467,12 @@ VOID NATIVE_CALL rvm64_main (
 		}
 	}
 	DWORD result = WaitForMultipleObjects ((DWORD)a->count, g_vmcs->one_time_thread, true, INFINITE); 
-	for (HANDLE i = 0; i < a->count; i++) {
-		if (g_vmcs->one_time_thread [i]) {
 
-			CloseHandle (threads [i]);
-			HeapFree (threads [i]);
+	for (HANDLE handle_index = 0; handle_index < a->count; handle_index++) {
+		if (g_vmcs->one_time_thread [handle_index]) {
+
+			CloseHandle (threads [handle_index]);
+			HeapFree (threads [handle_index]);
 		}
 	}
 	// post_thread_response () ??
