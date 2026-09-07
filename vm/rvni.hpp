@@ -161,9 +161,9 @@ namespace rvni
 					CHAR *Pathname = 0;
 					INT Flags = 0, Mode = 0;
 
-					reg_read (CHAR*, Pathname, A0);
-					reg_read (INT, Flags, A1);
-					reg_read (INT, Mode, A2);
+					reg_read (CHAR*, 	Pathname, 	A0);
+					reg_read (INT, 		Flags, 		A1);
+					reg_read (INT, 		Mode, 		A2);
 
 					INT Result = Api->typecaster.open (Pathname, Flags, Mode);
 
@@ -176,9 +176,9 @@ namespace rvni
 					LPVOID Buf 	= 0;
 					UINT Count 	= 0;
 
-					reg_read (INT, Fd, A0);
-					reg_read (LPVOID, Buf, A1);
-					reg_read (UINT, Count, A2);
+					reg_read (INT, 		Fd, 	A0);
+					reg_read (LPVOID, 	Buf, 	A1);
+					reg_read (UINT, 	Count, 	A2);
 
 					INT Result = Api->typecaster.read (Fd, Buf, Count);
 
@@ -191,9 +191,9 @@ namespace rvni
 					LPVOID Buf 	= 0;
 					UINT Count 	= 0;
 
-					reg_read (INT, Fd, A0);
-					reg_read (LPVOID, Buf, A1);
-					reg_read (UINT, Count, A2);
+					reg_read (INT, 		Fd, 	A0);
+					reg_read (LPVOID, 	Buf, 	A1);
+					reg_read (UINT, 	Count, 	A2);
 
 					INT Result = Api->typecaster.write (Fd, Buf, Count);
 
@@ -203,8 +203,8 @@ namespace rvni
 			case UCRT_FUNCTION::CLOSE: 
 				{
 					INT Fd = 0;
-					reg_read (INT, Fd, A0);
 
+					reg_read (INT, Fd, A0);
 					INT Result = Api->typecaster.close (Fd);
 
 					reg_write (INT, A0, Result);
@@ -216,9 +216,9 @@ namespace rvni
 					LONG Offset = 0;
 					INT Whence 	= 0;
 
-					reg_read (INT, Fd, A0);
+					reg_read (INT, 	Fd, 	A0);
 					reg_read (LONG, Offset, A1);
-					reg_read (INT, Whence, A2);
+					reg_read (INT, 	Whence, A2);
 
 					LONG Result = Api->typecaster.lseek (Fd, Offset, Whence);
 
@@ -230,8 +230,8 @@ namespace rvni
 					const CHAR *Pathname 	= 0;
 					LPVOID Statbuf 			= 0;
 
-					reg_read (const CHAR*, Pathname, a0);
-					reg_read (LPVOID, Statbuf, A1);
+					reg_read (const CHAR*, 	Pathname, 	A0);
+					reg_read (LPVOID, 		Statbuf, 	A1);
 
 					INT Result = Api->typecaster.stat64 (Pathname, Statbuf);
 
@@ -240,20 +240,20 @@ namespace rvni
 				}
 			case UCRT_FUNCTION::MALLOC: 
 				{
-					SIZE_T Size = 0;
-					reg_read (SIZE_T, Size, A0);
+					SIZE_T size = 0;
 
-					LPVOID Result = Api->typecaster.malloc (SIZE);
+					reg_read (SIZE_T, size, A0);
+					LPVOID result = Api->typecaster.malloc (size);
 
-					reg_write (UINT_PTR, A0, Result);
+					reg_write (UINT_PTR, A0, result);
 					break;
 				}
 			case UCRT_FUNCTION::FREE: 
 				{
 					LPVOID Ptr = 0;
-					reg_read (LPVOID, Ptr, A0);
 
-					Api->typecaster.free (Ptr);
+					reg_read (LPVOID, Ptr, A0);
+					api->typecaster.free (Ptr);
 
 					reg_write (UINT_PTR, A0, 0);
 					break;
@@ -264,8 +264,8 @@ namespace rvni
 					SIZE_T n = 0;
 
 					reg_read (LPVOID, Dest, A0);
-					reg_read (LPVOID, Src, A1);
-					reg_read (SIZE_T, n, A2);
+					reg_read (LPVOID, Src, 	A1);
+					reg_read (SIZE_T, n, 	A2);
 
 					LPVOID Result = Api->typecaster.memcpy (Dest, Src, n);
 
