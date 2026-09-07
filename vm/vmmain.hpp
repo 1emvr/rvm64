@@ -305,6 +305,7 @@ namespace thread
 namespace rvm 
 {
 	using namespace thread;
+	using namespace image_calculate;
 
 	VOID NATIVE_CALL rvm64_main () // TODO: keep running forever, waiting for new packets, re-evaluating memory and task ??
 	{ 
@@ -321,10 +322,10 @@ namespace rvm
 		   if (!calculate_runtime_memory ()) { // should either move infinite threads to their own memory or memory manager should keep tabs on everything
 		   goto defer;
 		   }
-		   */ 
+		*/ 
 
 		for (UINT8 thread_index = 0; thread_index < a->count; thread_index++) {
-			UINT_PTR elf_base 	= data + entires [thread_index].elf_off; // elf/param offset doens't actually get evaluated anywhere. Needs calculate_runtime_memory ()
+			UINT_PTR elf_base 	= data + entires [thread_index].elf_off; 
 			UINT_PTR param_base = data + entries [thread_index].param_off;
 
 			if (param_base [0] == 0) param_base = nullptr;
@@ -335,7 +336,7 @@ namespace rvm
 			UINT64 type 		= g_vmcs->t_type [thread_index];
 			THREAD_ARGS *args 	= &g_vmcs->t_args [thread_index];
 
-			// separating 
+			// need a memory manager that can just check if a region is still locked instead of keeping separate threads. 
 			if (type == one_thread) {
 				if (!start_thread (&g_vmcs->one_thread [thread_index], (LPTHREAD_START_ROUTINE)thread_main, (LPVOID)args)) {
 					a->count -= 1;
